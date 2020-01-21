@@ -18,6 +18,8 @@ github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/grsmv/inflect v0.0.0-20140723132642-a28d3de3b3ad h1:TwIHBCUKHVRVF2qTtjoiwgeR37KuVSn4XoL4/7RW1cU=
 github.com/grsmv/inflect v0.0.0-20140723132642-a28d3de3b3ad/go.mod h1:fb+mB08ThqPoju994Q3+VcLBrEHZqprAjxs7IpkvDLc=
+github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 h1:iQTw/8FWTuc7uiaSepXwyf3o52HaUYcV+Tu66S3F5GA=
+github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0/go.mod h1:1NbS8ALrpOvjt0rHPNLyCIeMtbizbir8U//inJ+zuB8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
@@ -42,6 +44,9 @@ github.com/runner-mei/GoBatis v1.1.6 h1:jXQuwAjjFhR7GNZDth584Oiq1c08thBpO1l0yDOZ
 github.com/runner-mei/GoBatis v1.1.6/go.mod h1:V6YE0l+mPOWsGjbV/fqfK3RkX+3UbzWRwIQ2MRMzEKQ=
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66 h1:RdPUaLzJE68Q0S1Sx1X87XajtK4ZPzTb9w6WOdEDYUw=
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
+github.com/runner-mei/goutils v0.0.0-20200120093800-c5f3ee590a17 h1:Zh+vD8ZMvKmNguLqDBqXQR0AuyTkJYVCFnXil+WwMfI=
+github.com/runner-mei/goutils v0.0.0-20200121065808-339b9fbc97d0 h1:MztWWtGDKOcSjPeoMYdQ8oW5kINtyrZ21f+NofygG8Q=
+github.com/runner-mei/goutils v0.0.0-20200121065808-339b9fbc97d0/go.mod h1:uHKAg5y2XurLk1ctSNQ0LNDAsvHS7/sNVTxbZeoopDk=
 github.com/runner-mei/log v1.0.0/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
 github.com/runner-mei/log v1.0.1 h1:G2ESdBI2ZP58AEV7qPSdfxd2GGxOkRObblOve5Vp3fc=
 github.com/runner-mei/log v1.0.1/go.mod h1:yyWfw0HOYyKnEBHLWiKJFdHmo47QOetYqiS79vnfAJs=
