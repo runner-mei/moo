@@ -2,15 +2,15 @@ package moo
 
 import (
 	gobatis "github.com/runner-mei/GoBatis"
-	"github.com/runner-mei/log"
-	"github.com/runner-mei/loong"
 	"go.uber.org/fx"
+
+	"github.com/runner-mei/moo/cfg"
 )
+
+var NS = "tpt"
 
 func init() {
 	var _ *gobatis.SessionFactory = &gobatis.SessionFactory{}
-	var _ log.Logger = nil
-	var _ = loong.New()
 }
 
 type Arguments struct {
@@ -38,14 +38,14 @@ func Run(args *Arguments) error {
 		return err
 	}
 
-	cfg, err := readConfigs(fs, "tpt.", args)
+	config, err := readConfigs(fs, NS+".", args)
 	if err != nil {
 		return err
 	}
 
 	var opts = []fx.Option{
-		fx.Provide(func() interface{} {
-			return cfg
+		fx.Provide(func() *cfg.Config {
+			return config
 		}),
 	}
 	for _, cb := range initFuncs {

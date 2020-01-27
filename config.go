@@ -94,9 +94,14 @@ func readCommandLineArgs(args []string) (map[string]string, error) {
 	return props, nil
 }
 
-func fileExists(filename string) bool {
+func fileExists(filename string, e *error) bool {
 	st, err := os.Stat(filename)
 	if err != nil {
+		if e != nil {
+			if !os.IsNotExist(err) {
+				*e = err
+			}
+		}
 		return false
 	}
 	return st != nil && !st.IsDir()
@@ -104,10 +109,10 @@ func fileExists(filename string) bool {
 
 func readMinioConfig(fs FileSystem) (map[string]interface{}, error) {
 	configFile := fs.FromData("minio", ".minio.sys", "config", "config.json")
-	if !fileExists(configFile) {
+	if !fileExists(configFile, nil) {
 
 		configFile2 := fs.FromData(".minio", "config.json")
-		if !fileExists(configFile2) {
+		if !fileExists(configFile2, nil) {
 			return nil, errors.Wrapf(os.ErrNotExist, "file '%s' is not exist", configFile)
 		}
 		configFile = configFile2
@@ -134,7 +139,7 @@ func readTSDBConfig(fs FileSystem) (httpPort, admPort string, err error) {
 	} else {
 		tsdbConfigFile = fs.FromConfig("tsdb_config.conf")
 	}
-	if filename := fs.FromDataConfig("tsdb_config.conf"); fileExists(filename) {
+	if filename := fs.FromDataConfig("tsdb_config.conf"); fileExists(filename, nil) {
 		tsdbConfigFile = filename
 	}
 

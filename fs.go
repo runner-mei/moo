@@ -32,14 +32,6 @@ type linuxFs struct {
 	confDir    string
 	tmpDir     string
 	runDir     string
-
-	// PACKAGE_NAME = "tpt"
-	// INSTALL_ROOT_DIR = "/usr/local/tpt"
-	// LOG_DIR = "/var/log/tpt"
-	// DATA_DIR = "/var/lib/tpt"
-	// SCRIPT_DIR = "/usr/lib/tpt/scripts"
-	// CONFIG_DIR = "/etc/tpt"
-	// Run_DIR = "/var/run/tpt/"
 }
 
 func (fs *linuxFs) FromInstallRoot(s ...string) string {
@@ -172,14 +164,24 @@ func NewFileSystem(params map[string]string) (FileSystem, error) {
 			runDir:     rootDir,
 		}
 	} else {
+		var namespace = os.Getenv("hw_namespace")
+		if params != nil {
+			if s := params["hw_namespace"]; s != "" {
+				namespace = s
+			}
+		}
+		if namespace == "" {
+			namespace = NS
+		}
+
 		fs = &linuxFs{
-			installDir: "/usr/local/tpt",
-			binDir:     "/usr/local/tpt/bin",
-			logDir:     "/var/log/tpt",
-			dataDir:    "/var/lib/tpt",
-			confDir:    "/etc/tpt",
-			tmpDir:     "/tmp/tpt",
-			runDir:     "/var/run/tpt",
+			installDir: "/usr/local/" + namespace,
+			binDir:     "/usr/local/" + namespace + "/bin",
+			logDir:     "/var/log/" + namespace,
+			dataDir:    "/var/lib/" + namespace,
+			confDir:    "/etc/" + namespace,
+			tmpDir:     "/tmp/" + namespace,
+			runDir:     "/var/run/" + namespace,
 		}
 	}
 
