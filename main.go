@@ -1,17 +1,12 @@
 package moo
 
 import (
-	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/cfg"
 	"go.uber.org/fx"
 )
 
 var NS = "tpt"
-
-func init() {
-	var _ *gobatis.SessionFactory = &gobatis.SessionFactory{}
-}
 
 type Arguments struct {
 	Defaults    []string
@@ -32,13 +27,17 @@ func Run(args *Arguments) error {
 	if err != nil {
 		return err
 	}
+	ns := params["env_prefix"]
+	if ns == "" {
+		ns = NS
+	}
 
 	fs, err := NewFileSystem(params)
 	if err != nil {
 		return err
 	}
 
-	config, err := readConfigs(fs, NS+".", args, params)
+	config, err := readConfigs(fs, ns+".", args, params)
 	if err != nil {
 		return err
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/urlutil"
+	"github.com/runner-mei/goutils/netutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/loong/jaeger"
@@ -61,7 +62,7 @@ func init() {
 						httpSrv.logger.Info("http listen at: " + network + "+"+ listenAt)
 
 						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
-						ln, err := httputil.Listen(network, listenAt)
+						ln, err := netutil.Listen(network, listenAt)
 						if err != nil {
 							return err
 						}
@@ -124,7 +125,7 @@ func init() {
 						httpSrv.logger.Info("https listen at: " + network + "+"+ listenAt)
 
 						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
-						ln, err := httputil.Listen(network, listenAt)
+						ln, err := netutil.Listen(network, listenAt)
 						if err != nil {
 							return err
 						}
