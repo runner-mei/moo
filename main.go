@@ -2,9 +2,9 @@ package moo
 
 import (
 	gobatis "github.com/runner-mei/GoBatis"
-	"go.uber.org/fx"
-
+	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/cfg"
+	"go.uber.org/fx"
 )
 
 var NS = "tpt"
@@ -38,14 +38,29 @@ func Run(args *Arguments) error {
 		return err
 	}
 
-	config, err := readConfigs(fs, NS+".", args)
+	config, err := readConfigs(fs, NS+".", args, params)
 	if err != nil {
 		return err
 	}
 
+	logger, undo, err := NewLogger(config)
+	if err != nil {
+		return err
+	}
+	if undo != nil {
+		defer undo()
+	}
+
 	var opts = []fx.Option{
+		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(1)}),
 		fx.Provide(func() *cfg.Config {
 			return config
+		}),
+		fx.Provide(func() FileSystem {
+			return fs
+		}),
+		fx.Provide(func() log.Logger {
+			return logger
 		}),
 	}
 	for _, cb := range initFuncs {

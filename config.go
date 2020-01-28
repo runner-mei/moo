@@ -14,7 +14,7 @@ import (
 	"github.com/runner-mei/moo/cfg"
 )
 
-func readConfigs(fs FileSystem, prefix string, args *Arguments) (*cfg.Config, error) {
+func readConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) (*cfg.Config, error) {
 	var allProps = map[string]interface{}{}
 
 	read := func(isCustom bool, files []string) error {
@@ -77,6 +77,9 @@ func readConfigs(fs FileSystem, prefix string, args *Arguments) (*cfg.Config, er
 		}
 	}
 
+	for k, v := range params {
+		allProps[k] = v
+	}
 	return cfg.NewConfig(allProps), nil
 }
 

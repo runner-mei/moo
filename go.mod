@@ -14,7 +14,7 @@ require (
 	github.com/mozillazg/go-unidecode v0.1.1 // indirect
 	github.com/runner-mei/GoBatis v1.1.6
 	github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3
-	github.com/runner-mei/goutils v0.0.0-20200123062102-d885612784aa
+	github.com/runner-mei/goutils v0.0.0-20200127081827-7dc777ceae4a
 	github.com/runner-mei/log v1.0.1
 	github.com/runner-mei/loong v1.0.5
 	github.com/runner-mei/resty v0.0.0-20191102140647-fa73802f0b7f // indirect

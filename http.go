@@ -2,10 +2,10 @@ package moo
 
 import (
 	"context"
+	"net"
 	"net/http"
 	nhttputil "net/http/httputil"
-	"net/url"
-	"os"
+	"net/url"	
 	"strconv"
 	"strings"
 
@@ -21,7 +21,7 @@ import (
 
 func init() {
 	On(func() Option {
-		return fx.Provide(func(lifecycle fx.Lifecycle, env *Environment, logger log.Logger) *HTTPServer {
+		return fx.Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
 				homePrefix: env.DaemonUrlPath,
@@ -45,36 +45,58 @@ func init() {
 			} else {
 				httpSrv.logger.Named("jaegertracing").Info("opentracing is disabled")
 			}
+			return httpSrv
+		})
+	})
 
+	On(func() Option {
+		return fx.Invoke(func(lifecycle fx.Lifecycle, env *Environment, httpSrv *HTTPServer) error {
 			if listenAt := env.Config.StringWithDefault("http-address", ""); listenAt != "" {
 				var hsrv *http.Server
+				var listener net.Listener
+
 				lifecycle.Append(fx.Hook{
 					OnStart: func(context.Context) error {
-						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
-
 						network := env.Config.StringWithDefault("http-network", "tcp")
-						err := httputil.RunServer(hsrv, network, listenAt)
-						if err != nil {
-							if http.ErrServerClosed != err {
-								httpSrv.logger.Error("start unsuccessful", log.Error(err))
-							} else {
-								httpSrv.logger.Info("stopped")
-							}
+						httpSrv.logger.Info("http listen at: " + network + "+"+ listenAt)
 
+						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
+						ln, err := httputil.Listen(network, listenAt)
+						if err != nil {
+							return err
 						}
-						return err
+						listener = ln
+
+						go func() {
+							tcpListener, ok := listener.(*net.TCPListener)
+							if ok {
+								listener = httputil.TcpKeepAliveListener{tcpListener}
+							}
+							err :=  hsrv.Serve(listener)
+							if err != nil {
+								if http.ErrServerClosed != err {
+									httpSrv.logger.Error("start unsuccessful", log.Error(err))
+								} else {
+									httpSrv.logger.Info("stopped")
+								}
+							}
+						}()
+						return nil
 					},
 					OnStop: func(context.Context) error {
-						return hsrv.Close()
+						err := hsrv.Close()
+						listener.Close()
+						return err
 					},
 				})
 			}
 
 			if listenAt := env.Config.StringWithDefault("https-address", ""); listenAt != "" {
 				var hsrv *http.Server
+				var listener net.Listener
+
 				lifecycle.Append(fx.Hook{
 					OnStart: func(context.Context) error {
-
 						var certFile, keyFile string
 						for _, file := range []string{
 							env.Fs.FromConfig("cert.pem"),
@@ -98,24 +120,40 @@ func init() {
 							return errors.New("keyFile or certFile isn't found")
 						}
 
-						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
 						network := env.Config.StringWithDefault("https-network", "tcp")
-						err := httputil.RunServerTLS(hsrv, network, listenAt, certFile, keyFile)
+						httpSrv.logger.Info("https listen at: " + network + "+"+ listenAt)
+
+						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
+						ln, err := httputil.Listen(network, listenAt)
 						if err != nil {
-							if http.ErrServerClosed != err {
-								httpSrv.logger.Error("start unsuccessful", log.Error(err))
-							} else {
-								httpSrv.logger.Info("stopped")
-							}
+							return err
 						}
-						return err
+						listener = ln
+
+						go func() {
+							tcpListener, ok := listener.(*net.TCPListener)
+							if ok {
+								listener = httputil.TcpKeepAliveListener{tcpListener}
+							}
+							err :=  hsrv.ServeTLS(listener, certFile, keyFile)
+							if err != nil {
+								if http.ErrServerClosed != err {
+									httpSrv.logger.Error("start unsuccessful", log.Error(err))
+								} else {
+									httpSrv.logger.Info("stopped")
+								}
+							}
+						}()
+						return nil
 					},
 					OnStop: func(context.Context) error {
-						return hsrv.Close()
+						err := hsrv.Close()
+						listener.Close()
+						return err
 					},
 				})
 			}
-			return httpSrv
+			return nil
 		})
 	})
 }
