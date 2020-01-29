@@ -9,10 +9,10 @@ import (
 	"log"
 	"time"
 
+	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/db"
 	"go.uber.org/fx"
-	gobatis "github.com/runner-mei/GoBatis"
 )
 
 type OperationLog struct {
@@ -130,15 +130,18 @@ func (logger oldOperationLogger) LogRecord(ctx context.Context, ol *OperationLog
 		Fields:     ol.Fields,
 	})
 }
+func NewOperationLogger(env *moo.Environment, dbFactory *gobatis.SessionFactory) OperationLogger {
+	if env.Config.IntWithDefault("operation_logger", 0) == 2 {
+		return operationLogger{dao: NewOperationLogDao(dbFactory.SessionReference())}
+	}
+
+	return oldOperationLogger{dao: NewOldOperationLogDao(dbFactory.SessionReference())}
+}
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db *db.ArgModelFactory, logger log.Logger) (OperationLogger) {
-			if env.Config.IntWithDefault("operation_logger", 0) == 2 {
-				return operationLogger{dao: NewOperationLogDao(db.Factory.SessionReference())}
-			}
-
-			return oldOperationLogger{dao: NewOldOperationLogDao(db.Factory.SessionReference())}
+		return fx.Provide(func(env *moo.Environment, db *db.ArgModelFactory, logger log.Logger) OperationLogger {
+			return NewOperationLogger(env, db.Factory)
 		})
 	})
 }

@@ -12,14 +12,18 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/mojocn/base64Captcha v1.3.0
 	github.com/mozillazg/go-slugify v0.2.0 // indirect
 	github.com/mozillazg/go-unidecode v0.1.1 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/runner-mei/GoBatis v1.1.6
 	github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3
 	github.com/runner-mei/goutils v0.0.0-20200127081827-7dc777ceae4a
 	github.com/runner-mei/log v1.0.1
 	github.com/runner-mei/loong v1.0.5
 	github.com/runner-mei/resty v0.0.0-20191102140647-fa73802f0b7f // indirect
+	go.uber.org/atomic v1.5.0
 	go.uber.org/fx v1.10.0
 	go.uber.org/zap v1.13.0
+	gopkg.in/ldap.v3 v3.1.0
 )
