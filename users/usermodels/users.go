@@ -16,7 +16,7 @@ func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger o
 	return &Users{
 		env:       env,
 		dbFactory: dbFactory,
-		userDao:   NewUserDao(sessionRef, NewUserQueryer(sessionRef)),
+		UserDao:   NewUserDao(sessionRef, NewUserQueryer(sessionRef)),
 		ologger:   ologger,
 	}
 }
@@ -24,17 +24,21 @@ func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger o
 type Users struct {
 	env       *moo.Environment
 	dbFactory *gobatis.SessionFactory
-	userDao   UserDao
+	UserDao   UserDao
 	ologger   operation_logs.OperationLogger
 }
 
 func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
-	return c.userDao.NicknameExists(ctx, name)
+	return c.UserDao.NicknameExists(ctx, name)
+}
+
+func (c *Users) GetUsers(ctx context.Context) ([]User, error) {
+	return c.UserDao.GetUsers(ctx)
 }
 
 func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	var role Role
-	err := c.userDao.GetRoleByName(ctx, name)(&role)
+	err := c.UserDao.GetRoleByName(ctx, name)(&role)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +47,7 @@ func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 
 func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
 	var user User
-	err := c.userDao.GetUserByName(ctx, name)(&user)
+	err := c.UserDao.GetUserByName(ctx, name)(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +58,7 @@ func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles [
 	var roleIDs []int64
 	for _, name := range roles {
 		var role Role
-		err := c.userDao.GetRoleByName(ctx, name)(&role)
+		err := c.UserDao.GetRoleByName(ctx, name)(&role)
 		if err != nil {
 			return 0, err
 		}
@@ -72,14 +76,14 @@ func (c *Users) CreateUser(ctx context.Context, user *User, roles []int64) (int6
 
 	ctx = gobatis.WithDbConnection(ctx, tx)
 
-	userid, err := c.userDao.CreateUser(ctx, user)
+	userid, err := c.UserDao.CreateUser(ctx, user)
 	if err != nil {
 		return 0, errors.WithTitle(err, "用户不存在，创建新用户失败")
 	}
 	user.ID = userid
 
 	for _, roleid := range roles {
-		err = c.userDao.AddRoleToUser(ctx, userid, roleid)
+		err = c.UserDao.AddRoleToUser(ctx, userid, roleid)
 		if err != nil {
 			return 0, errors.WithTitle(err, "用户不存在，创建新用户时添加角色失败")
 		}
@@ -97,4 +101,16 @@ func (c *Users) CreateUser(ctx context.Context, user *User, roles []int64) (int6
 		return 0, errors.WithTitle(err, "用户不存在，创建新用户时提交事务失败")
 	}
 	return userid, nil
+}
+
+func (c *Users) ReadProfile(ctx context.Context, userID int64, name string) (string, error) {
+	return c.UserDao.ReadProfile(ctx, userID, name)
+}
+
+func (c *Users) WriteProfile(ctx context.Context, userID int64, name, value string) error {
+	return c.UserDao.WriteProfile(ctx, userID, name, value)
+}
+
+func (c *Users) DeleteProfile(ctx context.Context, userID int64, name string) (int64, error) {
+	return c.UserDao.DeleteProfile(ctx, userID, name)
 }

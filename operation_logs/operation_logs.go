@@ -6,17 +6,17 @@ package operation_logs
 
 import (
 	"context"
-	"log"
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
+	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/db"
 	"go.uber.org/fx"
 )
 
 type OperationLog struct {
-	TableName  struct{}            `json:"-" xorm:"hengwei_operation_logs"`
+	TableName  struct{}            `json:"-" xorm:"moo_operation_logs"`
 	ID         int64               `json:"id,omitempty" xorm:"id pk autoincr"`
 	UserID     int64               `json:"userid,omitempty" xorm:"userid null"`
 	Username   string              `json:"username,omitempty" xorm:"username null"`
@@ -81,7 +81,7 @@ func (logger operationLogger) LogRecord(ctx context.Context, ol *OperationLog) e
 }
 
 type OldOperationLog struct {
-	TableName  struct{}            `json:"-" xorm:"tpt_operation_logs"`
+	TableName  struct{}            `json:"-" xorm:"moo_operation_logs"`
 	ID         int64               `json:"id,omitempty" xorm:"id pk autoincr"`
 	UserID     int64               `json:"userid,omitempty" xorm:"-"`
 	Username   string              `json:"username" xorm:"user_name notnull"`
@@ -140,7 +140,7 @@ func NewOperationLogger(env *moo.Environment, dbFactory *gobatis.SessionFactory)
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db *db.ArgModelFactory, logger log.Logger) OperationLogger {
+		return fx.Provide(func(env *moo.Environment, db db.ArgModelFactory, logger log.Logger) OperationLogger {
 			return NewOperationLogger(env, db.Factory)
 		})
 	})

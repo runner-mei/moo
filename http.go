@@ -4,32 +4,64 @@ import (
 	"context"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	nhttputil "net/http/httputil"
-	"net/url"	
+	"net/url"
 	"strconv"
 	"strings"
 
 	bgo "github.com/digitalcrab/browscap_go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/httputil"
-	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/goutils/netutil"
+	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/loong/jaeger"
+	"github.com/runner-mei/moo/api"
 	"go.uber.org/fx"
 )
 
+type HTTPLifecycle interface {
+	OnHTTP(addr string)
+	OnHTTPs(addr string)
+}
+
+type HTTPLifecycleIn struct {
+	fx.In
+
+	Lifecycle HTTPLifecycle `optional:"true"`
+}
+
+type Middlewares struct {
+	fx.In
+
+	Funcs []loong.MiddlewareFunc `group:"middlewares"`
+}
+
 func init() {
+	loong.ContextWithUserHook = func(ctx context.Context, u interface{}) context.Context {
+		return context.WithValue(ctx, api.UserKey, u)
+	}
+	loong.UserFromContextHook = func(ctx context.Context) interface{} {
+		if ctx == nil {
+			return nil
+		}
+		return ctx.Value(api.UserKey)
+	}
+
 	On(func() Option {
 		return fx.Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
-				homePrefix: env.DaemonUrlPath,
+				homePrefix: strings.TrimSuffix( env.DaemonUrlPath, "/") + "/",
+				trimPrefix: strings.TrimSuffix( env.DaemonUrlPath, "/"),
 				engine:     loong.New(),
 				fastRoutes: map[string]HandlerFunc{},
 				homePage:   urlutil.JoinURLPath(env.DaemonUrlPath, "home/"),
 			}
+			httpSrv.engine.Logger = httpSrv.logger
+
 			for _, file := range []string{
 				env.Fs.FromData("resources", "favicon.ico"),
 				env.Fs.FromInstallRoot("web", "resources", "favicon.ico"),
@@ -50,8 +82,9 @@ func init() {
 		})
 	})
 
+
 	On(func() Option {
-		return fx.Invoke(func(lifecycle fx.Lifecycle, env *Environment, httpSrv *HTTPServer) error {
+		return fx.Invoke(func(lifecycle fx.Lifecycle, env *Environment, httpSrv *HTTPServer, httpLifecycle HTTPLifecycleIn) error {
 			if listenAt := env.Config.StringWithDefault("http-address", ""); listenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
@@ -59,7 +92,7 @@ func init() {
 				lifecycle.Append(fx.Hook{
 					OnStart: func(context.Context) error {
 						network := env.Config.StringWithDefault("http-network", "tcp")
-						httpSrv.logger.Info("http listen at: " + network + "+"+ listenAt)
+						httpSrv.logger.Info("http listen at: " + network + "+" + listenAt)
 
 						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
 						ln, err := netutil.Listen(network, listenAt)
@@ -73,7 +106,7 @@ func init() {
 							if ok {
 								listener = httputil.TcpKeepAliveListener{tcpListener}
 							}
-							err :=  hsrv.Serve(listener)
+							err := hsrv.Serve(listener)
 							if err != nil {
 								if http.ErrServerClosed != err {
 									httpSrv.logger.Error("start unsuccessful", log.Error(err))
@@ -82,6 +115,15 @@ func init() {
 								}
 							}
 						}()
+
+						if httpLifecycle.Lifecycle != nil {
+							if listenAt == ":" || listenAt == ":0" || listenAt == "0.0.0.0:0" {
+								httpLifecycle.Lifecycle.OnHTTP(listener.Addr().String())
+							} else {
+								httpLifecycle.Lifecycle.OnHTTP(listenAt)
+							}
+						}
+
 						return nil
 					},
 					OnStop: func(context.Context) error {
@@ -122,7 +164,7 @@ func init() {
 						}
 
 						network := env.Config.StringWithDefault("https-network", "tcp")
-						httpSrv.logger.Info("https listen at: " + network + "+"+ listenAt)
+						httpSrv.logger.Info("https listen at: " + network + "+" + listenAt)
 
 						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
 						ln, err := netutil.Listen(network, listenAt)
@@ -136,7 +178,7 @@ func init() {
 							if ok {
 								listener = httputil.TcpKeepAliveListener{tcpListener}
 							}
-							err :=  hsrv.ServeTLS(listener, certFile, keyFile)
+							err := hsrv.ServeTLS(listener, certFile, keyFile)
 							if err != nil {
 								if http.ErrServerClosed != err {
 									httpSrv.logger.Error("start unsuccessful", log.Error(err))
@@ -145,6 +187,15 @@ func init() {
 								}
 							}
 						}()
+
+						if httpLifecycle.Lifecycle != nil {
+							if listenAt == ":" || listenAt == ":0" || listenAt == "0.0.0.0:0" {
+								httpLifecycle.Lifecycle.OnHTTPs(listener.Addr().String())
+							} else {
+								httpLifecycle.Lifecycle.OnHTTPs(listenAt)
+							}
+						}
+
 						return nil
 					},
 					OnStop: func(context.Context) error {
@@ -163,6 +214,7 @@ type HandlerFunc func(w http.ResponseWriter, r *http.Request, pa string)
 
 type HTTPServer struct {
 	logger      log.Logger
+	trimPrefix  string
 	homePrefix  string
 	homePage    string
 	faviconFile string
@@ -176,6 +228,12 @@ func (srv *HTTPServer) Engine() *loong.Engine {
 }
 
 func (srv *HTTPServer) FastRoute(stripPrefix bool, name string, handler http.Handler) {
+	name = strings.TrimSuffix(name, "/")
+	name = strings.TrimPrefix(name, "/")
+	if strings.ContainsRune(name, '/') {
+		panic(errors.New("'"+ name + "' is invalid fast urlpath, it must not contains '/'"))
+	}
+
 	if stripPrefix {
 		srv.fastRoutes[name] = func(w http.ResponseWriter, r *http.Request, pa string) {
 			r.URL.Path = pa
@@ -222,12 +280,12 @@ func (srv *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pa := strings.TrimPrefix(r.URL.Path, srv.homePrefix)
+	pa := strings.TrimPrefix(r.URL.Path, srv.trimPrefix)
 	name, urlPath := urlutil.SplitURLPath(pa)
 	if h, exists := srv.fastRoutes[name]; exists {
 		h(w, r, urlPath)
 	} else {
-		r.URL.Path = urlPath
+		r.URL.Path = pa
 		srv.engine.ServeHTTP(w, r)
 	}
 }

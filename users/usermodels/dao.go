@@ -5,26 +5,31 @@ package usermodels
 import (
 	"context"
 	"time"
+
+	"github.com/runner-mei/moo/api"
 )
 
 const (
 	// UserAdmin admin 用户名
-	UserAdmin = "admin"
+	UserAdmin = api.UserAdmin
 
 	// UserGuest guest 用户名
-	UserGuest = "guest"
+	UserGuest = api.UserGuest
+
+	// UserBgOperator background operator 用户名
+	UserBgOperator = api.UserBgOperator
 
 	// RoleSuper super 角色名
-	RoleSuper = "super"
+	RoleSuper = api.RoleSuper
 
 	// RoleAdministrator administrator 角色名
-	RoleAdministrator = "administrator"
+	RoleAdministrator = api.RoleAdministrator
 
 	// RoleVisitor visitor 角色名
-	RoleVisitor = "visitor"
+	RoleVisitor = api.RoleVisitor
 
 	// RoleGuest guest 角色名
-	RoleGuest = "guest"
+	RoleGuest = api.RoleGuest
 )
 
 type OnlineUser struct {
@@ -86,7 +91,6 @@ func (role *Role) IsBuiltin() bool {
 
 type UserAndRole struct {
 	TableName struct{} `json:"-" xorm:"moo_users_and_roles"`
-	ID        int64    `json:"id" xorm:"id pk autoincr"`
 	UserID    int64    `json:"user_id" xorm:"user_id unique(user_role)"`
 	RoleID    int64    `json:"role_id" xorm:"role_id unique(user_role) notnull"`
 }
@@ -137,15 +141,25 @@ type UserQueryer interface {
 type UserDao interface {
 	UserQueryer
 
+	// @type update
+	// @default UPDATE <tablename type="User"/>
+	//       SET locked_at = now() WHERE lower(name) = lower(#{username})
+	Lock(ctx context.Context, username string) error
+
+	// @type update
+	// @default UPDATE <tablename type="User"/>
+	//       SET locked_at = NULL WHERE lower(name) = lower(#{username})
+	Unlock(ctx context.Context, username string) error
+
 	CreateUser(ctx context.Context, user *User) (int64, error)
 
 	// @type update
-	// @default UPDATE <tablename type="User"/>(user_id, role_id)
+	// @default UPDATE <tablename type="User"/>
 	//       SET disabled = true WHERE id=#{id}
 	DisableUser(ctx context.Context, id int64) error
 
 	// @type update
-	// @default UPDATE <tablename type="User"/>(user_id, role_id)
+	// @default UPDATE <tablename type="User"/>
 	//       SET disabled = false WHERE id=#{id}
 	EnableUser(ctx context.Context, id int64) error
 

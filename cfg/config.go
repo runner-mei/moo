@@ -47,10 +47,26 @@ func (self *Config) UintWithDefault(key string, defValue uint) uint {
 	return defValue
 }
 
+// Uint64WithDefault 读配置
+func (self *Config) Uint64WithDefault(key string, defValue uint64) uint64 {
+	if s, ok := self.settings[key]; ok {
+		return as.Uint64WithDefault(s, defValue)
+	}
+	return defValue
+}
+
 // IntWithDefault 读配置
 func (self *Config) IntWithDefault(key string, defValue int) int {
 	if s, ok := self.settings[key]; ok {
 		return as.IntWithDefault(s, defValue)
+	}
+	return defValue
+}
+
+// Int64WithDefault 读配置
+func (self *Config) Int64WithDefault(key string, defValue int64) int64 {
+	if s, ok := self.settings[key]; ok {
+		return as.Int64WithDefault(s, defValue)
 	}
 	return defValue
 }

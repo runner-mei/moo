@@ -22,6 +22,13 @@ func On(cb func() Option) {
 	initFuncs = append(initFuncs, cb)
 }
 
+// Reset 这个只是用于测试用的
+func Reset(newFuncs []func() Option) []func() Option {
+	oldFuncs := initFuncs
+	initFuncs = newFuncs
+	return oldFuncs
+}
+
 func Run(args *Arguments) error {
 	params, err := readCommandLineArgs(args.CommandArgs)
 	if err != nil {
@@ -51,7 +58,7 @@ func Run(args *Arguments) error {
 	}
 
 	var opts = []fx.Option{
-		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(1)}),
+		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),
 		fx.Provide(func() *cfg.Config {
 			return config
 		}),

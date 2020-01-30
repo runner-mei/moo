@@ -2,11 +2,14 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
+	"net"
 
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/cfg"
 	"go.uber.org/fx"
 )
 
@@ -37,32 +40,38 @@ type ArgConstants struct {
 	Constants map[string]interface{} `name:"db_constants"`
 }
 
-type DbResult struct {
+type DbModelResult struct {
 	fx.Out
 	Constants            map[string]interface{}  `name:"db_constants"`
 	DrvModels            string                  `name:"drv_models"`
-	DrvData              string                  `name:"drv_data"`
 	Models               *sql.DB                 `name:"models"`
-	Data                 *sql.DB                 `name:"data"`
 	ModelsSessionFactory *gobatis.SessionFactory `name:"modelFactory"`
+}
+
+type DbDataResult struct {
+	fx.Out
+	DrvData              string                  `name:"drv_data"`
+	Data                 *sql.DB                 `name:"data"`
 	DataSessionFactory   *gobatis.SessionFactory `name:"dataFactory"`
 }
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, logger log.Logger) (*DbResult, error) {
-			drvModels, urlModels := env.Db.Models.Url()
+		return fx.Provide(func(env *moo.Environment, logger log.Logger) (DbModelResult, error) {
+			dbConfig := readDbConfig("models.", env.Config)
+
+			drvModels, urlModels := dbConfig.Url()
+			logger.Info(drvModels + " "+ urlModels)
 			dbModels, err := sql.Open(drvModels, urlModels)
 			if nil != err {
-				return nil, errors.Wrap(err, "connect to models database failed")
+				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
 			}
-
-			drvData, urlData := env.Db.Data.Url()
-			dbData, err := sql.Open(drvData, urlData)
+			err = dbModels.Ping()
 			if nil != err {
 				dbModels.Close()
-				return nil, errors.Wrap(err, "connect to models database failed")
+				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
 			}
+
 
 			constants := map[string]interface{}{
 				// "discriminator_request": itsm_models.DiscriminatorRequest,
@@ -82,14 +91,38 @@ func init() {
 				},
 			})
 			if err != nil {
-				return nil, errors.Wrap(err, "connect to models factory failed")
+				dbModels.Close()
+				return DbModelResult{}, errors.Wrap(err, "connect to models factory failed")
+			}
+			return DbModelResult{
+				Constants:            constants,
+				DrvModels:            drvModels,
+				Models:               dbModels,
+				ModelsSessionFactory: modelFactory,
+			}, nil
+		})
+	})
+
+	moo.On(func() moo.Option {
+		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants ArgConstants) (DbDataResult, error) {
+			dbConfig := readDbConfig("data.", env.Config)
+
+			drvData, urlData := dbConfig.Url()
+			dbData, err := sql.Open(drvData, urlData)
+			if nil != err {
+				return DbDataResult{}, errors.Wrap(err, "connect to models database failed")
+			}
+			err = dbData.Ping()
+			if nil != err {
+				dbData.Close()
+				return DbDataResult{}, errors.Wrap(err, "connect to models database failed")
 			}
 
-			tracer = log.NewSQLTracer(logger.Named("gobatis.data"))
+			tracer := log.NewSQLTracer(logger.Named("gobatis.data"))
 			dataFactory, err := gobatis.New(&gobatis.Config{Tracer: tracer,
 				TagPrefix:  "xorm",
 				TagMapper:  gobatis.TagSplitForXORM,
-				Constants:  constants,
+				Constants:  constants.Constants,
 				DriverName: drvData,
 				DB:         dbData,
 				XMLPaths: []string{
@@ -97,17 +130,81 @@ func init() {
 				},
 			})
 			if err != nil {
-				return nil, errors.Wrap(err, "connect to data factory failed")
+				dbData.Close()
+				return DbDataResult{}, errors.Wrap(err, "connect to data factory failed")
 			}
-			return &DbResult{
-				Constants:            constants,
-				DrvModels:            drvModels,
+			return DbDataResult{
 				DrvData:              drvData,
-				Models:               dbModels,
 				Data:                 dbData,
-				ModelsSessionFactory: modelFactory,
 				DataSessionFactory:   dataFactory,
 			}, nil
 		})
 	})
+}
+
+
+
+// DbConfig 数据库配置
+type DbConfig struct {
+	DbType   string
+	Address  string
+	Port     string
+	DbName   string
+	Username string
+	Password string
+}
+
+func (db *DbConfig) Host() string {
+	if "" != db.Port && "0" != db.Port {
+		return net.JoinHostPort(db.Address, db.Port)
+	}
+	switch db.DbType {
+	case "postgresql":
+		return net.JoinHostPort(db.Address, "5432")
+	case "mysql":
+		return net.JoinHostPort(db.Address, "3306")
+	default:
+		panic(errors.New("unknown db type - " + db.DbType))
+	}
+}
+
+func (db *DbConfig) dbUrl() (string, string, error) {
+	switch db.DbType {
+	case "postgresql":
+		if db.Port == "" {
+			db.Port = "5432"
+		}
+		return "postgres", fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
+			db.Address, db.Port, db.DbName, db.Username, db.Password), nil
+	case "mysql":
+		if db.Port == "" {
+			db.Port = "3306"
+		}
+		return "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?autocommit=true&parseTime=true",
+			db.Username, db.Password, net.JoinHostPort(db.Address, db.Port), db.DbName), nil
+	case "odbc_with_mssql":
+		return "odbc_with_mssql", fmt.Sprintf("dsn=%s;uid=%s;pwd=%s",
+			db.DbName, db.Username, db.Password), nil
+	default:
+		return "", "", errors.New("unknown db type - " + db.DbType)
+	}
+}
+
+func (db *DbConfig) Url() (string, string) {
+	dbDrv, dbUrl, err := db.dbUrl()
+	if err != nil {
+		panic(errors.New("unknown db type - " + db.DbType))
+	}
+	return dbDrv, dbUrl
+}
+
+func readDbConfig(prefix string, props *cfg.Config) DbConfig {
+	return DbConfig{
+		DbType:   props.StringWithDefault(prefix+"db.type", "postgresql"),
+		Address:  props.StringWithDefault(prefix+"db.address", "127.0.0.1"),
+		Port:     props.StringWithDefault(prefix+"db.port", ""),
+		DbName:   props.StringWithDefault(prefix+"db.db_name", ""),
+		Username: props.StringWithDefault(prefix+"db.username", ""),
+		Password: props.StringWithDefault(prefix+"db.password", ""),
+	}
 }
