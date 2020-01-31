@@ -296,3 +296,46 @@ func TestLoginBlockIP(t *testing.T) {
 			auth.HeaderXForwardedFor: "192.168.100.9",
 		})
 }
+
+func TestWelcome(t *testing.T) {
+	hwsrv := startLoginServer(t, nil)
+	defer hwsrv.Close()
+
+	assert := func(t *testing.T, s string) {
+		hwsrv.assertResult(t, s, hwsrv.responseText)
+	}
+
+	t.Run("test 1", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service="))
+	})
+
+	t.Run("test 2", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service=/"))
+	})
+
+	t.Run("test 3", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service="+
+				strings.TrimPrefix(hwsrv.Env.DaemonUrlPath, "/")))
+	})
+
+	t.Run("test 4", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service="+
+				strings.TrimPrefix(hwsrv.Env.DaemonUrlPath, "/")+"/"))
+	})
+
+	t.Run("test 5", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service="+
+				strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"))
+	})
+
+	t.Run("test 6", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=adm&password=123&service="+
+				strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"//"))
+	})
+}
