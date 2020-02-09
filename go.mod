@@ -6,9 +6,15 @@ require (
 	emperror.dev/emperror v0.32.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/certifi/gocertifi v0.0.0-20200104152315-a6d78f326758 // indirect
+	github.com/cockroachdb/errors v1.2.4 // indirect
+	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/digitalcrab/browscap_go v0.0.0-20160912072603-465055751e36
+	github.com/getsentry/raven-go v0.2.0 // indirect
+	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
+	github.com/jaypipes/ghw v0.5.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.1.14 // indirect

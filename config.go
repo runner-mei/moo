@@ -3,6 +3,7 @@ package moo
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"net"
 	"os"
 	"runtime"
@@ -14,25 +15,34 @@ import (
 	"github.com/runner-mei/moo/cfg"
 )
 
-func readConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) (*cfg.Config, error) {
+func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) (*cfg.Config, error) {
 	var allProps = map[string]interface{}{}
 
 	read := func(isCustom bool, files []string) error {
 		for i := range files {
 			var filename = files[i]
-			if fs != nil {
+			props, err := cfg.ReadProperties(filename)
+			if err != nil {
+				if !os.IsNotExist(err) {
+					return err
+				}
+				if fs == nil && filepath.IsAbs(filename) {
+					continue
+				}
+
 				if isCustom {
 					filename = fs.FromDataConfig(filename)
 				} else {
 					filename = fs.FromConfig(filename)
 				}
-			}
-			props, err := cfg.ReadProperties(filename)
-			if err != nil {
-				if os.IsNotExist(err) {
-					continue
+
+				props, err = cfg.ReadProperties(filename)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return err
 				}
-				return err
 			}
 
 			for k, v := range props {
@@ -83,7 +93,7 @@ func readConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 	return cfg.NewConfig(allProps), nil
 }
 
-func readCommandLineArgs(args []string) (map[string]string, error) {
+func ReadCommandLineArgs(args []string) (map[string]string, error) {
 	props := map[string]string{}
 
 	for _, arg := range args {

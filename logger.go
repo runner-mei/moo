@@ -30,7 +30,6 @@ func NewLogger(cfg *cfg.Config) (log.Logger, func(), error) {
 }
 
 
-
 type LoggerPrinter struct {
 	logger log.Logger
 }
