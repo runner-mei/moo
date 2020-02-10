@@ -9,7 +9,7 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/cfg"
+	"github.com/runner-mei/goutils/cfg"
 	"go.uber.org/fx"
 )
 

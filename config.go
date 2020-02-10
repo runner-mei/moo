@@ -3,16 +3,16 @@ package moo
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"net"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
-	"github.com/runner-mei/moo/cfg"
+	"github.com/runner-mei/goutils/cfg"
 )
 
 func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) (*cfg.Config, error) {

@@ -28,7 +28,7 @@ require (
 	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.8
 	github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3
-	github.com/runner-mei/goutils v0.0.0-20200131130752-c9ed176985d2
+	github.com/runner-mei/goutils v0.0.0-20200210001204-d0d99b956cc3
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/twinj/uuid v1.0.0 // indirect
@@ -36,7 +36,6 @@ require (
 	go.uber.org/atomic v1.5.1
 	go.uber.org/fx v1.10.0
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d // indirect
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect

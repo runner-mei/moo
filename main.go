@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/runner-mei/log"
-	"github.com/runner-mei/moo/cfg"
+	"github.com/runner-mei/goutils/cfg"
 	"go.uber.org/fx"
 )
 

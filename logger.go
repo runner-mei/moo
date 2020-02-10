@@ -5,7 +5,7 @@ import (
 	"github.com/runner-mei/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"github.com/runner-mei/moo/cfg"
+	"github.com/runner-mei/goutils/cfg"
 )
 
 
