@@ -82,7 +82,7 @@ func Run(args *Arguments) error {
 		return err
 	}
 
-	config, err := ReadConfigs(fs, namespace+".", args, params)
+	existnames, nonexistnames, config, err := ReadConfigs(fs, namespace+".", args, params)
 	if err != nil {
 		return err
 	}
@@ -91,6 +91,11 @@ func Run(args *Arguments) error {
 	if err != nil {
 		return err
 	}
+
+	logger.Debug("load config successful",
+		log.StringArray("existnames", existnames),
+		log.StringArray("nonexistnames", nonexistnames))
+
 	if undo != nil {
 		defer undo()
 	}

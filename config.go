@@ -15,8 +15,10 @@ import (
 	"github.com/runner-mei/goutils/cfg"
 )
 
-func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) (*cfg.Config, error) {
+func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[string]string) ([]string, []string, *cfg.Config, error) {
 	var allProps = map[string]interface{}{}
+	var existfilenames []string
+	var nonexistfilenames []string
 
 	read := func(isCustom bool, files []string) error {
 		for i := range files {
@@ -39,10 +41,12 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 				props, err = cfg.ReadProperties(filename)
 				if err != nil {
 					if os.IsNotExist(err) {
+						nonexistfilenames = append(nonexistfilenames, filename)
 						continue
 					}
 					return err
 				}
+				existfilenames = append(existfilenames, filename)
 			}
 
 			for k, v := range props {
@@ -54,7 +58,7 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 
 	err := read(false, args.Defaults)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	for name := range allProps {
@@ -66,13 +70,13 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 
 	err = read(true, args.Customs)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	httpPort, admPort, err := readTSDBConfig(fs)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, err
+			return nil, nil, nil, err
 		}
 	} else {
 		allProps["tsdb.http_port"] = httpPort
@@ -83,14 +87,15 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 		allProps["minio_config"] = minioConfig
 	} else if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, err
+			return nil, nil, nil, err
 		}
 	}
 
 	for k, v := range params {
 		allProps[k] = v
 	}
-	return cfg.NewConfig(allProps), nil
+
+	return existfilenames, nonexistfilenames, cfg.NewConfig(allProps), nil
 }
 
 func ReadCommandLineArgs(args []string) (map[string]string, error) {
