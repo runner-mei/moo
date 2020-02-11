@@ -1,23 +1,14 @@
-package usermodels
+package db
 
 import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/db"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/operation_logs"
-	"go.uber.org/fx"
 )
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db db.ArgModelFactory, ologger operation_logs.OperationLogger) *Users {
-			return NewUsers(env, db.Factory, ologger)
-		})
-	})
-
-	moo.On(func() moo.Option {
-		return fx.Invoke(func(env *moo.Environment, logger log.Logger, db db.ArgModelDb) error {
+		return moo.Invoke(func(env *moo.Environment, logger log.Logger, db ArgModelDb) error {
 			if env.Config.BoolWithDefault("test.clean_database", false) {
 				_, err := db.DB.Exec(CleanSQL)
 				if err != nil {

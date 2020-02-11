@@ -3,8 +3,8 @@ package moo
 import (
 	"fmt"
 
-	"github.com/runner-mei/log"
 	"github.com/runner-mei/goutils/cfg"
+	"github.com/runner-mei/log"
 	"go.uber.org/fx"
 )
 
@@ -28,6 +28,9 @@ type Arguments struct {
 type Option = fx.Option
 type Lifecycle = fx.Lifecycle
 type Hook = fx.Hook
+type In = fx.In
+type Out = fx.Out
+
 var Provide = fx.Provide
 var Invoke = fx.Invoke
 

@@ -92,11 +92,21 @@ func (fs *linuxFs) SearchConfig(s ...string) []string {
 }
 
 func NewFileSystem(params map[string]string) (FileSystem, error) {
+	var namespace = os.Getenv("moo_namespace")
+	if params != nil {
+		if s := params["moo_namespace"]; s != "" {
+			namespace = s
+		}
+	}
+	if namespace == "" {
+		namespace = NS
+	}
+
 	var fs *linuxFs
 	if runtime.GOOS == "windows" {
-		var rootDir = os.Getenv("hw_root_dir")
+		var rootDir = os.Getenv(namespace + "_root_dir")
 		if params != nil {
-			if s := params["hw_root_dir"]; s != "" {
+			if s := params[namespace+"_root_dir"]; s != "" {
 				rootDir = s
 			}
 		}
@@ -132,11 +142,8 @@ func NewFileSystem(params map[string]string) (FileSystem, error) {
 			}
 		}
 		if rootDir == "" {
-			for _, s := range []string{"../../../../cn/com/hengwei",
-				"../../../../../cn/com/hengwei",
-				"../../../../../../cn/com/hengwei",
-				"../../../../../../../cn/com/hengwei"} {
-				abs, _ := filepath.Abs(s)
+			for _, s := range filepath.SplitList(os.Getenv("GOPATH")) {
+				abs, _ := filepath.Abs(filepath.Join(s, "src/cn/com/hengwei"))
 				abs = filepath.Clean(abs)
 				if st, err := os.Stat(abs); err == nil && st.IsDir() {
 					rootDir = abs
@@ -164,16 +171,6 @@ func NewFileSystem(params map[string]string) (FileSystem, error) {
 			runDir:     rootDir,
 		}
 	} else {
-		var namespace = os.Getenv("hw_namespace")
-		if params != nil {
-			if s := params["hw_namespace"]; s != "" {
-				namespace = s
-			}
-		}
-		if namespace == "" {
-			namespace = NS
-		}
-
 		fs = &linuxFs{
 			installDir: "/usr/local/" + namespace,
 			binDir:     "/usr/local/" + namespace + "/bin",
@@ -185,20 +182,20 @@ func NewFileSystem(params map[string]string) (FileSystem, error) {
 		}
 	}
 
-	if confDir := os.Getenv("hw_conf_dir"); confDir != "" {
+	if confDir := os.Getenv(namespace + "_conf_dir"); confDir != "" {
 		fs.confDir = confDir
 	}
 
-	if dataDir := os.Getenv("hw_data_dir"); dataDir != "" {
+	if dataDir := os.Getenv(namespace + "_data_dir"); dataDir != "" {
 		fs.dataDir = dataDir
 	}
 
 	if params != nil {
-		if s := params["hw_conf_dir"]; s != "" {
+		if s := params[namespace+"_conf_dir"]; s != "" {
 			fs.confDir = s
 		}
 
-		if s := params["hw_data_dir"]; s != "" {
+		if s := params[namespace+"_data_dir"]; s != "" {
 			fs.dataDir = s
 		}
 	}

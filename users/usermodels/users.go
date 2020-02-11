@@ -8,8 +8,17 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/db"
 	"github.com/runner-mei/moo/operation_logs"
 )
+
+func init() {
+	moo.On(func() moo.Option {
+		return moo.Provide(func(env *moo.Environment, db db.ArgModelFactory, ologger operation_logs.OperationLogger) *Users {
+			return NewUsers(env, db.Factory, ologger)
+		})
+	})
+}
 
 func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger operation_logs.OperationLogger) *Users {
 	sessionRef := dbFactory.SessionReference()

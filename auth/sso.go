@@ -11,12 +11,11 @@ import (
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/auth/services"
-	"go.uber.org/fx"
 )
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
+		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 
 			casUserPrefix := env.Config.StringWithDefault("users.cas.user_prefix", "")
 			sessionPrefix := urlutil.Join(env.DaemonUrlPath, "/sessions")
@@ -58,7 +57,7 @@ func init() {
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
+		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			loginJWTFunc := loong.WrapContextHandler(sessions.LoginJWT)
 			web := httpSrv.Engine().Group("api")
 			web.GET("/login", loginJWTFunc)
@@ -95,7 +94,7 @@ func init() {
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, logger log.Logger) error {
+		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, logger log.Logger) error {
 			ssoEcho := httpSrv.Engine().Group("sso")
 			mode := env.Config.StringWithDefault("users.login_url", "sessions")
 			redirectPrefix := urlutil.Join(env.DaemonUrlPath, mode)

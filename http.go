@@ -19,7 +19,6 @@ import (
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/loong/jaeger"
 	"github.com/runner-mei/moo/api"
-	"go.uber.org/fx"
 )
 
 type HTTPLifecycle interface {
@@ -28,13 +27,13 @@ type HTTPLifecycle interface {
 }
 
 type HTTPLifecycleIn struct {
-	fx.In
+	In
 
 	Lifecycle HTTPLifecycle `optional:"true"`
 }
 
 type Middlewares struct {
-	fx.In
+	In
 
 	Funcs []loong.MiddlewareFunc `group:"middlewares"`
 }
@@ -51,7 +50,7 @@ func init() {
 	}
 
 	On(func() Option {
-		return fx.Provide(func(env *Environment, logger log.Logger) *HTTPServer {
+		return Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
 				homePrefix: strings.TrimSuffix( env.DaemonUrlPath, "/") + "/",
@@ -84,12 +83,12 @@ func init() {
 
 
 	On(func() Option {
-		return fx.Invoke(func(lifecycle fx.Lifecycle, env *Environment, httpSrv *HTTPServer, httpLifecycle HTTPLifecycleIn) error {
+		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, httpLifecycle HTTPLifecycleIn) error {
 			if listenAt := env.Config.StringWithDefault("http-address", ""); listenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
 
-				lifecycle.Append(fx.Hook{
+				lifecycle.Append(Hook{
 					OnStart: func(context.Context) error {
 						network := env.Config.StringWithDefault("http-network", "tcp")
 						httpSrv.logger.Info("http listen at: " + network + "+" + listenAt)
@@ -138,7 +137,7 @@ func init() {
 				var hsrv *http.Server
 				var listener net.Listener
 
-				lifecycle.Append(fx.Hook{
+				lifecycle.Append(Hook{
 					OnStart: func(context.Context) error {
 						var certFile, keyFile string
 						for _, file := range []string{

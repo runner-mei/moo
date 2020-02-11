@@ -126,7 +126,11 @@ func readMinioConfig(fs FileSystem) (map[string]interface{}, error) {
 
 		configFile2 := fs.FromData(".minio", "config.json")
 		if !fileExists(configFile2, nil) {
-			return nil, errors.Wrapf(os.ErrNotExist, "file '%s' is not exist", configFile)
+			return nil, &os.PathError{
+				Op:   "stat",
+				Path: configFile,
+				Err:  os.ErrNotExist,
+			}
 		}
 		configFile = configFile2
 	}
