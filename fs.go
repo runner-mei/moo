@@ -91,17 +91,7 @@ func (fs *linuxFs) SearchConfig(s ...string) []string {
 	return files
 }
 
-func NewFileSystem(params map[string]string) (FileSystem, error) {
-	var namespace = os.Getenv("moo_namespace")
-	if params != nil {
-		if s := params["moo_namespace"]; s != "" {
-			namespace = s
-		}
-	}
-	if namespace == "" {
-		namespace = NS
-	}
-
+func NewFileSystem(namespace string, params map[string]string) (FileSystem, error) {
 	var fs *linuxFs
 	if runtime.GOOS == "windows" {
 		var rootDir = os.Getenv(namespace + "_root_dir")

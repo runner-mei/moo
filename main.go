@@ -2,6 +2,7 @@ package moo
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/runner-mei/goutils/cfg"
 	"github.com/runner-mei/log"
@@ -65,17 +66,23 @@ func Run(args *Arguments) error {
 	if err != nil {
 		return err
 	}
-	ns := params["env_prefix"]
-	if ns == "" {
-		ns = NS
+
+	var namespace = os.Getenv("moo_namespace")
+	if params != nil {
+		if s := params["moo_namespace"]; s != "" {
+			namespace = s
+		}
+	}
+	if namespace == "" {
+		namespace = NS
 	}
 
-	fs, err := NewFileSystem(params)
+	fs, err := NewFileSystem(namespace, params)
 	if err != nil {
 		return err
 	}
 
-	config, err := ReadConfigs(fs, ns+".", args, params)
+	config, err := ReadConfigs(fs, namespace+".", args, params)
 	if err != nil {
 		return err
 	}
@@ -88,7 +95,7 @@ func Run(args *Arguments) error {
 		defer undo()
 	}
 
-	env := NewEnvironment(config, fs, logger)
+	env := NewEnvironment(namespace, config, fs, logger)
 
 	var opts = []fx.Option{
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),

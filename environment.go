@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/runner-mei/log"
 	"github.com/runner-mei/goutils/cfg"
+	"github.com/runner-mei/log"
 )
 
 type Environment struct {
@@ -16,9 +16,10 @@ type Environment struct {
 	LoginHeaderTitleText string
 	LoginFooterTitleText string
 
-	Name   string
-	Config *cfg.Config
-	Fs     FileSystem
+	Namespace string
+	Name      string
+	Config    *cfg.Config
+	Fs        FileSystem
 
 	DaemonUrlPath string
 }
@@ -35,9 +36,10 @@ func ReadFileWithDefault(files []string, defaultValue string) string {
 	return defaultValue
 }
 
-func NewEnvironment(cfg *cfg.Config, fs FileSystem, logger log.Logger) *Environment {
+func NewEnvironment(namespace string, cfg *cfg.Config, fs FileSystem, logger log.Logger) *Environment {
 	env := &Environment{
 		Logger:        logger,
+		Namespace:     namespace,
 		Name:          cfg.StringWithDefault("product.name", "moo"),
 		Config:        cfg,
 		Fs:            fs,
