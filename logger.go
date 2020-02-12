@@ -8,9 +8,18 @@ import (
 	"github.com/runner-mei/goutils/cfg"
 )
 
-
 func NewLogger(cfg *cfg.Config) (log.Logger, func(), error) {
 	logConfig := zap.NewProductionConfig()
+
+	var levelErr error
+	if levelStr := cfg.StringWithDefault("moo.log.level", ""); levelStr != "" {
+		level := logConfig.Level.Level()
+		levelErr = level.Set(levelStr)
+		if levelErr == nil {
+			logConfig.Level.SetLevel(level)
+		}
+	}
+
 	logConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	logger, err := logConfig.Build()
 	if err != nil {
@@ -18,6 +27,10 @@ func NewLogger(cfg *cfg.Config) (log.Logger, func(), error) {
 	}
 	if name := cfg.StringWithDefault("log.name", ""); name != "" {
 		logger = logger.Named(name)
+	}
+
+	if levelErr != nil {
+		logger.Warn("set level fail", log.Error(levelErr))
 	}
 
 	zap.ReplaceGlobals(logger)
