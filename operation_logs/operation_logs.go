@@ -131,7 +131,7 @@ func (logger oldOperationLogger) LogRecord(ctx context.Context, ol *OperationLog
 	})
 }
 func NewOperationLogger(env *moo.Environment, dbFactory *gobatis.SessionFactory) OperationLogger {
-	if env.Config.IntWithDefault("operation_logger", 0) == 2 {
+	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
 		return operationLogger{dao: NewOperationLogDao(dbFactory.SessionReference())}
 	}
 

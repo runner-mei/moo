@@ -58,7 +58,7 @@ type DbDataResult struct {
 func init() {
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger) (DbModelResult, error) {
-			dbConfig := readDbConfig("models.", env.Config)
+			dbConfig := readDbConfig("moo.", env.Config)
 
 			drvModels, urlModels := dbConfig.Url()
 			logger.Info(drvModels + " "+ urlModels)
@@ -105,7 +105,7 @@ func init() {
 
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants ArgConstants) (DbDataResult, error) {
-			dbConfig := readDbConfig("data.", env.Config)
+			dbConfig := readDbConfig("moo.data.", env.Config)
 
 			drvData, urlData := dbConfig.Url()
 			dbData, err := sql.Open(drvData, urlData)

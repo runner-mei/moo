@@ -111,7 +111,7 @@ func readConfig(env *moo.Environment) *Config {
 		FooterTitleText: env.LoginFooterTitleText,
 
 		TampletePaths:    []string{env.Fs.FromLib("web/sso"), env.Fs.FromData("resources")},
-		RedirectMode:     env.Config.StringWithDefault("sso.redirect_mode", "html"),
+		RedirectMode:     env.Config.StringWithDefault("users.redirect_mode", "html"),
 		ShowForce:        strings.ToLower(strings.TrimSpace(env.Config.StringWithDefault("users.login_conflict", ""))) != "disableforce",
 		SessionKey:       authclient.DefaultSessionKey,
 		SessionPath:      readSessonPath(env),

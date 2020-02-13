@@ -126,13 +126,16 @@ func (a *AppTest) Start(t testing.TB) {
 func NewAppTest(t testing.TB) *AppTest {
 	oldInitFuncs := moo.Reset(nil)
 	moo.Reset(oldInitFuncs)
+	defer moo.Reset(oldInitFuncs)
+
 	return &AppTest{
 		oldInitFuncs: oldInitFuncs,
 		HttpOK:       make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{
 				"users.version=2",
-				"sso.redirect_mode=code",
+				"moo.operation_logger=2",
+				"users.redirect_mode=code",
 			},
 		},
 	}
