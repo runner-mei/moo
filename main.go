@@ -67,9 +67,9 @@ func Run(args *Arguments) error {
 		return err
 	}
 
-	var namespace = os.Getenv("moo_namespace")
+	var namespace = os.Getenv("moo.namespace")
 	if params != nil {
-		if s := params["moo_namespace"]; s != "" {
+		if s := params["moo.namespace"]; s != "" {
 			namespace = s
 		}
 	}
