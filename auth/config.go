@@ -98,7 +98,7 @@ func readConfig(env *moo.Environment) *Config {
 			DriverDigit: &base64Captcha.DriverDigit{
 				Height:     80,
 				Width:      240,
-				Length: 5,
+				Length:     5,
 				MaxSkew:    0.7,
 				DotCount:   80,
 			},

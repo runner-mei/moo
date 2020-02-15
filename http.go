@@ -56,7 +56,7 @@ func init() {
 				homePrefix: strings.TrimSuffix( env.DaemonUrlPath, "/") + "/",
 				trimPrefix: strings.TrimSuffix( env.DaemonUrlPath, "/"),
 				engine:     loong.New(),
-				fastRoutes: map[string]HandlerFunc{},
+				fastRoutes: map[string]FastHandlerFunc{},
 				homePage:   urlutil.JoinURLPath(env.DaemonUrlPath, "home/"),
 			}
 			httpSrv.engine.Logger = httpSrv.logger
@@ -209,7 +209,15 @@ func init() {
 	})
 }
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request, pa string)
+type FastHandler interface {
+	Serve(w http.ResponseWriter, r *http.Request, pa string) 
+}
+
+type FastHandlerFunc func(w http.ResponseWriter, r *http.Request, pa string)
+
+func (fn FastHandlerFunc) Serve(w http.ResponseWriter, r *http.Request, pa string) {
+	fn(w, r, pa)
+} 
 
 type HTTPServer struct {
 	logger      log.Logger
@@ -219,11 +227,15 @@ type HTTPServer struct {
 	faviconFile string
 
 	engine     *loong.Engine
-	fastRoutes map[string]HandlerFunc
+	fastRoutes map[string]FastHandlerFunc
 }
 
 func (srv *HTTPServer) Engine() *loong.Engine {
 	return srv.engine
+}
+
+func (srv *HTTPServer) AddFastHandler(name string, handler FastHandlerFunc) {
+	srv.fastRoutes[name]=handler
 }
 
 func (srv *HTTPServer) FastRoute(stripPrefix bool, name string, handler http.Handler) {
