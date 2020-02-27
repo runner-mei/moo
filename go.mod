@@ -28,7 +28,7 @@ require (
 	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.8
 	github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3
-	github.com/runner-mei/goutils v0.0.0-20200210001204-d0d99b956cc3
+	github.com/runner-mei/goutils v0.0.0-20200215075957-426da768fd48
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/twinj/uuid v1.0.0 // indirect

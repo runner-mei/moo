@@ -148,6 +148,8 @@ github.com/runner-mei/goutils v0.0.0-20200131130752-c9ed176985d2 h1:u+iAIYdqnhDX
 github.com/runner-mei/goutils v0.0.0-20200131130752-c9ed176985d2/go.mod h1:pmaHs7IE5pLL/DW842cUUGS68c4hhiTX5WQ+ttDOa4I=
 github.com/runner-mei/goutils v0.0.0-20200210001204-d0d99b956cc3 h1:r967v60n8OiI3Non06qhvMa8N5A293xVQw1saBQ+1fY=
 github.com/runner-mei/goutils v0.0.0-20200210001204-d0d99b956cc3/go.mod h1:42CqTCSjHgaERv57fSR2VyusWah8yI/ataFLcM+v+7g=
+github.com/runner-mei/goutils v0.0.0-20200215075957-426da768fd48 h1:dWfNbymjrq2DjnxLAVT1rY7zAKkNp+h7y/yVtQCR/os=
+github.com/runner-mei/goutils v0.0.0-20200215075957-426da768fd48/go.mod h1:42CqTCSjHgaERv57fSR2VyusWah8yI/ataFLcM+v+7g=
 github.com/runner-mei/log v1.0.0/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
 github.com/runner-mei/log v1.0.1 h1:G2ESdBI2ZP58AEV7qPSdfxd2GGxOkRObblOve5Vp3fc=
 github.com/runner-mei/log v1.0.1/go.mod h1:yyWfw0HOYyKnEBHLWiKJFdHmo47QOetYqiS79vnfAJs=
