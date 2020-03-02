@@ -13,29 +13,33 @@ import (
 	"go.uber.org/fx"
 )
 
-type ArgModelDb struct {
+type InModelDB struct {
 	fx.In
 	DrvName string  `name:"drv_models"`
 	DB      *sql.DB `name:"models"`
+
+	InitSQL func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
 }
 
-type ArgDataDb struct {
+type InDataDB struct {
 	fx.In
 	DrvName string  `name:"drv_data"`
 	DB      *sql.DB `name:"data"`
 }
 
-type ArgModelFactory struct {
+type InModelFactory struct {
 	fx.In
 	Factory *gobatis.SessionFactory `name:"modelFactory"`
+
+	InitSQL func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
 }
 
-type ArgDataFactory struct {
+type InDataFactory struct {
 	fx.In
 	Factory *gobatis.SessionFactory `name:"dataFactory"`
 }
 
-type ArgConstants struct {
+type InConstants struct {
 	fx.In
 	Constants map[string]interface{} `name:"db_constants"`
 }
@@ -46,6 +50,7 @@ type DbModelResult struct {
 	DrvModels            string                  `name:"drv_models"`
 	Models               *sql.DB                 `name:"models"`
 	ModelsSessionFactory *gobatis.SessionFactory `name:"modelFactory"`
+	InitSQL func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
 }
 
 type DbDataResult struct {
@@ -99,12 +104,13 @@ func init() {
 				DrvModels:            drvModels,
 				Models:               dbModels,
 				ModelsSessionFactory: modelFactory,
+				InitSQL: initDb,
 			}, nil
 		})
 	})
 
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants ArgConstants) (DbDataResult, error) {
+		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants InConstants) (DbDataResult, error) {
 			dbConfig := readDbConfig("moo.data.", env.Config)
 
 			drvData, urlData := dbConfig.Url()

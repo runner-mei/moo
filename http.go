@@ -38,6 +38,22 @@ type Middlewares struct {
 	Funcs []loong.MiddlewareFunc `group:"middlewares"`
 }
 
+
+type InAddress struct {
+	In
+
+	HttpFunc func() (string, string, error) `name:"http-address" optional:"true"`
+	HttpsFunc func() (string, string, error) `name:"https-address" optional:"true"`
+}
+
+type OutAddress struct {
+	Out
+
+	HttpFunc func() (string, string, error) `name:"http-address"`
+	HttpsFunc func() (string, string, error) `name:"https-address"`
+}
+
+
 func init() {
 	loong.ContextWithUserHook = func(ctx context.Context, u interface{}) context.Context {
 		return context.WithValue(ctx, api.UserKey, u)
@@ -53,6 +69,7 @@ func init() {
 		return Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
+				noPrefix:   env.DaemonUrlPath == "" || env.DaemonUrlPath == "/", 
 				homePrefix: strings.TrimSuffix( env.DaemonUrlPath, "/") + "/",
 				trimPrefix: strings.TrimSuffix( env.DaemonUrlPath, "/"),
 				engine:     loong.New(),
@@ -83,18 +100,38 @@ func init() {
 
 
 	On(func() Option {
-		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, httpLifecycle HTTPLifecycleIn) error {
-			if listenAt := env.Config.StringWithDefault("http-address", ""); listenAt != "" {
+		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, inAddress InAddress, httpLifecycle HTTPLifecycleIn) error {
+			var noListen = true
+
+			if inAddress.HttpFunc == nil {
+				inAddress.HttpFunc = func() (string, string, error) {
+				return env.Config.StringWithDefault("http-network", "tcp"),
+				 	env.Config.StringWithDefault("http-address", ""),
+					nil
+				}
+			}
+			if inAddress.HttpsFunc == nil {
+				inAddress.HttpsFunc = func() (string, string, error) {
+				return env.Config.StringWithDefault("https-network", "tcp"),
+				 	env.Config.StringWithDefault("https-address", ""),
+					nil
+				}
+			}
+
+			httpNetwork, httpListenAt, err := inAddress.HttpFunc()
+			if err != nil {
+				return err
+			} 
+			if httpListenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
 
 				lifecycle.Append(Hook{
 					OnStart: func(context.Context) error {
-						network := env.Config.StringWithDefault("http-network", "tcp")
-						httpSrv.logger.Info("http listen at: " + network + "+" + listenAt)
+						httpSrv.logger.Info("http listen at: " + httpNetwork + "+" + httpListenAt)
 
-						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
-						ln, err := netutil.Listen(network, listenAt)
+						hsrv = &http.Server{Addr: httpListenAt, Handler: httpSrv}
+						ln, err := netutil.Listen(httpNetwork, httpListenAt)
 						if err != nil {
 							return err
 						}
@@ -116,10 +153,10 @@ func init() {
 						}()
 
 						if httpLifecycle.Lifecycle != nil {
-							if listenAt == ":" || listenAt == ":0" || listenAt == "0.0.0.0:0" {
+							if httpListenAt == ":" || httpListenAt == ":0" || httpListenAt == "0.0.0.0:0" {
 								httpLifecycle.Lifecycle.OnHTTP(listener.Addr().String())
 							} else {
-								httpLifecycle.Lifecycle.OnHTTP(listenAt)
+								httpLifecycle.Lifecycle.OnHTTP(httpListenAt)
 							}
 						}
 
@@ -131,9 +168,14 @@ func init() {
 						return err
 					},
 				})
+				noListen = false 
 			}
 
-			if listenAt := env.Config.StringWithDefault("https-address", ""); listenAt != "" {
+			httpsNetwork, httpsListenAt, err := inAddress.HttpsFunc()
+			if err != nil {
+				return err
+			} 
+			if httpsListenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
 
@@ -162,11 +204,10 @@ func init() {
 							return errors.New("keyFile or certFile isn't found")
 						}
 
-						network := env.Config.StringWithDefault("https-network", "tcp")
-						httpSrv.logger.Info("https listen at: " + network + "+" + listenAt)
+						httpSrv.logger.Info("https listen at: " + httpsNetwork + "+" + httpsListenAt)
 
-						hsrv = &http.Server{Addr: listenAt, Handler: httpSrv}
-						ln, err := netutil.Listen(network, listenAt)
+						hsrv = &http.Server{Addr: httpsListenAt, Handler: httpSrv}
+						ln, err := netutil.Listen(httpsNetwork, httpsListenAt)
 						if err != nil {
 							return err
 						}
@@ -188,10 +229,10 @@ func init() {
 						}()
 
 						if httpLifecycle.Lifecycle != nil {
-							if listenAt == ":" || listenAt == ":0" || listenAt == "0.0.0.0:0" {
+							if httpsListenAt == ":" || httpsListenAt == ":0" || httpsListenAt == "0.0.0.0:0" {
 								httpLifecycle.Lifecycle.OnHTTPs(listener.Addr().String())
 							} else {
-								httpLifecycle.Lifecycle.OnHTTPs(listenAt)
+								httpLifecycle.Lifecycle.OnHTTPs(httpsListenAt)
 							}
 						}
 
@@ -203,6 +244,12 @@ func init() {
 						return err
 					},
 				})
+
+				noListen = false
+			}
+
+			if noListen {
+				env.Logger.Info("http not listen, http-address or https-address is missing")
 			}
 			return nil
 		})
@@ -221,6 +268,7 @@ func (fn FastHandlerFunc) Serve(w http.ResponseWriter, r *http.Request, pa strin
 
 type HTTPServer struct {
 	logger      log.Logger
+	noPrefix    bool
 	trimPrefix  string
 	homePrefix  string
 	homePage    string
@@ -267,31 +315,34 @@ func (srv *HTTPServer) RouteProxy(stripPrefix bool, name, urlstr string) {
 }
 
 func (srv *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !strings.HasPrefix(r.URL.Path, srv.homePrefix) {
-		if r.URL.Path == "/favicon.ico" {
-			if srv.faviconFile != "" {
-				http.ServeFile(w, r, srv.faviconFile)
+	var pa = r.URL.Path
+	if !srv.noPrefix {
+		if !strings.HasPrefix(r.URL.Path, srv.homePrefix) {
+			if r.URL.Path == "/favicon.ico" {
+				if srv.faviconFile != "" {
+					http.ServeFile(w, r, srv.faviconFile)
+					return
+				}
+				http.NotFound(w, r)
 				return
 			}
-			http.NotFound(w, r)
+
+			BrowserCheckFunc(srv.logger, srv.homePrefix, w, r, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "" ||
+					r.URL.Path == "/" ||
+					srv.homePrefix == r.URL.Path ||
+					srv.homePrefix == r.URL.Path+"/" ||
+					srv.homePage == r.URL.Path+"/" {
+					http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+					return
+				}
+				http.DefaultServeMux.ServeHTTP(w, r)
+			}))
 			return
 		}
 
-		BrowserCheckFunc(srv.logger, srv.homePrefix, w, r, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "" ||
-				r.URL.Path == "/" ||
-				srv.homePrefix == r.URL.Path ||
-				srv.homePrefix == r.URL.Path+"/" ||
-				srv.homePage == r.URL.Path+"/" {
-				http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
-				return
-			}
-			http.DefaultServeMux.ServeHTTP(w, r)
-		}))
-		return
+		pa = strings.TrimPrefix(r.URL.Path, srv.trimPrefix)
 	}
-
-	pa := strings.TrimPrefix(r.URL.Path, srv.trimPrefix)
 	name, urlPath := urlutil.SplitURLPath(pa)
 	if h, exists := srv.fastRoutes[name]; exists {
 		h(w, r, urlPath)

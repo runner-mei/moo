@@ -140,7 +140,7 @@ func NewOperationLogger(env *moo.Environment, dbFactory *gobatis.SessionFactory)
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db db.ArgModelFactory, logger log.Logger) OperationLogger {
+		return fx.Provide(func(env *moo.Environment, db db.InModelFactory, logger log.Logger) OperationLogger {
 			return NewOperationLogger(env, db.Factory)
 		})
 	})

@@ -1,38 +1,80 @@
 package db
 
 import (
+	"database/sql"
+	"strings"
+
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 )
 
+func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
+	args := GetTableNames()
+	for k := range args {
+		newName := env.Config.StringWithDefault("moo.tablename." + k, "")
+		if newName == "" {
+			continue
+		}
+		args[k] = newName
+	}
+
+	if env.Config.BoolWithDefault("test.clean_database", false) {
+		_, err := db.Exec(ReplaceTableName(CleanSQL, args))
+		if err != nil {
+			return err
+		}
+		logger.Info("清理用户相关的表成功")
+	} else if env.Config.BoolWithDefault("test.clean_data", false) {
+		_, err := db.Exec(ReplaceTableName(CleanDataSQL, args))
+		if err != nil {
+			return err
+		}
+		logger.Info("清理用户相关的数据成功")
+	}
+
+	if env.Config.BoolWithDefault("users.init_database", false) {
+		_, err := db.Exec(ReplaceTableName(InitSQL, args))
+		if err != nil {
+			return err
+		}
+		logger.Info("初始化用户相关的表成功")
+	} else {
+		logger.Info("跳过用户相关表的初始化")
+	}
+	return nil
+}
+
+func GetTableNames() map[string]string {
+	return map[string]string {
+		"moo_operation_logs" : "moo_operation_logs",
+		"moo_online_users": "moo_online_users",
+		"moo_permission_and_roles":"moo_permission_and_roles", 
+		"moo_users_and_roles": "moo_users_and_roles",
+		"moo_users": "moo_users",
+		"moo_roles":"moo_roles",
+	}
+}
+
+func ReplaceTableName(sqlStr string, args map[string]string) string {
+	for k, v := range args {
+		if k == v {
+			continue
+		}
+		if k == "" || v == "" {
+			continue
+		}
+
+		sqlStr = strings.ReplaceAll(sqlStr, k, v)
+	}
+	return sqlStr
+}
+
+
 func init() {
 	moo.On(func() moo.Option {
-		return moo.Invoke(func(env *moo.Environment, logger log.Logger, db ArgModelDb) error {
-			if env.Config.BoolWithDefault("test.clean_database", false) {
-				_, err := db.DB.Exec(CleanSQL)
-				if err != nil {
-					return err
-				}
-				logger.Info("清理用户相关的表成功")
-			} else if env.Config.BoolWithDefault("test.clean_data", false) {
-				_, err := db.DB.Exec(CleanDataSQL)
-				if err != nil {
-					return err
-				}
-				logger.Info("清理用户相关的数据成功")
-			}
-
-			if env.Config.BoolWithDefault("users.init_database", false) {
-				_, err := db.DB.Exec(InitSQL)
-				if err != nil {
-					return err
-				}
-				logger.Info("初始化用户相关的表成功")
-			} else {
-				logger.Info("跳过用户相关表的初始化")
-			}
-			return nil
+		return moo.Invoke(func(env *moo.Environment, logger log.Logger, db InModelDB) error {
+			return initDb(env, logger, db.DB)
 		})
 	})
 }

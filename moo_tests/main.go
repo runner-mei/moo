@@ -1,4 +1,4 @@
-package tests
+package moo_tests
 
 import (
 	"io"

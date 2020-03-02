@@ -14,7 +14,7 @@ import (
 
 func init() {
 	moo.On(func() moo.Option {
-		return moo.Provide(func(env *moo.Environment, db db.ArgModelFactory, ologger operation_logs.OperationLogger) *Users {
+		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, ologger operation_logs.OperationLogger) *Users {
 			return NewUsers(env, db.Factory, ologger)
 		})
 	})

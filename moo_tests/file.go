@@ -1,6 +1,6 @@
 // +build file
 
-package tests
+package moo_tests
 
 import (
 	_ "github.com/runner-mei/moo/auth/users/file"

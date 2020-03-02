@@ -33,7 +33,7 @@ type Params struct {
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db *db.ArgModelDb, ologger operation_logs.OperationLogger) (UserSyncer, error) {
+		return fx.Provide(func(env *moo.Environment, db *db.InModelDB, ologger operation_logs.OperationLogger) (UserSyncer, error) {
 			return CreateUserSyncer(env, db.DB)
 		})
 	})
