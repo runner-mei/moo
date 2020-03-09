@@ -315,6 +315,17 @@ func (u *fileUser) Data(name string) interface{} {
 
 	return u.data[name]
 }
+// 用户属性
+func (u *fileUser) ForEach(cb func(string, interface{})) {
+	cb("id", u.u.ID)
+	cb("name", u.u.Name)
+
+	if u.u.Attributes != nil {
+		for k, v := range u.u.Attributes {
+			cb(k, v)
+		}
+	}
+}
 
 func (u *fileUser) WriteProfile(key, value string) error {
 	if value == "" {

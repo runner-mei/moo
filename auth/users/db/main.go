@@ -401,6 +401,25 @@ func (u *user) Data(key string) interface{} {
 	return nil
 }
 
+// 用户属性
+func (u *user) ForEach(cb func(string, interface{})) {
+	cb("id", u.u.ID)
+	cb("name", u.u.Name)
+	cb("nickname", u.u.Nickname)
+	cb("description", u.u.Description)
+	// cb("attributes", u.u.Attributes)
+	cb("source", u.u.Source)
+	cb("created_at", u.u.CreatedAt)
+	cb("updated_at", u.u.UpdatedAt)
+
+	if u.u.Attributes != nil {
+		for k, v := range u.u.Attributes {
+			cb(k, v)
+		}
+	}
+}
+
+
 func (u *user) HasPermission(permissionID string) bool {
 	if u.Name() == api.UserAdmin {
 		return true

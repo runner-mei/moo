@@ -91,6 +91,9 @@ type User interface {
 
 	// 是不是有一个指定的角色
 	HasRole(string) bool
+
+	// 用户属性
+	ForEach(func(string, interface{}))
 }
 
 type userKey struct{}
