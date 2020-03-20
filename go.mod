@@ -1,7 +1,5 @@
 module github.com/runner-mei/moo
 
-go 1.13
-
 require (
 	emperror.dev/emperror v0.32.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
@@ -22,13 +20,9 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mojocn/base64Captcha v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/revel/config v0.21.0 // indirect
-	github.com/revel/log15 v2.11.20+incompatible // indirect
-	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
-	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.8
-	github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3
-	github.com/runner-mei/goutils v0.0.0-20200215075957-426da768fd48
+	github.com/runner-mei/errors v0.0.0-20200318090343-75b0baa0f222
+	github.com/runner-mei/goutils v0.0.0-20200318081800-7d9bfaf277ad
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/twinj/uuid v1.0.0 // indirect
@@ -46,3 +40,5 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/stack.v0 v0.0.0-20141108040640-9b43fcefddd0 // indirect
 )
+
+go 1.13
