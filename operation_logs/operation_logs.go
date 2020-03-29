@@ -145,18 +145,18 @@ func (logger oldOperationLogger) LogRecord(ctx context.Context, ol *OperationLog
 		Fields:     ol.Fields,
 	})
 }
-func NewOperationLogger(env *moo.Environment, dbFactory *gobatis.SessionFactory) OperationLogger {
+func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {
 	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
-		return operationLogger{dao: NewOperationLogDao(dbFactory.SessionReference())}
+		return operationLogger{dao: NewOperationLogDao(session)}
 	}
 
-	return oldOperationLogger{dao: NewOldOperationLogDao(dbFactory.SessionReference())}
+	return oldOperationLogger{dao: NewOldOperationLogDao(session)}
 }
 
 func init() {
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, db db.InModelFactory, logger log.Logger) OperationLogger {
-			return NewOperationLogger(env, db.Factory)
+			return NewOperationLogger(env, db.Factory.SessionReference())
 		})
 	})
 }
