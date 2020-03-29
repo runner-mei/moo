@@ -264,7 +264,14 @@ type FastHandlerFunc func(w http.ResponseWriter, r *http.Request, pa string)
 
 func (fn FastHandlerFunc) Serve(w http.ResponseWriter, r *http.Request, pa string) {
 	fn(w, r, pa)
-} 
+}
+
+type HttpHandlerFunc func(w http.ResponseWriter, r *http.Request)
+
+func (fn HttpHandlerFunc) Serve(w http.ResponseWriter, r *http.Request, pa string) {
+	r.URL.Path = pa
+	fn(w, r)
+}
 
 type HTTPServer struct {
 	logger      log.Logger

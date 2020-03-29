@@ -31,6 +31,7 @@ type Lifecycle = fx.Lifecycle
 type Hook = fx.Hook
 type In = fx.In
 type Out = fx.Out
+type Shutdowner = fx.Shutdowner
 
 var Provide = fx.Provide
 var Invoke = fx.Invoke

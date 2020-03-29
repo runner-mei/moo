@@ -53,6 +53,7 @@ type OperationLogDao interface {
 
 // @gobatis.ignore
 type OperationLogger interface {
+	Tx(tx *gobatis.Tx) OperationLogger
 	WithTx(tx gobatis.DBRunner) OperationLogger
 	LogRecord(ctx context.Context, ol *OperationLog) error
 }
@@ -60,6 +61,13 @@ type OperationLogger interface {
 type operationLogger struct {
 	tx  gobatis.DBRunner
 	dao OperationLogDao
+}
+
+func (logger operationLogger) Tx(tx *gobatis.Tx) OperationLogger {
+	if tx == nil {
+		return logger
+	}
+	return operationLogger{dao: NewOperationLogDao(tx.SessionReference())}
 }
 
 func (logger operationLogger) WithTx(tx gobatis.DBRunner) OperationLogger {
@@ -100,6 +108,13 @@ type OldOperationLogDao interface {
 type oldOperationLogger struct {
 	tx  gobatis.DBRunner
 	dao OldOperationLogDao
+}
+
+func (logger oldOperationLogger) Tx(tx *gobatis.Tx) OperationLogger {
+	if tx == nil {
+		return logger
+	}
+	return oldOperationLogger{dao: NewOldOperationLogDao(tx.SessionReference())}
 }
 
 func (logger oldOperationLogger) WithTx(tx gobatis.DBRunner) OperationLogger {
