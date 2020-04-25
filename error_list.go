@@ -26,6 +26,7 @@ type Error struct {
 
 type ErrorPlaceholder interface {
 	SetError(level ErrLevel, msg string)
+	ClearError()
 }
 
 type placeholder struct {
@@ -42,6 +43,13 @@ func (ph *placeholder) SetError(level ErrLevel, msg string) {
 		ph.err.CreatedAt = time.Now()
 	}
 	ph.err.Message = msg
+}
+
+func (ph *placeholder) ClearError() {
+	ph.mu.Lock()
+	defer ph.mu.Unlock()
+
+	ph.err.Message = ""
 }
 
 func (ph *placeholder) isError() bool {
