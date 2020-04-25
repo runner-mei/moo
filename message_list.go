@@ -8,65 +8,66 @@ import (
 	"go.uber.org/fx"
 )
 
-type ErrLevel string
+type MessageLevel string
 
 const (
-	ErrWarn  ErrLevel = "warn"
-	ErrError ErrLevel = "error"
-	ErrFatal ErrLevel = "fatal"
+	ErrInfo  MessageLevel = "info"
+	ErrWarn  MessageLevel = "warn"
+	ErrError MessageLevel = "error"
+	ErrFatal MessageLevel = "fatal"
 )
 
-type Error struct {
-	ID        string    `json:"id"`
-	Source    string    `json:"source"`
-	Level     ErrLevel  `json:"level"`
-	Message   string    `json:"message"`
-	CreatedAt time.Time `json:"created_at"`
+type Message struct {
+	ID        string       `json:"id"`
+	Source    string       `json:"source"`
+	Level     MessageLevel `json:"level"`
+	Content   string       `json:"message"`
+	CreatedAt time.Time    `json:"created_at"`
 }
 
-type ErrorPlaceholder interface {
-	SetError(level ErrLevel, msg string)
-	ClearError()
+type MessagePlaceholder interface {
+	Set(level MessageLevel, msg string)
+	Clear()
 }
 
 type placeholder struct {
 	mu *sync.Mutex
 
-	err Error
+	err Message
 }
 
-func (ph *placeholder) SetError(level ErrLevel, msg string) {
+func (ph *placeholder) Set(level MessageLevel, msg string) {
 	ph.mu.Lock()
 	defer ph.mu.Unlock()
 
-	if msg != "" && ph.err.Message == "" {
+	if msg != "" && ph.err.Content == "" {
 		ph.err.CreatedAt = time.Now()
 	}
-	ph.err.Message = msg
+	ph.err.Content = msg
 }
 
-func (ph *placeholder) ClearError() {
+func (ph *placeholder) Clear() {
 	ph.mu.Lock()
 	defer ph.mu.Unlock()
 
-	ph.err.Message = ""
+	ph.err.Content = ""
 }
 
-func (ph *placeholder) isError() bool {
-	return ph.err.Message != ""
+func (ph *placeholder) isMessage() bool {
+	return ph.err.Content != ""
 }
 
-func (ph *placeholder) toError() Error {
+func (ph *placeholder) toMessage() Message {
 	return ph.err
 }
 
-type ErrorList struct {
+type MessageList struct {
 	mu           sync.Mutex
-	list         []Error
+	list         []Message
 	placeholders []placeholder
 }
 
-func (list *ErrorList) Placeholder(id, source string) ErrorPlaceholder {
+func (list *MessageList) Placeholder(id, source string) MessagePlaceholder {
 	if id == "" {
 		panic(errors.New("id is missing"))
 	}
@@ -81,7 +82,7 @@ func (list *ErrorList) Placeholder(id, source string) ErrorPlaceholder {
 
 	list.placeholders = append(list.placeholders, placeholder{
 		mu: &list.mu,
-		err: Error{
+		err: Message{
 			ID:     id,
 			Source: source,
 		},
@@ -89,7 +90,7 @@ func (list *ErrorList) Placeholder(id, source string) ErrorPlaceholder {
 	return &list.placeholders[len(list.placeholders)-1]
 }
 
-func (list *ErrorList) Add(err *Error) {
+func (list *MessageList) Add(err *Message) {
 	if err.ID == "" {
 		panic(errors.New("id is missing"))
 	}
@@ -105,7 +106,7 @@ func (list *ErrorList) Add(err *Error) {
 	list.list = append(list.list, *err)
 }
 
-func (list *ErrorList) Remove(id string) {
+func (list *MessageList) Remove(id string) {
 	list.mu.Lock()
 	defer list.mu.Unlock()
 
@@ -117,17 +118,17 @@ func (list *ErrorList) Remove(id string) {
 	}
 }
 
-func (list *ErrorList) All() []Error {
+func (list *MessageList) All() []Message {
 	list.mu.Lock()
 	defer list.mu.Unlock()
 
-	var results = make([]Error, len(list.list))
+	var results = make([]Message, len(list.list))
 	for idx := range list.list {
 		results[idx] = list.list[idx]
 	}
 	for idx := range list.placeholders {
-		if list.placeholders[idx].isError() {
-			results = append(results, list.placeholders[idx].toError())
+		if list.placeholders[idx].isMessage() {
+			results = append(results, list.placeholders[idx].toMessage())
 		}
 	}
 	return results
@@ -135,8 +136,8 @@ func (list *ErrorList) All() []Error {
 
 func init() {
 	On(func() Option {
-		return fx.Provide(func() *ErrorList {
-			return &ErrorList{}
+		return fx.Provide(func() *MessageList {
+			return &MessageList{}
 		})
 	})
 }
