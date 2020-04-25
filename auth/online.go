@@ -2,9 +2,9 @@ package auth
 
 import (
 	"context"
-	"errors"
 
 	"github.com/runner-mei/goutils/util"
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo/auth/services"
 )
 
