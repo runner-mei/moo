@@ -249,6 +249,72 @@ func init() {
 				ctx.Statements["OldOperationLogDao.Insert"] = stmt
 			}
 		}
+		{ //// OldOperationLogDao.Count
+			if _, exists := ctx.Statements["OldOperationLogDao.Count"]; !exists {
+				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&OldOperationLog{}),
+					[]string{
+						"userid",
+						"successful",
+						"typeList",
+						"createdAt",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(bool)).Elem(),
+						reflect.TypeOf([]string{}),
+						reflect.TypeOf(&TimeRange{}).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate OldOperationLogDao.Count error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.Count",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OldOperationLogDao.Count"] = stmt
+			}
+		}
+		{ //// OldOperationLogDao.List
+			if _, exists := ctx.Statements["OldOperationLogDao.List"]; !exists {
+				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&OperationLog{}),
+					[]string{
+						"userid",
+						"successful",
+						"typeList",
+						"createdAt",
+						"offset",
+						"limit",
+						"sortBy",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(bool)).Elem(),
+						reflect.TypeOf([]string{}),
+						reflect.TypeOf(&TimeRange{}).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(string)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate OldOperationLogDao.List error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.List",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OldOperationLogDao.List"] = stmt
+			}
+		}
 		return nil
 	})
 }
@@ -283,4 +349,60 @@ func (impl *OldOperationLogDaoImpl) Insert(ctx context.Context, ol *OldOperation
 		},
 		true)
 	return err
+}
+
+func (impl *OldOperationLogDaoImpl) Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error) {
+	var instance int64
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "OldOperationLogDao.Count",
+		[]string{
+			"userid",
+			"successful",
+			"typeList",
+			"createdAt",
+		},
+		[]interface{}{
+			userid,
+			successful,
+			typeList,
+			createdAt,
+		}).Scan(&nullable)
+	if err != nil {
+		return 0, err
+	}
+	if !nullable.Valid {
+		return 0, sql.ErrNoRows
+	}
+
+	return instance, nil
+}
+
+func (impl *OldOperationLogDaoImpl) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
+	var instances []OperationLog
+	results := impl.session.Select(ctx, "OldOperationLogDao.List",
+		[]string{
+			"userid",
+			"successful",
+			"typeList",
+			"createdAt",
+			"offset",
+			"limit",
+			"sortBy",
+		},
+		[]interface{}{
+			userid,
+			successful,
+			typeList,
+			createdAt,
+			offset,
+			limit,
+			sortBy,
+		})
+	err := results.ScanSlice(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
 }

@@ -103,6 +103,12 @@ type OldOperationLog struct {
 
 type OldOperationLogDao interface {
 	Insert(ctx context.Context, ol *OldOperationLog) error
+
+	// @http.GET(path="/count")
+	Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
+
+	// @http.GET(path="")
+	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
 type oldOperationLogger struct {
@@ -159,4 +165,13 @@ func init() {
 			return NewOperationLogger(env, db.Factory.SessionReference())
 		})
 	})
+}
+
+// @gobatis.ignore
+type OperationQueryer interface {
+	// @http.GET(path="/count")
+	Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error)
+
+	// @http.GET(path="")
+	List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
