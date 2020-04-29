@@ -104,10 +104,21 @@ type OldOperationLog struct {
 type OldOperationLogDao interface {
 	Insert(ctx context.Context, ol *OldOperationLog) error
 
-	// @http.GET(path="/count")
+	// @default SELECT count(*) FROM <tablename type="OldOperationLog" /> <where>
+	// <if test="successful"> successful = #{successful} </if>
+	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")" separator="," >#{item}</foreach> </if>
+	// <if test="createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
+	// <if test="createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
+	// </where>
 	Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
 
-	// @http.GET(path="")
+	// @default SELECT * FROM <tablename type="OldOperationLog" /> <where>
+	// <if test="successful"> successful = #{successful} </if>
+	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")"  separator="," >#{item}</foreach> </if>
+	// <if test="createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
+	// <if test="createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
+	// </where>
+	// <pagination />
 	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
