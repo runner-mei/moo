@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"reflect"
+	"strings"
 
 	gobatis "github.com/runner-mei/GoBatis"
 )
@@ -251,24 +252,16 @@ func init() {
 		}
 		{ //// OldOperationLogDao.Count
 			if _, exists := ctx.Statements["OldOperationLogDao.Count"]; !exists {
-				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&OldOperationLog{}),
-					[]string{
-						"userid",
-						"successful",
-						"typeList",
-						"createdAt",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(new(int64)).Elem(),
-						reflect.TypeOf(new(bool)).Elem(),
-						reflect.TypeOf([]string{}),
-						reflect.TypeOf(&TimeRange{}).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate OldOperationLogDao.Count error")
+				var sb strings.Builder
+				sb.WriteString("SELECT count(*) FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OldOperationLog{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\" separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.Count",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
@@ -281,30 +274,16 @@ func init() {
 		}
 		{ //// OldOperationLogDao.List
 			if _, exists := ctx.Statements["OldOperationLogDao.List"]; !exists {
-				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&OperationLog{}),
-					[]string{
-						"userid",
-						"successful",
-						"typeList",
-						"createdAt",
-						"offset",
-						"limit",
-						"sortBy",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(new(int64)).Elem(),
-						reflect.TypeOf(new(bool)).Elem(),
-						reflect.TypeOf([]string{}),
-						reflect.TypeOf(&TimeRange{}).Elem(),
-						reflect.TypeOf(new(int64)).Elem(),
-						reflect.TypeOf(new(int64)).Elem(),
-						reflect.TypeOf(new(string)).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate OldOperationLogDao.List error")
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OldOperationLog{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>\r\n <pagination />")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.List",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,

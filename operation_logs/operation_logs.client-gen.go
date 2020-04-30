@@ -17,52 +17,7 @@ import (
 // OperationLogger is skipped
 // operationLogger is skipped
 // OldOperationLog is skipped
-
-type OldOperationLogDaoClient struct {
-	Proxy *resty.Proxy
-}
-
-// Insert: annotation is missing
-
-func (client OldOperationLogDaoClient) Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error) {
-	var result int64
-
-	request := resty.NewRequest(client.Proxy, "/count").
-		SetParam("userid", strconv.FormatInt(userid, 10)).
-		SetParam("successful", BoolToString(successful))
-	for idx := range typeList {
-		request = request.AddParam("type_list", typeList[idx])
-	}
-	request = request.SetParam("created_at.start", createdAt.Start.Format(client.Proxy.TimeFormat)).
-		SetParam("created_at.end", createdAt.End.Format(client.Proxy.TimeFormat)).
-		Result(&result)
-
-	err := request.GET(ctx)
-	resty.ReleaseRequest(client.Proxy, request)
-	return result, err
-}
-
-func (client OldOperationLogDaoClient) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
-	var result []OperationLog
-
-	request := resty.NewRequest(client.Proxy, "/").
-		SetParam("userid", strconv.FormatInt(userid, 10)).
-		SetParam("successful", BoolToString(successful))
-	for idx := range typeList {
-		request = request.AddParam("type_list", typeList[idx])
-	}
-	request = request.SetParam("created_at.start", createdAt.Start.Format(client.Proxy.TimeFormat)).
-		SetParam("created_at.end", createdAt.End.Format(client.Proxy.TimeFormat)).
-		SetParam("offset", strconv.FormatInt(offset, 10)).
-		SetParam("limit", strconv.FormatInt(limit, 10)).
-		SetParam("sort_by", sortBy).
-		Result(&result)
-
-	err := request.GET(ctx)
-	resty.ReleaseRequest(client.Proxy, request)
-	return result, err
-}
-
+// OldOperationLogDao is skipped
 // oldOperationLogger is skipped
 
 type OperationQueryerClient struct {
