@@ -48,6 +48,8 @@ type User struct {
 	Nickname    string                 `json:"nickname" xorm:"nickname unique notnull"`
 	Password    string                 `json:"password,omitempty" xorm:"password null"`
 	Description string                 `json:"description,omitempty" xorm:"description null"`
+	CanLogin    bool                   `json:"can_login,omitempty" xorm:"can_login null"`
+	IsDefault   bool                   `json:"is_default,omitempty" xorm:"is_default null"`
 	Attributes  map[string]interface{} `json:"attributes" xorm:"attributes jsonb null"`
 	Source      string                 `json:"source,omitempty" xorm:"source null"`
 	Signature   string                 `json:"signature,omitempty" xorm:"signature null"`
@@ -78,6 +80,7 @@ type Role struct {
 	ID          int64     `json:"id" xorm:"id pk autoincr"`
 	Name        string    `json:"name" xorm:"name unique notnull"`
 	Description string    `json:"description,omitempty" xorm:"description null"`
+	IsDefault   bool      `json:"is_default,omitempty" xorm:"is_default null"`
 	CreatedAt   time.Time `json:"created_at,omitempty" xorm:"created_at created"`
 	UpdatedAt   time.Time `json:"updated_at,omitempty" xorm:"updated_at updated"`
 }

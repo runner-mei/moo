@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/runner-mei/goutils/cfg"
 	"github.com/runner-mei/log"
 	"go.uber.org/fx"
 )
@@ -35,6 +34,7 @@ type Shutdowner = fx.Shutdowner
 
 var Provide = fx.Provide
 var Invoke = fx.Invoke
+var Supply = fx.Supply
 
 var initFuncs []func() Option
 
@@ -105,18 +105,11 @@ func Run(args *Arguments) error {
 
 	var opts = []fx.Option{
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),
-		fx.Provide(func() *cfg.Config {
-			return env.Config
-		}),
-		fx.Provide(func() FileSystem {
-			return env.Fs
-		}),
-		fx.Provide(func() log.Logger {
-			return env.Logger
-		}),
-		fx.Provide(func() *Environment {
-			return env
-		}),
+		fx.Supply(env.Config),
+		fx.Supply(env.Fs),
+		fx.Supply(env.Logger),
+		fx.Supply(env),
+		fx.Provide(NewBus),
 	}
 	for _, cb := range initFuncs {
 		opts = append(opts, cb())

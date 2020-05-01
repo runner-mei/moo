@@ -111,7 +111,9 @@ CREATE TABLE IF NOT EXISTS moo_users (
 	password    character varying(500) ,
 	description text,
 	signature   text,
-	disabled    bool,
+	can_login   boolean,
+	disabled    boolean,
+	is_default  boolean,
 	attributes  jsonb,
 	source      character varying(50),
 	locked_at   timestamp WITH TIME ZONE,
@@ -131,8 +133,9 @@ CREATE TABLE IF NOT EXISTS moo_user_profiles (
 );
 
 CREATE TABLE IF NOT EXISTS moo_roles (
-		id      bigserial PRIMARY KEY,
-		name    character varying(100) NOT NULL UNIQUE,
+		id          bigserial PRIMARY KEY,
+		name        character varying(100) NOT NULL UNIQUE,
+		is_default  boolean,
 		description text,
 		created_at  timestamp,
 		updated_at  timestamp
