@@ -26,6 +26,7 @@ require (
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/runner-mei/resty v0.0.0-20191102140647-fa73802f0b7f
+	github.com/stretchr/testify v1.4.0
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
 	go.uber.org/atomic v1.5.1
