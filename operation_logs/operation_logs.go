@@ -95,10 +95,11 @@ type OldOperationLog struct {
 	Username   string              `json:"username" xorm:"user_name notnull"`
 	Successful bool                `json:"successful" xorm:"successful notnull"`
 	Type       string              `json:"type" xorm:"type notnull"`
+	Errors     string              `json:"errors" xorm:"errors null"`
 	Content    string              `json:"content,omitempty" xorm:"content null"`
 	Fields     *OperationLogRecord `json:"attributes,omitempty" xorm:"attributes json null"`
 	CreatedAt  time.Time           `json:"created_at,omitempty" xorm:"created_at"`
-	UpdatedAt  time.Time           `json:"updated_at,omitempty" xorm:"updated_at"`
+	UpdatedAt  time.Time           `json:"updated_at,omitempty" xorm:"updated_at <-"`
 }
 
 type OldOperationLogDao interface {
@@ -107,19 +108,19 @@ type OldOperationLogDao interface {
 	// @default SELECT count(*) FROM <tablename type="OldOperationLog" /> <where>
 	// <if test="successful"> successful = #{successful} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")" separator="," >#{item}</foreach> </if>
-	// <if test="createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
-	// <if test="createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
+	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
+	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
 	Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
 
 	// @default SELECT * FROM <tablename type="OldOperationLog" /> <where>
 	// <if test="successful"> successful = #{successful} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")"  separator="," >#{item}</foreach> </if>
-	// <if test="createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
-	// <if test="createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
+	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
+	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
 	// <pagination />
-	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
+	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OldOperationLog, error)
 }
 
 type oldOperationLogger struct {

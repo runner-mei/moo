@@ -9,7 +9,6 @@ import (
 	"github.com/runner-mei/moo"
 )
 
-
 func BoolToString(value bool) string {
 	if value {
 		return "true"
@@ -60,6 +59,7 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid int64, succe
 
 func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession) OperationQueryer {
 	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
+		panic("")
 		return operationQueryer{dao: NewOperationLogDao(session)}
 	}
 

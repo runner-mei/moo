@@ -259,7 +259,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\" separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>")
+				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\" separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.Count",
@@ -281,7 +281,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>\r\n <pagination />")
+				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>\r\n <pagination />")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.List",
@@ -358,8 +358,8 @@ func (impl *OldOperationLogDaoImpl) Count(ctx context.Context, userid int64, suc
 	return instance, nil
 }
 
-func (impl *OldOperationLogDaoImpl) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
-	var instances []OperationLog
+func (impl *OldOperationLogDaoImpl) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OldOperationLog, error) {
+	var instances []OldOperationLog
 	results := impl.session.Select(ctx, "OldOperationLogDao.List",
 		[]string{
 			"userid",
