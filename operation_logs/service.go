@@ -48,11 +48,13 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid int64, succe
 	}
 	var results = make([]OperationLog, len(logList))
 	for idx := range logList {
+		results[idx].ID = logList[idx].ID
 		results[idx].Username = logList[idx].Username
 		results[idx].Successful = logList[idx].Successful
 		results[idx].Type = logList[idx].Type
 		results[idx].Content = logList[idx].Content
 		results[idx].Fields = logList[idx].Fields
+		results[idx].CreatedAt = logList[idx].CreatedAt
 	}
 	return results, nil
 }

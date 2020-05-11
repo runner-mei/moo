@@ -99,7 +99,7 @@ type OldOperationLog struct {
 	Content    string              `json:"content,omitempty" xorm:"content null"`
 	Fields     *OperationLogRecord `json:"attributes,omitempty" xorm:"attributes json null"`
 	CreatedAt  time.Time           `json:"created_at,omitempty" xorm:"created_at"`
-	UpdatedAt  time.Time           `json:"updated_at,omitempty" xorm:"updated_at <-"`
+	UpdatedAt  *time.Time          `json:"updated_at,omitempty" xorm:"updated_at <-"`
 }
 
 type OldOperationLogDao interface {
