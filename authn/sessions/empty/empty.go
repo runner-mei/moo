@@ -10,7 +10,7 @@ import (
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func() auth.Sessions {
+		return fx.Provide(func() authn.Sessions {
 			return &EmptySessions{}
 		})
 	})
@@ -27,13 +27,13 @@ func (sess EmptySessions) Login(ctx context.Context, userid interface{}, usernam
 func (sess EmptySessions) Logout(ctx context.Context, key string) error {
 	return nil
 }
-func (sess EmptySessions) Get(ctx context.Context, id string) (*auth.SessionInfo, error) {
+func (sess EmptySessions) Get(ctx context.Context, id string) (*authn.SessionInfo, error) {
 	return nil, nil
 }
-func (sess EmptySessions) Query(ctx context.Context, username string) ([]auth.SessionInfo, error) {
+func (sess EmptySessions) Query(ctx context.Context, username string) ([]authn.SessionInfo, error) {
 	return nil, nil
 }
-func (sess EmptySessions) All(ctx context.Context) ([]auth.SessionInfo, error) {
+func (sess EmptySessions) All(ctx context.Context) ([]authn.SessionInfo, error) {
 	return nil, nil
 }
 func (sess EmptySessions) UpdateNow(ctx context.Context, key string) error {

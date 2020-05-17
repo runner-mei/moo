@@ -24,9 +24,9 @@ import (
 type Params struct {
 	fx.In
 
-	LoginManager *auth.LoginManager
-	Renderer     *auth.Renderer
-	Sessions     auth.Sessions
+	LoginManager *authn.LoginManager
+	Renderer     *authn.Renderer
+	Sessions     authn.Sessions
 	Users        *usermodels.Users
 	UserSyncer   UserSyncer `optional:"true"`
 }

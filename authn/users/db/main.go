@@ -19,7 +19,7 @@ import (
 type userManager struct {
 	logger            log.Logger
 
-	signingMethod auth.SigningMethod
+	signingMethod authn.SigningMethod
 	secretKey     string
 	lockedTimeExpires time.Duration
 	users             *usermodels.Users

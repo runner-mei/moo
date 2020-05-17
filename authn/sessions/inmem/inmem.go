@@ -15,10 +15,10 @@ import (
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(lifecycle fx.Lifecycle, env *moo.Environment) (auth.Sessions, auth.SessionsForTest) {
+		return fx.Provide(func(lifecycle fx.Lifecycle, env *moo.Environment) (authn.Sessions, authn.SessionsForTest) {
 			mgr := &SessionManager{
 				expiresNano: env.Config.Int64WithDefault("sessions.inmem.expires", 0) * int64(time.Second),
-				list: map[string]*auth.SessionInfo{},
+				list: map[string]*authn.SessionInfo{},
 			}
 
 			var timer util.Timer
@@ -45,7 +45,7 @@ func init() {
 type SessionManager struct {
 	expiresNano int64
 	mu   sync.RWMutex
-	list map[string]*auth.SessionInfo
+	list map[string]*authn.SessionInfo
 }
 
 func (mgr *SessionManager) Count(ctx context.Context, username string, address string) (int, error) {
@@ -53,21 +53,21 @@ func (mgr *SessionManager) Count(ctx context.Context, username string, address s
 	defer mgr.mu.RUnlock()
 	var count = 0
 
-	filter := func(si *auth.SessionInfo) bool {
+	filter := func(si *authn.SessionInfo) bool {
 		return true
 	}
 	if username != "" {
 		if address != "" {
-			filter = func(si *auth.SessionInfo) bool {
+			filter = func(si *authn.SessionInfo) bool {
 				return si.Username == username && si.Address == address
 			}
 		} else {
-			filter = func(si *auth.SessionInfo) bool {
+			filter = func(si *authn.SessionInfo) bool {
 				return si.Username == username
 			}
 		}
 	} else if address != "" {
-		filter = func(si *auth.SessionInfo) bool {
+		filter = func(si *authn.SessionInfo) bool {
 			return si.Address == address
 		}
 	}
@@ -88,16 +88,16 @@ func (mgr *SessionManager) UpdateNow(ctx context.Context, id string) error {
 	return nil
 }
 
-func (mgr *SessionManager) Get(ctx context.Context, id string) (*auth.SessionInfo, error) {
+func (mgr *SessionManager) Get(ctx context.Context, id string) (*authn.SessionInfo, error) {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 	return mgr.list[id], nil
 }
 
-func (mgr *SessionManager) All(ctx context.Context) ([]auth.SessionInfo, error) {
+func (mgr *SessionManager) All(ctx context.Context) ([]authn.SessionInfo, error) {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
-	var results = make([]auth.SessionInfo, 0, len(mgr.list))
+	var results = make([]authn.SessionInfo, 0, len(mgr.list))
 
 	for _, s := range mgr.list {
 		results = append(results, *s)
@@ -112,7 +112,7 @@ func (mgr *SessionManager) Login(ctx context.Context, userid interface{}, userna
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
-	var old *auth.SessionInfo
+	var old *authn.SessionInfo
 
 	for _, s := range mgr.list {
 		if s.Username == username && s.Address == loginAddress {
@@ -124,8 +124,8 @@ func (mgr *SessionManager) Login(ctx context.Context, userid interface{}, userna
 		return old.UUID, nil
 	}
 
-	uuid := auth.GenerateID()
-	mgr.list[uuid] = &auth.SessionInfo{
+	uuid := authn.GenerateID()
+	mgr.list[uuid] = &authn.SessionInfo{
 		UUID:      uuid,
 		UserID:    userid,
 		Username:  username,
@@ -147,7 +147,7 @@ func (mgr *SessionManager) IsOnlineExists(ctx context.Context, userid interface{
 	// 判断用户是不是已经在其它主机上登录
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
-	var onlineList = make([]auth.SessionInfo, 0, 4)
+	var onlineList = make([]authn.SessionInfo, 0, 4)
 
 	for _, s := range mgr.list {
 		if s.Username == username {
@@ -159,7 +159,7 @@ func (mgr *SessionManager) IsOnlineExists(ctx context.Context, userid interface{
 	}
 
 	if len(onlineList) > 0 {
-		return &auth.ErrOnline{OnlineList: onlineList}
+		return &authn.ErrOnline{OnlineList: onlineList}
 	}
 	return nil
 }

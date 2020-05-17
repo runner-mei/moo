@@ -19,7 +19,7 @@ import (
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, logger log.Logger) (auth.UserManager, api.UserManager, error) {
+		return fx.Provide(func(env *moo.Environment, logger log.Logger) (authn.UserManager, api.UserManager, error) {
 			fum, err := NewFileUserManager(env, logger)
 			return fum, fum, err
 		})
@@ -29,7 +29,7 @@ func init() {
 type FileUserManager struct {
 	env           *moo.Environment
 	logger        log.Logger
-	SigningMethod auth.SigningMethod
+	SigningMethod authn.SigningMethod
 	SecretKey     string
 }
 
@@ -348,7 +348,7 @@ var _ services.Authorizer = &fileUser{}
 func (u *fileUser) Auth(ctx *services.AuthContext) (bool, error) {
 	err := u.fum.SigningMethod.Verify(ctx.Request.Password, u.password, u.fum.SecretKey)
 	if err != nil {
-		if err == auth.ErrSignatureInvalid {
+		if err == authn.ErrSignatureInvalid {
 			return true, services.ErrPasswordNotMatch
 		}
 		return true, err
@@ -414,12 +414,12 @@ func (u *fileUser) IngressIPList() ([]netutil.IPChecker, error) {
 	return u.ingressIPList, nil
 }
 
-func NewFileUserManager(env *moo.Environment, logger log.Logger) (auth.UserManager, error) {
+func NewFileUserManager(env *moo.Environment, logger log.Logger) (authn.UserManager, error) {
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	fum := &FileUserManager{
 		env:           env,
 		logger:        logger,
-		SigningMethod: auth.GetSigningMethod(signingMethod),
+		SigningMethod: authn.GetSigningMethod(signingMethod),
 		SecretKey:     env.Config.StringWithDefault("users.signing.secret_key", ""),
 	}
 	if fum.SigningMethod == nil {

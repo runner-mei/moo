@@ -28,7 +28,7 @@ func (emptyPermissionQueryer) Parents(groupID string) []string {
 	return nil
 }
 
-func Create(env *moo.Environment, users *usermodels.Users, permissionQueryer PermissionQueryer, logger log.Logger) (auth.UserManager, error) {
+func Create(env *moo.Environment, users *usermodels.Users, permissionQueryer PermissionQueryer, logger log.Logger) (authn.UserManager, error) {
 	if permissionQueryer == nil {
 		permissionQueryer = &emptyPermissionQueryer{}
 	}
@@ -36,7 +36,7 @@ func Create(env *moo.Environment, users *usermodels.Users, permissionQueryer Per
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	um := &userManager{
 		logger:            logger,
-		signingMethod: auth.GetSigningMethod(signingMethod),
+		signingMethod: authn.GetSigningMethod(signingMethod),
 		secretKey:     env.Config.StringWithDefault("users.signing.secret_key", ""),
 		users:             users,
 		permissionQueryer: permissionQueryer,
@@ -126,7 +126,7 @@ func (u *userInfo) Roles() []string {
 func (u *userInfo) Auth(ctx *services.AuthContext) (bool, error) {
 	err := u.um.signingMethod.Verify(ctx.Request.Password, u.user.Password, u.um.secretKey)
 	if err != nil {
-		if err == auth.ErrSignatureInvalid {
+		if err == authn.ErrSignatureInvalid {
 			return true, services.ErrPasswordNotMatch
 		}
 		return true, err
@@ -191,7 +191,7 @@ func (u *userInfo) IngressIPList() ([]netutil.IPChecker, error) {
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, logger log.Logger) (auth.UserManager, api.UserManager, error) {
+		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, logger log.Logger) (authn.UserManager, api.UserManager, error) {
 			um, err := Create(env, users, nil, logger)
 			return um, um, err
 		})

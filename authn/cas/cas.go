@@ -26,8 +26,8 @@ type CASOptions struct {
 	Client         *http.Client    // Custom http client to allow options for http connections
 	SendService    bool            // Custom sendService to determine whether you need to send service param
 	URLScheme      gocas.URLScheme // Custom url scheme, can be used to modify the request urls for the client
-	Renderer       *auth.Renderer
-	Sessions       auth.Sessions
+	Renderer       *authn.Renderer
+	Sessions       authn.Sessions
 	LoginCallback  string
 	LogoutCallback string
 	IgnoreList     []string
@@ -45,8 +45,8 @@ type CASClient struct {
 	client         *http.Client
 	sendService    bool
 	urlScheme      gocas.URLScheme
-	renderer       *auth.Renderer
-	sessions       auth.Sessions
+	renderer       *authn.Renderer
+	sessions       authn.Sessions
 	loginCallback  *url.URL
 	logoutCallback *url.URL
 	ignoreList     []string
@@ -369,7 +369,7 @@ func (c *CASClient) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		c.logger.Info("新用户登陆，创建新用户成功", log.String("username", username))
 	}
 
-	address := auth.RealIP(r)
+	address := authn.RealIP(r)
 
 	sessionID, err := c.sessions.Login(r.Context(), user.ID, user.Name, address)
 	if err != nil && errors.IsNotFound(err) {
