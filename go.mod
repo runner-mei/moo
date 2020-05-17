@@ -19,6 +19,10 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mojocn/base64Captcha v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/revel/config v0.21.0 // indirect
+	github.com/revel/log15 v2.11.20+incompatible // indirect
+	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
+	github.com/revel/revel v0.21.0 // indirect
 	github.com/runner-mei/GoBatis v1.1.10
 	github.com/runner-mei/errors v0.0.0-20200428055959-3abd159d904f
 	github.com/runner-mei/goutils v0.0.0-20200430115545-6f9a404daa90
@@ -43,8 +47,6 @@ require (
 	honnef.co/go/tools v0.0.1-2020.1.3 // indirect
 )
 
-exclude (
-	github.com/labstack/echo v3.3.10+incompatible
-)
+exclude github.com/labstack/echo v3.3.10+incompatible
 
 go 1.13
