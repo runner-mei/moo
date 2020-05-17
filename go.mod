@@ -14,8 +14,7 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
 	github.com/jaypipes/ghw v0.5.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
-	github.com/labstack/echo v3.3.10+incompatible
-	github.com/labstack/echo/v4 v4.1.14 // indirect
+	github.com/labstack/echo/v4 v4.1.14
 	github.com/lib/pq v1.4.0
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mojocn/base64Captcha v1.3.0
@@ -42,6 +41,10 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/stack.v0 v0.0.0-20141108040640-9b43fcefddd0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.3 // indirect
+)
+
+exclude (
+	github.com/labstack/echo v3.3.10+incompatible
 )
 
 go 1.13

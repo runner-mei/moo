@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/runner-mei/moo/auth/authclient"
 )
 
