@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/runner-mei/moo"
-	_ "github.com/runner-mei/moo/auth/sessions/inmem"
+	_ "github.com/runner-mei/moo/authn/sessions/inmem"
 	"go.uber.org/fx"
 )
 

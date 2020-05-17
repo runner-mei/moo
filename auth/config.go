@@ -13,7 +13,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api/authclient"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn/services"
 )
 
 // Config 服务的配置项

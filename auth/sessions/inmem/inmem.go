@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/runner-mei/goutils/util"
-	"github.com/runner-mei/moo/auth"
+	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo"
 	"go.uber.org/fx"
 )

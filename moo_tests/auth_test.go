@@ -13,7 +13,7 @@ import (
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/auth"
+	"github.com/runner-mei/moo/authn"
 	"go.uber.org/fx"
 	"golang.org/x/net/publicsuffix"
 )

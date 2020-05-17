@@ -10,7 +10,7 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn/services"
 )
 
 type UserManager interface {

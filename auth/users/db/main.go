@@ -11,7 +11,7 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/auth"
+	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/atomic"
 )

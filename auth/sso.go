@@ -10,7 +10,7 @@ import (
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api/authclient"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn/services"
 )
 
 func init() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/runner-mei/moo"
-	_ "github.com/runner-mei/moo/auth/sessions/inmem"
+	_ "github.com/runner-mei/moo/authn/sessions/inmem"
 )
 
 func main() {

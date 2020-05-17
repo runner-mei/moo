@@ -3,7 +3,7 @@ package empty
 import (
 	"context"
 
-	"github.com/runner-mei/moo/auth"
+	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo"
 	"go.uber.org/fx"
 )

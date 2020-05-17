@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/revel/revel"
-	authclient "github.com/runner-mei/moo/auth/authclient"
+	authclient "github.com/runner-mei/moo/authn/authclient"
 )
 
 type CheckFunc func(c *revel.Controller) revel.Result

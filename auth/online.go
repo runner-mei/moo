@@ -5,7 +5,7 @@ import (
 
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/errors"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn/services"
 )
 
 type ErrOnline struct {

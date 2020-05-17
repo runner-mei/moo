@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/runner-mei/moo/auth/authclient"
+	"github.com/runner-mei/moo/authn/authclient"
 )
 
 func SSO(sessionKey, sessionPath string, h func() hash.Hash, secretKey []byte) echo.MiddlewareFunc {

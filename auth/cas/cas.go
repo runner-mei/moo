@@ -11,8 +11,8 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/auth"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/moo/authn/services"
 	"github.com/runner-mei/moo/users/usermodels"
 	gocas "gopkg.in/cas.v2"
 )

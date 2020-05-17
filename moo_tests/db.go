@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/runner-mei/moo/auth/users/db"
+	_ "github.com/runner-mei/moo/authn/users/db"
 )
 
 func getenv(name string, args ...string) string {

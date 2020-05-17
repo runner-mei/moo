@@ -14,7 +14,7 @@ import (
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api/authclient"
-	"github.com/runner-mei/moo/auth"
+	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/db"
 	"github.com/runner-mei/moo/operation_logs"
 	"github.com/runner-mei/moo/users/usermodels"

@@ -3,5 +3,5 @@
 package main
 
 import (
-	_ "github.com/runner-mei/moo/auth/users/db"
+	_ "github.com/runner-mei/moo/authn/users/db"
 )

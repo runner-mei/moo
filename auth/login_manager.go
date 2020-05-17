@@ -20,7 +20,7 @@ import (
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
-	"github.com/runner-mei/moo/auth/services"
+	"github.com/runner-mei/moo/authn/services"
 	"go.uber.org/fx"
 )
 
