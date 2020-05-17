@@ -40,6 +40,14 @@ type AuthOut struct {
 	Session      loong.AuthValidateFunc `group:"authValidate"`
 }
 
+
+type InAuthFunc struct {
+	fx.In
+
+	Funcs          []loong.AuthValidateFunc `group:"authValidate"`
+}
+
+
 func init() {
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, userManager UserManager, online Sessions, locator ArgWelcomeLocator) (AuthOut, error) {
