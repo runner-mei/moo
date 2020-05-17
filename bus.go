@@ -154,8 +154,8 @@ func (b *Bus) handlerTopicSubscriptions(c *container, handlerKey string) []strin
 	return subscriptions
 }
 
-// On re/register the handler to the registry
-func (b *Bus) On(key string, h *BusHandler) {
+// Register re/register the handler to the registry
+func (b *Bus) Register(key string, h *BusHandler) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -164,8 +164,8 @@ func (b *Bus) On(key string, h *BusHandler) {
 	b.setContainer(c)
 }
 
-// Off deletes handler from the registry
-func (b *Bus) Off(key string) {
+// Unregister deletes handler from the registry
+func (b *Bus) Unregister(key string) {
 	b.Lock()
 	defer b.Unlock()
 

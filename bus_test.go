@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	 "github.com/runner-mei/moo"
+	"github.com/runner-mei/moo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +27,7 @@ func TestEmit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("emit failed: %v", err)
 		}
-		b.Off("test")
+		b.Unregister("test")
 	})
 	t.Run("with unknown topic", func(t *testing.T) {
 		ctx := context.Background()
@@ -83,12 +83,12 @@ func TestDeregisterTopics(t *testing.T) {
 func TestTopicHandlers(t *testing.T) {
 	b := setup()
 	defer tearDown(b)
-	defer b.Off("test.handler/1")
-	defer b.Off("test.handler/2")
+	defer b.Unregister("test.handler/1")
+	defer b.Unregister("test.handler/2")
 
 	handler := fakeHandler(".*")
-	b.On("test.handler/1", &handler)
-	b.On("test.handler/2", &handler)
+	b.Register("test.handler/1", &handler)
+	b.Register("test.handler/2", &handler)
 	b.RegisterTopics("user.created")
 
 	assert := assert.New(t)
@@ -100,12 +100,12 @@ func TestTopicHandlers(t *testing.T) {
 func TestHandlerKeys(t *testing.T) {
 	b := setup("comment.created", "comment.deleted")
 	defer tearDown(b, "comment.created", "comment.deleted")
-	defer b.Off("test.key.1")
-	defer b.Off("test.key.2")
+	defer b.Unregister("test.key.1")
+	defer b.Unregister("test.key.2")
 
 	h := fakeHandler(".*")
-	b.On("test.key.1", &h)
-	b.On("test.key.2", &h)
+	b.Register("test.key.1", &h)
+	b.Register("test.key.2", &h)
 
 	want := []string{"test.key.1", "test.key.2"}
 	assert.ElementsMatch(t, want, b.HandlerKeys())
@@ -127,7 +127,7 @@ func TestHandlerTopicSubscriptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		b.On(test.handlerKey, &test.handler)
+		b.Register(test.handlerKey, &test.handler)
 
 		assert.ElementsMatch(t, test.want, b.HandlerTopicSubscriptions(test.handlerLookupKey))
 	}
@@ -136,10 +136,10 @@ func TestHandlerTopicSubscriptions(t *testing.T) {
 func TestOn(t *testing.T) {
 	b := setup("comment.created", "comment.deleted")
 	defer tearDown(b, "comment.created", "comment.deleted")
-	defer b.Off("test.handler")
+	defer b.Unregister("test.handler")
 
 	h := fakeHandler(".*created$")
-	b.On("test.handler", &h)
+	b.Register("test.handler", &h)
 
 	t.Run("registers handler key", func(t *testing.T) {
 		assert.True(t, isHandlerKeyExists(b, "test.handler"))
@@ -159,8 +159,8 @@ func TestOff(t *testing.T) {
 	defer tearDown(b, "comment.created", "comment.deleted")
 
 	h := fakeHandler(".*")
-	b.On("test.handler", &h)
-	b.Off("test.handler")
+	b.Register("test.handler", &h)
+	b.Unregister("test.handler")
 
 	t.Run("deletes handler key", func(t *testing.T) {
 		assert.False(t, isHandlerKeyExists(b, "test.handler"))
@@ -197,7 +197,7 @@ func registerFakeHandler(b *moo.Bus, key string, t *testing.T) {
 		})
 	}
 	h := moo.BusHandler{Handle: fn, Matcher: ".*created$"}
-	b.On(key, &h)
+	b.Register(key, &h)
 }
 
 func isTopicHandler(b *moo.Bus, topicName string, h *moo.BusHandler) bool {
