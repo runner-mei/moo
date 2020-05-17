@@ -107,7 +107,9 @@ func Run(args *Arguments) error {
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),
 		fx.Supply(env.Config),
 		fx.Supply(env.Fs),
-		fx.Supply(env.Logger),
+		fx.Provide(func() log.Logger {
+			return env.Logger
+		}),
 		fx.Supply(env),
 		fx.Provide(NewBus),
 	}
