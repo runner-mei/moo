@@ -211,7 +211,7 @@ func readDbConfig(prefix string, props *cfg.Config) DbConfig {
 		DbType:   props.StringWithDefault(prefix+"db.type", "postgresql"),
 		Address:  props.StringWithDefault(prefix+"db.address", "127.0.0.1"),
 		Port:     props.StringWithDefault(prefix+"db.port", ""),
-		DbName:   props.StringWithDefault(prefix+"db.db_name", ""),
+		DbName:   props.StringWithDefault(prefix+"db.dbname", ""),
 		Username: props.StringWithDefault(prefix+"db.username", ""),
 		Password: props.StringWithDefault(prefix+"db.password", ""),
 	}
