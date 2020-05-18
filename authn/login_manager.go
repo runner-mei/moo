@@ -493,7 +493,7 @@ func (mgr *LoginManager) List(ctx context.Context, w http.ResponseWriter, r *htt
 	ReturnJSON(w, r, list, http.StatusOK)
 }
 
-func (mgr *LoginManager) signature(w http.ResponseWriter, r *http.Request) {
+func (mgr *LoginManager) Signature(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	queryParams.Del("token")
 	queryParams.Set(authclient.SESSION_EXPIRE_KEY, "session")

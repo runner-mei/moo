@@ -87,6 +87,9 @@ func init() {
 			sessionMux.DELETE("/", logoutFunc)
 			sessionMux.DELETE("", logoutFunc)
 
+			signature:= loong.WrapContextHandler(loong.ContextHandlerFunc(sessions.Signature))
+			sessionMux.GET("/signature", signature)
+
 			return nil
 		})
 	})
