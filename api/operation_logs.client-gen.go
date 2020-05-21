@@ -15,10 +15,6 @@ import (
 // TimeRange is skipped
 // OperationLogDao is skipped
 // OperationLogger is skipped
-// operationLogger is skipped
-// OldOperationLog is skipped
-// OldOperationLogDao is skipped
-// oldOperationLogger is skipped
 
 type OperationQueryerClient struct {
 	Proxy *resty.Proxy

@@ -15,10 +15,6 @@ import (
 // TimeRange is skipped
 // OperationLogDao is skipped
 // OperationLogger is skipped
-// operationLogger is skipped
-// OldOperationLog is skipped
-// OldOperationLogDao is skipped
-// oldOperationLogger is skipped
 
 func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 	mux.GET("/count", func(ctx *loong.Context) error {
