@@ -2,24 +2,24 @@ package operation_logs
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/db"
+	"github.com/runner-mei/moo/api"
 )
 
-func BoolToString(value bool) string {
-	if value {
-		return "true"
-	}
-	return "false"
-}
 
-func toBool(s string) bool {
-	s = strings.ToLower(s)
-	return s == "true"
-}
+type OperationLog = api.OperationLog
+type ChangeRecord = api.ChangeRecord
+type OperationLogRecord = api.OperationLogRecord
+type TimeRange = api.TimeRange
+type OperationLogDao = api.OperationLogDao
+type OperationLogger = api.OperationLogger
+type OperationQueryer = api.OperationQueryer
+
+var InitOperationQueryer = api.InitOperationQueryer
 
 type operationQueryer struct {
 	dao OperationLogDao
@@ -34,7 +34,7 @@ func (queryer operationQueryer) List(ctx context.Context, userid int64, successf
 }
 
 type oldOperationQueryer struct {
-	dao OldOperationLogDao
+	dao api.OldOperationLogDao
 }
 
 func (queryer oldOperationQueryer) Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
@@ -62,8 +62,24 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid int64, succe
 func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession) OperationQueryer {
 	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
 		panic("")
-		return operationQueryer{dao: NewOperationLogDao(session)}
+		return operationQueryer{dao: api.NewOperationLogDao(session)}
 	}
 
-	return oldOperationQueryer{dao: NewOldOperationLogDao(session)}
+	return oldOperationQueryer{dao: api.NewOldOperationLogDao(session)}
+}
+
+func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {
+	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
+		return operationLogger{dao: api.NewOperationLogDao(session)}
+	}
+
+	return oldOperationLogger{dao: api.NewOldOperationLogDao(session)}
+}
+
+func init() {
+	moo.On(func() moo.Option {
+		return fx.Provide(func(env *moo.Environment, db db.InModelFactory, logger log.Logger) OperationLogger {
+			return NewOperationLogger(env, db.Factory.SessionReference())
+		})
+	})
 }

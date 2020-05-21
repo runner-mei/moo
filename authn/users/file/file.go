@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
 	"github.com/runner-mei/goutils/netutil"
+	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/log"
-	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn"
@@ -28,9 +29,34 @@ func init() {
 
 type FileUserManager struct {
 	env           *moo.Environment
+	filename      string
 	logger        log.Logger
 	SigningMethod authn.SigningMethod
 	SecretKey     string
+}
+
+func readValue(fields map[string]interface{}, name string) string {
+	o := fields[name]
+	if o == nil {
+		return ""
+	}
+	return as.StringWithDefault(o, "")
+}
+
+func (h *FileUserManager) CreateByDict(ctx context.Context, fields map[string]interface{}) (interface{}, error) {
+	username := readValue(fields, "username")
+	if username == "" {
+		return nil, errors.New("username is missing")
+	}
+	nickname := readValue(fields, "nickname")
+	if nickname == "" {
+		nickname = username
+	}
+	password := readValue(fields, "password")
+	if password == "" {
+		return nil, errors.New("password is missing")
+	}
+	return h.Create(ctx, username, nickname, "", password, fields, nil)
 }
 
 func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
@@ -110,20 +136,76 @@ func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, pa
 		}
 	}
 
-	file := h.env.Fs.FromDataConfig("moo_users.json")
-	out, err := os.Create(file)
+	return id, h.writeUsers(ctx, users)
+}
+
+func (h *FileUserManager) Update(ctx context.Context, name string, values map[string]interface{}) error {
+	var users, err = h.All()
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
 	}
-	err = json.NewEncoder(out).Encode(users)
+
+	foundIndex := -1
+	for idx, user := range users {
+
+		u, err := h.toAPIUser(ctx, 0, "", user)
+		if err != nil {
+			return err
+		}
+		if u.name == name {
+			foundIndex = idx
+			break
+		}
+	}
+
+	if foundIndex <= 0 {
+		return services.ErrUserNotFound
+	}
+
+	for key, value := range values {
+		if value == nil {
+			delete(users[foundIndex], key)
+		} else {
+			users[foundIndex][key] = value
+		}
+	}
+	return h.writeUsers(ctx, users)
+}
+
+func (h *FileUserManager) Delete(ctx context.Context, name string) error {
+	var users, err = h.All()
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
 	}
-	return id, out.Close()
+
+	offset := 0
+	for idx, user := range users {
+		u, err := h.toAPIUser(ctx, 0, "", user)
+		if err != nil {
+			return err
+		}
+		if u.name == name {
+			continue
+		}
+
+		if offset != idx {
+			users[offset] = users[idx]
+		}
+		offset++
+	}
+	users = users[:offset]
+
+	return h.writeUsers(ctx, users)
 }
 
 func (h *FileUserManager) Read(ctx *services.AuthContext) (interface{}, services.User, error) {
-	u, err := h.Find(context.Background(), ctx.Request.Username)
+	_, u, err := h.Find(context.Background(), ctx.Request.Username)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -137,10 +219,6 @@ func (h *FileUserManager) Unlock(*services.AuthContext) error {
 func (h *FileUserManager) Lock(*services.AuthContext) error {
 	return nil
 }
-
-// func (h *FileUserManager) Locked() ([]LockedUser, error) {
-// 	return nil, nil
-// }
 
 func (h *FileUserManager) createAdminUser() *fileUser {
 	return &fileUser{
@@ -162,8 +240,36 @@ func (h *FileUserManager) createBgOpUser() *fileUser {
 	}
 }
 
+func (h *FileUserManager) writeUsers(ctx context.Context, users []map[string]interface{}) error {
+	if len(users) == 0 {
+		filename := h.env.Fs.FromDataConfig(h.filename)
+		return os.Remove(filename)
+	}
+
+	filename := h.env.Fs.FromDataConfig(h.filename)
+	if util.FileExists(filename) {
+		os.Remove(filename + ".old")
+		os.Rename(filename, filename+".old")
+	}
+
+	out, err := os.Create(filename)
+	if err != nil {
+		os.Rename(filename+".old", filename)
+		return err
+	}
+	defer out.Close()
+
+	err = json.NewEncoder(out).Encode(users)
+	if err != nil {
+		out.Close()
+		os.Remove(filename)
+		os.Rename(filename+".old", filename)
+	}
+	return err
+}
+
 func (h *FileUserManager) All() ([]map[string]interface{}, error) {
-	file := h.env.Fs.FromDataConfig("moo_users.json")
+	file := h.env.Fs.FromDataConfig(h.filename)
 	reader, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -191,29 +297,32 @@ func (h *FileUserManager) toAPIUser(ctx context.Context, userID int64, username 
 	}, nil
 }
 
-func (h *FileUserManager) Find(ctx context.Context, name string) (*fileUser, error) {
+func (h *FileUserManager) Find(ctx context.Context, name string) ([]map[string]interface{}, *fileUser, error) {
 	var users, err = h.All()
 	if err != nil {
 		if os.IsNotExist(err) {
 			if name == api.UserAdmin {
-				return h.createAdminUser(), nil
+				u := h.createAdminUser()
+				return []map[string]interface{}{u.data}, u, nil
 			}
 
 			if name == api.UserBgOperator {
-				return h.createBgOpUser(), nil
+				u := h.createBgOpUser()
+				return []map[string]interface{}{u.data}, u, nil
 			}
-			return nil, services.ErrUserNotFound
+			return nil, nil, services.ErrUserNotFound
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, user := range users {
 		uname := as.StringWithDefault(user["username"], "")
 		if uname == name {
-			return h.toAPIUser(ctx, 0, uname, user)
+			u, err := h.toAPIUser(ctx, 0, uname, user)
+			return users, u, err
 		}
 	}
-	return nil, nil
+	return users, nil, nil
 }
 
 func (h *FileUserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
@@ -259,7 +368,7 @@ func (h *FileUserManager) UserByID(ctx context.Context, userID int64, opts ...ap
 }
 
 func (h *FileUserManager) UserByName(ctx context.Context, userName string, opts ...api.Option) (api.User, error) {
-	user, err := h.Find(ctx, userName)
+	_, user, err := h.Find(ctx, userName)
 	if err != nil {
 		return nil, err
 	}
@@ -315,13 +424,14 @@ func (u *fileUser) Data(name string) interface{} {
 
 	return u.data[name]
 }
+
 // 用户属性
 func (u *fileUser) ForEach(cb func(string, interface{})) {
-	cb("id", u.u.ID)
-	cb("name", u.u.Name)
+	cb("id", u.id)
+	cb("name", u.name)
 
-	if u.u.Attributes != nil {
-		for k, v := range u.u.Attributes {
+	if u.data != nil {
+		for k, v := range u.data {
 			cb(k, v)
 		}
 	}
@@ -418,12 +528,13 @@ func NewFileUserManager(env *moo.Environment, logger log.Logger) (authn.UserMana
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	fum := &FileUserManager{
 		env:           env,
+		filename:      env.Config.StringWithDefault("users.filename", "moo_users.json"),
 		logger:        logger,
 		SigningMethod: authn.GetSigningMethod(signingMethod),
 		SecretKey:     env.Config.StringWithDefault("users.signing.secret_key", ""),
 	}
 	if fum.SigningMethod == nil {
-		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
-	} 
+		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")
+	}
 	return fum, nil
 }

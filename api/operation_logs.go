@@ -2,17 +2,14 @@
 //go:generate gogen client -ext=.client-gen.go operation_logs.go
 //go:generate gobatis operation_logs.go
 
-package operation_logs
+package api
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
-	"github.com/runner-mei/log"
-	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/db"
-	"go.uber.org/fx"
 )
 
 type OperationLog struct {
@@ -163,21 +160,6 @@ func (logger oldOperationLogger) LogRecord(ctx context.Context, ol *OperationLog
 		Fields:     ol.Fields,
 	})
 }
-func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {
-	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
-		return operationLogger{dao: NewOperationLogDao(session)}
-	}
-
-	return oldOperationLogger{dao: NewOldOperationLogDao(session)}
-}
-
-func init() {
-	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, db db.InModelFactory, logger log.Logger) OperationLogger {
-			return NewOperationLogger(env, db.Factory.SessionReference())
-		})
-	})
-}
 
 // @gobatis.ignore
 type OperationQueryer interface {
@@ -186,4 +168,16 @@ type OperationQueryer interface {
 
 	// @http.GET(path="")
 	List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
+}
+
+func BoolToString(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
+}
+
+func toBool(s string) bool {
+	s = strings.ToLower(s)
+	return s == "true"
 }

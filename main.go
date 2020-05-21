@@ -23,6 +23,8 @@ type Arguments struct {
 	Defaults    []string
 	Customs     []string
 	CommandArgs []string
+
+	PreRun func(*Environment) error
 }
 
 type Option = fx.Option
@@ -102,6 +104,13 @@ func Run(args *Arguments) error {
 	}
 
 	env := NewEnvironment(namespace, config, fs, logger)
+
+	if args.PreRun != nil {
+		err := args.PreRun(env)
+		if err != nil {
+			return err
+		}
+	}
 
 	var opts = []fx.Option{
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),

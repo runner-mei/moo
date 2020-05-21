@@ -30,7 +30,6 @@ type ArgWelcomeLocator struct {
 	Locator WelcomeLocator `optional:"true"`
 }
 
-
 type AuthOut struct {
 	fx.Out
 
@@ -40,13 +39,11 @@ type AuthOut struct {
 	Session      loong.AuthValidateFunc `group:"authValidate"`
 }
 
-
 type InAuthFunc struct {
 	fx.In
 
-	Funcs          []loong.AuthValidateFunc `group:"authValidate"`
+	Funcs []loong.AuthValidateFunc `group:"authValidate"`
 }
-
 
 func init() {
 	moo.On(func() moo.Option {

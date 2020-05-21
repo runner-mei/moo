@@ -96,11 +96,11 @@ func readConfig(env *moo.Environment) *Config {
 		Logger: env.Logger.Named("sso.ui"),
 		Captcha: services.CaptchaConfig{
 			DriverDigit: &base64Captcha.DriverDigit{
-				Height:     80,
-				Width:      240,
-				Length:     5,
-				MaxSkew:    0.7,
-				DotCount:   80,
+				Height:   80,
+				Width:    240,
+				Length:   5,
+				MaxSkew:  0.7,
+				DotCount: 80,
 			},
 		},
 		Theme:           "hw",
