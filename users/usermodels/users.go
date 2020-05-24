@@ -30,6 +30,17 @@ func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger o
 	}
 }
 
+type UserQuery struct {
+	NameLike string
+	CanLogin sql.NullBool
+	Disabled sql.NullBool
+	Source   sql.NullString
+
+	HasOnlineInfo  bool
+	HasRoleInfo    bool
+	HasWelcomeInfo bool
+}
+
 type Users struct {
 	env       *moo.Environment
 	dbFactory *gobatis.SessionFactory
@@ -41,8 +52,51 @@ func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
 	return c.UserDao.NicknameExists(ctx, name)
 }
 
-func (c *Users) GetUsers(ctx context.Context) ([]User, error) {
-	return c.UserDao.GetUsers(ctx)
+func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit int64) ([]User, error) {
+	next, closer := c.UserDao.GetUsers(ctx, query.NameLike, query.CanLogin, query.Disabled, query.Source, offset, limit)
+	defer util.CloseWith(closer)
+
+	var userList []User
+	for {
+		var u User
+		ok, err := next(&u)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+		userList = append(userList, u)
+	}
+
+
+	return userList, nil
+}
+
+
+func (c *Users) GetRoles(ctx context.Context, name string, offset, limit int64) ([]Role, error) {
+	next, closer := c.UserDao.GetRoles(ctx, name, offset, limit)
+	defer util.CloseWith(closer)
+
+	var roles []Role
+	for {
+		var role Role
+		ok, err := next(&role)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
 }
 
 func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {

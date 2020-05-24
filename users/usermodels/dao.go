@@ -4,9 +4,14 @@ package usermodels
 
 import (
 	"context"
+	"database/sql"
+	"io"
 	"time"
 
+	"github.com/runner-mei/validation"
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/goutils/as"
+	"github.com/runner-mei/goutils/netutil"
 )
 
 const (
@@ -34,9 +39,9 @@ const (
 
 type OnlineUser struct {
 	TableName struct{}  `json:"-" xorm:"moo_online_users"`
-	UserID    int64     `json:"user_id" xorm:"user_id pk"`
+	UserID    int64     `json:"user_id" xorm:"user_id pk(user_address)"`
+	Address   string    `json:"address" xorm:"address pk(user_address)"`
 	Uuid      string    `json:"uuid,omitempty" xorm:"uuid unique"`
-	Address   string    `json:"address" xorm:"address"`
 	CreatedAt time.Time `json:"created_at,omitempty" xorm:"created_at created"`
 	UpdatedAt time.Time `json:"updated_at,omitempty" xorm:"updated_at updated"`
 }
@@ -67,13 +72,48 @@ type User struct {
 	Reserved1 map[string]string `json:"profiles" xorm:"profiles <- null"`
 }
 
+func (user *User) Default() *User {
+	user.CanLogin = true
+	return user
+}
+
+func (user *User) Validate(validation *validation.Validation) bool {
+	validation.Required("Name", user.Name)
+	validation.Required("Nickname", user.Nickname)
+	if user.Source != "ldap" && user.Source != "cas" {
+		validation.MinSize("Password", user.Password, 8)
+		validation.MaxSize("Password", user.Password, 250)
+	}
+
+	o := user.Attributes["white_address_list"]
+	if o != nil {
+		var ss = as.ToStrings(o)
+		if len(ss) != 0 {
+			_, err := netutil.ToCheckers(ss)
+			if err != nil {
+				validation.Error("Attributes[white_address_list]", err.Error())
+			}
+		}
+	}
+	return validation.HasErrors()
+}
+
 func (user *User) IsDisabled() bool {
 	return user.Disabled // || user.Type == ItsmReporter
 }
 
 func (user *User) IsBuiltin() bool {
+	if user.IsDefault {
+		return true
+	}
+
 	return user.Name == UserAdmin ||
-		user.Name == UserGuest
+		user.Name == UserGuest ||
+		user.Name == UserBgOperator
+}
+
+func (user *User) IsHidden() bool {
+	return user.Name == UserBgOperator // || user.Type == ItsmReporter
 }
 
 type UserProfile struct {
@@ -93,7 +133,15 @@ type Role struct {
 	UpdatedAt   time.Time `json:"updated_at,omitempty" xorm:"updated_at updated"`
 }
 
+func (role *Role) Validate(v *validation.Validation) bool {
+	v.Required("Name", role.Name)
+	return v.HasErrors()
+}
+
 func (role *Role) IsBuiltin() bool {
+	if role.IsDefault {
+		return true
+	}
 	return role.Name == RoleSuper ||
 		role.Name == RoleAdministrator ||
 		role.Name == RoleVisitor ||
@@ -127,25 +175,54 @@ type OnlineUserDao interface {
 
 type UserQueryer interface {
 	// @type select
+	// @default SELECT count(*) > 0 FROM <tablename type="Role" /> WHERE name = #{name}
+	RolenameExists(ctx context.Context, name string) (bool, error)
+
+	// @type select
+	// @default SELECT count(*) > 0 FROM <tablename type="User" /> WHERE lower(name) = lower(#{name})
+	UsernameExists(ctx context.Context, name string) (bool, error)
+
+	// @type select
 	// @default SELECT count(*) > 0 FROM <tablename type="User" /> WHERE nickname = #{name}
 	NicknameExists(ctx context.Context, name string) (bool, error)
 
 	// @record_type Role
+	GetRoleCount(ctx context.Context, nameLike string) (int64, error)
+
+	// @record_type Role
+	GetRoles(ctx context.Context, nameLike string, offset, limit int64) (func(*Role) (bool, error), io.Closer)
+
+	// @record_type Role
+	GetRoleByID(ctx context.Context, id int64) func(*Role) error
+
+	// @record_type Role
 	GetRoleByName(ctx context.Context, name string) func(*Role) error
+
+	// @record_type Role
+	GetRolesByNames(ctx context.Context, name []string) (func(*Role) (bool, error), io.Closer)
 
 	// @record_type User
 	GetUserByID(ctx context.Context, id int64) func(*User) error
 
-	// @record_type User
+	// @default SELECT * FROM <tablename type="User" /> WHERE lower(name) = lower(#{name})
 	GetUserByName(ctx context.Context, name string) func(*User) error
 
+	// @default SELECT * FROM <tablename type="User" /> WHERE lower(nickname) = lower(#{nickname})
+	GetUserByNickname(ctx context.Context, nickname string) func(*User) error
+
+	// @default SELECT * FROM <tablename type="User" /> WHERE lower(name) = lower(#{name}) OR lower(nickname) = lower(#{nickname})
+	GetUserByNameOrNickname(ctx context.Context, name, nickname string) func(*User) error
+
 	// @record_type User
-	GetUsers(ctx context.Context) ([]User, error)
+	GetUserCount(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString) (int64, error)
+
+	// @record_type User
+	GetUsers(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString, offset, limit int64) (func(*User) (bool, error), io.Closer)
 
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
-	//  exists (select * from <tablename type="UserAndRole" as="users_roles" />
+	//  exists (select * from <tablename type="UserAndRole" /> as users_roles
 	//     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})
-	GetRolesByUser(ctx context.Context, userID int64) ([]Role, error)
+	GetRolesByUserID(ctx context.Context, userID int64) ([]Role, error)
 
 	// @default SELECT value FROM <tablename type="UserProfile" /> WHERE id = #{userID} AND name = #{name}
 	ReadProfile(ctx context.Context, userID int64, name string) (string, error)
@@ -157,34 +234,60 @@ type UserQueryer interface {
 	// @type delete
 	// @default DELETE FROM <tablename type="UserProfile" /> WHERE id=#{userID} AND name=#{name}
 	DeleteProfile(ctx context.Context, userID int64, name string) (int64, error)
+
+	// @record_type UserAndRole
+	GetUserAndRoleList(ctx context.Context) (func(*UserAndRole) (bool, error), io.Closer)
 }
 
 type UserDao interface {
 	UserQueryer
 
 	// @type update
+	// @default UPDATE <tablename type="User"/> SET locked_at = now() WHERE id=#{id}
+	LockUser(ctx context.Context, id int64) error
+
+	// @type update
+	// @default UPDATE <tablename type="User"/> SET locked_at = null WHERE id=#{id}
+	UnlockUser(ctx context.Context, id int64) error
+
+	// @type update
 	// @default UPDATE <tablename type="User"/>
 	//       SET locked_at = now() WHERE lower(name) = lower(#{username})
-	Lock(ctx context.Context, username string) error
+	LockUserByUsername(ctx context.Context, username string) error
 
 	// @type update
 	// @default UPDATE <tablename type="User"/>
 	//       SET locked_at = NULL WHERE lower(name) = lower(#{username})
-	Unlock(ctx context.Context, username string) error
+	UnlockUserByUsername(ctx context.Context, username string) error
 
 	CreateUser(ctx context.Context, user *User) (int64, error)
 
-	// @type update
-	// @default UPDATE <tablename type="User"/>
-	//       SET disabled = true WHERE id=#{id}
-	DisableUser(ctx context.Context, id int64) error
-
-	// @type update
-	// @default UPDATE <tablename type="User"/>
-	//       SET disabled = false WHERE id=#{id}
-	EnableUser(ctx context.Context, id int64) error
-
 	UpdateUser(ctx context.Context, id int64, user *User) (int64, error)
+
+	// @record_type User
+	UpdateUserPassword(ctx context.Context, id int64, password string) (int64, error)
+
+	// @record_type User
+	DeleteUser(ctx context.Context, id int64) (int64, error)
+
+	// @type update
+	// @default UPDATE <tablename type="User"/>
+	//       SET disabled = true <if test="name.Valid">, name= #{name} </if>
+	//           <if test="nickname.Valid">, nickname= #{nickname} </if>
+	//       WHERE id=#{id}
+	DisableUser(ctx context.Context, id int64, name, nickname sql.NullString) error
+
+	// @type update
+	// @default UPDATE <tablename type="User"/>
+	//       SET disabled = false <if test="name.Valid">, name= #{name} </if>
+	//           <if test="nickname.Valid">, nickname= #{nickname} </if>
+	//       WHERE id=#{id}
+	EnableUser(ctx context.Context, id int64, name, nickname sql.NullString) error
+
+	// @type select
+	// @default SELECT count(*) > 0 FROM <tablename type="UserAndRole" />
+	//          WHERE user_id = #{userid} AND role_id = #{roleid}
+	HasRoleForUser(ctx context.Context, userid, roleid int64) (bool, error)
 
 	// @default INSERT INTO <tablename type="UserAndRole"/>(user_id, role_id)
 	//       VALUES(#{userid}, #{roleid})
@@ -192,6 +295,16 @@ type UserDao interface {
 	//       DO UPDATE SET user_id=EXCLUDED.user_id, role_id=EXCLUDED.role_id
 	AddRoleToUser(ctx context.Context, userid, roleid int64) error
 
-	// @default DELETE FROM <tablename type="UserAndRole"/> WHERE user_id = #{userid} and role_id = #{roleid}
+	// @record_type UserAndRole
 	RemoveRoleFromUser(ctx context.Context, userid, roleid int64) error
+
+	// @record_type UserAndRole
+	RemoveRolesFromUser(ctx context.Context, userid int64) error
+
+	CreateRole(ctx context.Context, role *Role) (int64, error)
+
+	UpdateRole(ctx context.Context, id int64, role *Role) (int64, error)
+
+	// @record_type Role
+	DeleteRole(ctx context.Context, id int64) (int64, error)
 }

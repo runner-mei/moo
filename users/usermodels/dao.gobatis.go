@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
 	"reflect"
 	"strings"
 
@@ -13,6 +14,50 @@ import (
 
 func init() {
 	gobatis.Init(func(ctx *gobatis.InitContext) error {
+		{ //// UserQueryer.RolenameExists
+			if _, exists := ctx.Statements["UserQueryer.RolenameExists"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT count(*) > 0 FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE name = #{name}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.RolenameExists",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.RolenameExists"] = stmt
+			}
+		}
+		{ //// UserQueryer.UsernameExists
+			if _, exists := ctx.Statements["UserQueryer.UsernameExists"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT count(*) > 0 FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE lower(name) = lower(#{name})")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.UsernameExists",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.UsernameExists"] = stmt
+			}
+		}
 		{ //// UserQueryer.NicknameExists
 			if _, exists := ctx.Statements["UserQueryer.NicknameExists"]; !exists {
 				var sb strings.Builder
@@ -33,6 +78,82 @@ func init() {
 					return err
 				}
 				ctx.Statements["UserQueryer.NicknameExists"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetRoleCount
+			if _, exists := ctx.Statements["UserQueryer.GetRoleCount"]; !exists {
+				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{
+						"nameLike",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(string)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetRoleCount error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRoleCount",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetRoleCount"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetRoles
+			if _, exists := ctx.Statements["UserQueryer.GetRoles"]; !exists {
+				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{
+						"nameLike",
+						"offset",
+						"limit",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(string)).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetRoles error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRoles",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetRoles"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetRoleByID
+			if _, exists := ctx.Statements["UserQueryer.GetRoleByID"]; !exists {
+				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{
+						"id",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetRoleByID error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRoleByID",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetRoleByID"] = stmt
 			}
 		}
 		{ //// UserQueryer.GetRoleByName
@@ -57,6 +178,30 @@ func init() {
 					return err
 				}
 				ctx.Statements["UserQueryer.GetRoleByName"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetRolesByNames
+			if _, exists := ctx.Statements["UserQueryer.GetRolesByNames"]; !exists {
+				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{
+						"name",
+					},
+					[]reflect.Type{
+						reflect.TypeOf([]string{}),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetRolesByNames error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRolesByNames",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetRolesByNames"] = stmt
 			}
 		}
 		{ //// UserQueryer.GetUserByID
@@ -85,18 +230,16 @@ func init() {
 		}
 		{ //// UserQueryer.GetUserByName
 			if _, exists := ctx.Statements["UserQueryer.GetUserByName"]; !exists {
-				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&User{}),
-					[]string{
-						"name",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(new(string)).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUserByName error")
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" WHERE lower(name) = lower(#{name})")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserByName",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
@@ -107,12 +250,100 @@ func init() {
 				ctx.Statements["UserQueryer.GetUserByName"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetUserByNickname
+			if _, exists := ctx.Statements["UserQueryer.GetUserByNickname"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE lower(nickname) = lower(#{nickname})")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserByNickname",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUserByNickname"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetUserByNameOrNickname
+			if _, exists := ctx.Statements["UserQueryer.GetUserByNameOrNickname"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE lower(name) = lower(#{name}) OR lower(nickname) = lower(#{nickname})")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserByNameOrNickname",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUserByNameOrNickname"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetUserCount
+			if _, exists := ctx.Statements["UserQueryer.GetUserCount"]; !exists {
+				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&User{}),
+					[]string{
+						"nameLike",
+						"canLogin",
+						"disabled",
+						"source",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(string)).Elem(),
+						reflect.TypeOf(&sql.NullBool{}).Elem(),
+						reflect.TypeOf(&sql.NullBool{}).Elem(),
+						reflect.TypeOf(&sql.NullString{}).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUserCount error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserCount",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUserCount"] = stmt
+			}
+		}
 		{ //// UserQueryer.GetUsers
 			if _, exists := ctx.Statements["UserQueryer.GetUsers"]; !exists {
 				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&User{}),
-					[]string{},
-					[]reflect.Type{},
+					[]string{
+						"nameLike",
+						"canLogin",
+						"disabled",
+						"source",
+						"offset",
+						"limit",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(string)).Elem(),
+						reflect.TypeOf(&sql.NullBool{}).Elem(),
+						reflect.TypeOf(&sql.NullBool{}).Elem(),
+						reflect.TypeOf(&sql.NullString{}).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+					},
 					[]gobatis.Filter{})
 				if err != nil {
 					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUsers error")
@@ -127,8 +358,8 @@ func init() {
 				ctx.Statements["UserQueryer.GetUsers"] = stmt
 			}
 		}
-		{ //// UserQueryer.GetRolesByUser
-			if _, exists := ctx.Statements["UserQueryer.GetRolesByUser"]; !exists {
+		{ //// UserQueryer.GetRolesByUserID
+			if _, exists := ctx.Statements["UserQueryer.GetRolesByUserID"]; !exists {
 				var sb strings.Builder
 				sb.WriteString("SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
@@ -144,19 +375,17 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" AS ")
-				sb.WriteString("users_roles")
-				sb.WriteString("\r\n     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})")
+				sb.WriteString(" as users_roles\r\n     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})")
 				sqlStr := sb.String()
 
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRolesByUser",
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRolesByUserID",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
 					sqlStr)
 				if err != nil {
 					return err
 				}
-				ctx.Statements["UserQueryer.GetRolesByUser"] = stmt
+				ctx.Statements["UserQueryer.GetRolesByUserID"] = stmt
 			}
 		}
 		{ //// UserQueryer.ReadProfile
@@ -225,6 +454,26 @@ func init() {
 				ctx.Statements["UserQueryer.DeleteProfile"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetUserAndRoleList
+			if _, exists := ctx.Statements["UserQueryer.GetUserAndRoleList"]; !exists {
+				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&UserAndRole{}),
+					[]string{},
+					[]reflect.Type{},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUserAndRoleList error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserAndRoleList",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUserAndRoleList"] = stmt
+			}
+		}
 		return nil
 	})
 }
@@ -249,6 +498,50 @@ type UserQueryerImpl struct {
 	session gobatis.SqlSession
 }
 
+func (impl *UserQueryerImpl) RolenameExists(ctx context.Context, name string) (bool, error) {
+	var instance bool
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "UserQueryer.RolenameExists",
+		[]string{
+			"name",
+		},
+		[]interface{}{
+			name,
+		}).Scan(&nullable)
+	if err != nil {
+		return false, err
+	}
+	if !nullable.Valid {
+		return false, sql.ErrNoRows
+	}
+
+	return instance, nil
+}
+
+func (impl *UserQueryerImpl) UsernameExists(ctx context.Context, name string) (bool, error) {
+	var instance bool
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "UserQueryer.UsernameExists",
+		[]string{
+			"name",
+		},
+		[]interface{}{
+			name,
+		}).Scan(&nullable)
+	if err != nil {
+		return false, err
+	}
+	if !nullable.Valid {
+		return false, sql.ErrNoRows
+	}
+
+	return instance, nil
+}
+
 func (impl *UserQueryerImpl) NicknameExists(ctx context.Context, name string) (bool, error) {
 	var instance bool
 	var nullable gobatis.Nullable
@@ -271,6 +564,61 @@ func (impl *UserQueryerImpl) NicknameExists(ctx context.Context, name string) (b
 	return instance, nil
 }
 
+func (impl *UserQueryerImpl) GetRoleCount(ctx context.Context, nameLike string) (int64, error) {
+	var instance int64
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "UserQueryer.GetRoleCount",
+		[]string{
+			"nameLike",
+		},
+		[]interface{}{
+			nameLike,
+		}).Scan(&nullable)
+	if err != nil {
+		return 0, err
+	}
+	if !nullable.Valid {
+		return 0, sql.ErrNoRows
+	}
+
+	return instance, nil
+}
+
+func (impl *UserQueryerImpl) GetRoles(ctx context.Context, nameLike string, offset int64, limit int64) (func(*Role) (bool, error), io.Closer) {
+	results := impl.session.Select(ctx, "UserQueryer.GetRoles",
+		[]string{
+			"nameLike",
+			"offset",
+			"limit",
+		},
+		[]interface{}{
+			nameLike,
+			offset,
+			limit,
+		})
+	return func(value *Role) (bool, error) {
+		if !results.Next() {
+			return false, results.Err()
+		}
+		return true, results.Scan(value)
+	}, results
+}
+
+func (impl *UserQueryerImpl) GetRoleByID(ctx context.Context, id int64) func(*Role) error {
+	result := impl.session.SelectOne(ctx, "UserQueryer.GetRoleByID",
+		[]string{
+			"id",
+		},
+		[]interface{}{
+			id,
+		})
+	return func(value *Role) error {
+		return result.Scan(value)
+	}
+}
+
 func (impl *UserQueryerImpl) GetRoleByName(ctx context.Context, name string) func(*Role) error {
 	result := impl.session.SelectOne(ctx, "UserQueryer.GetRoleByName",
 		[]string{
@@ -282,6 +630,22 @@ func (impl *UserQueryerImpl) GetRoleByName(ctx context.Context, name string) fun
 	return func(value *Role) error {
 		return result.Scan(value)
 	}
+}
+
+func (impl *UserQueryerImpl) GetRolesByNames(ctx context.Context, name []string) (func(*Role) (bool, error), io.Closer) {
+	results := impl.session.Select(ctx, "UserQueryer.GetRolesByNames",
+		[]string{
+			"name",
+		},
+		[]interface{}{
+			name,
+		})
+	return func(value *Role) (bool, error) {
+		if !results.Next() {
+			return false, results.Err()
+		}
+		return true, results.Scan(value)
+	}, results
 }
 
 func (impl *UserQueryerImpl) GetUserByID(ctx context.Context, id int64) func(*User) error {
@@ -310,21 +674,91 @@ func (impl *UserQueryerImpl) GetUserByName(ctx context.Context, name string) fun
 	}
 }
 
-func (impl *UserQueryerImpl) GetUsers(ctx context.Context) ([]User, error) {
-	var instances []User
-	results := impl.session.Select(ctx, "UserQueryer.GetUsers",
-		[]string{},
-		[]interface{}{})
-	err := results.ScanSlice(&instances)
-	if err != nil {
-		return nil, err
+func (impl *UserQueryerImpl) GetUserByNickname(ctx context.Context, nickname string) func(*User) error {
+	result := impl.session.SelectOne(ctx, "UserQueryer.GetUserByNickname",
+		[]string{
+			"nickname",
+		},
+		[]interface{}{
+			nickname,
+		})
+	return func(value *User) error {
+		return result.Scan(value)
 	}
-	return instances, nil
 }
 
-func (impl *UserQueryerImpl) GetRolesByUser(ctx context.Context, userID int64) ([]Role, error) {
+func (impl *UserQueryerImpl) GetUserByNameOrNickname(ctx context.Context, name string, nickname string) func(*User) error {
+	result := impl.session.SelectOne(ctx, "UserQueryer.GetUserByNameOrNickname",
+		[]string{
+			"name",
+			"nickname",
+		},
+		[]interface{}{
+			name,
+			nickname,
+		})
+	return func(value *User) error {
+		return result.Scan(value)
+	}
+}
+
+func (impl *UserQueryerImpl) GetUserCount(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString) (int64, error) {
+	var instance int64
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "UserQueryer.GetUserCount",
+		[]string{
+			"nameLike",
+			"canLogin",
+			"disabled",
+			"source",
+		},
+		[]interface{}{
+			nameLike,
+			canLogin,
+			disabled,
+			source,
+		}).Scan(&nullable)
+	if err != nil {
+		return 0, err
+	}
+	if !nullable.Valid {
+		return 0, sql.ErrNoRows
+	}
+
+	return instance, nil
+}
+
+func (impl *UserQueryerImpl) GetUsers(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString, offset int64, limit int64) (func(*User) (bool, error), io.Closer) {
+	results := impl.session.Select(ctx, "UserQueryer.GetUsers",
+		[]string{
+			"nameLike",
+			"canLogin",
+			"disabled",
+			"source",
+			"offset",
+			"limit",
+		},
+		[]interface{}{
+			nameLike,
+			canLogin,
+			disabled,
+			source,
+			offset,
+			limit,
+		})
+	return func(value *User) (bool, error) {
+		if !results.Next() {
+			return false, results.Err()
+		}
+		return true, results.Scan(value)
+	}, results
+}
+
+func (impl *UserQueryerImpl) GetRolesByUserID(ctx context.Context, userID int64) ([]Role, error) {
 	var instances []Role
-	results := impl.session.Select(ctx, "UserQueryer.GetRolesByUser",
+	results := impl.session.Select(ctx, "UserQueryer.GetRolesByUserID",
 		[]string{
 			"userID",
 		},
@@ -389,10 +823,66 @@ func (impl *UserQueryerImpl) DeleteProfile(ctx context.Context, userID int64, na
 		})
 }
 
+func (impl *UserQueryerImpl) GetUserAndRoleList(ctx context.Context) (func(*UserAndRole) (bool, error), io.Closer) {
+	results := impl.session.Select(ctx, "UserQueryer.GetUserAndRoleList",
+		[]string{},
+		[]interface{}{})
+	return func(value *UserAndRole) (bool, error) {
+		if !results.Next() {
+			return false, results.Err()
+		}
+		return true, results.Scan(value)
+	}, results
+}
+
 func init() {
 	gobatis.Init(func(ctx *gobatis.InitContext) error {
-		{ //// UserDao.Lock
-			if _, exists := ctx.Statements["UserDao.Lock"]; !exists {
+		{ //// UserDao.LockUser
+			if _, exists := ctx.Statements["UserDao.LockUser"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("UPDATE ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" SET locked_at = now() WHERE id=#{id}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.LockUser",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.LockUser"] = stmt
+			}
+		}
+		{ //// UserDao.UnlockUser
+			if _, exists := ctx.Statements["UserDao.UnlockUser"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("UPDATE ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" SET locked_at = null WHERE id=#{id}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.UnlockUser",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.UnlockUser"] = stmt
+			}
+		}
+		{ //// UserDao.LockUserByUsername
+			if _, exists := ctx.Statements["UserDao.LockUserByUsername"]; !exists {
 				var sb strings.Builder
 				sb.WriteString("UPDATE ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
@@ -403,18 +893,18 @@ func init() {
 				sb.WriteString("\r\n       SET locked_at = now() WHERE lower(name) = lower(#{username})")
 				sqlStr := sb.String()
 
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.Lock",
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.LockUserByUsername",
 					gobatis.StatementTypeUpdate,
 					gobatis.ResultStruct,
 					sqlStr)
 				if err != nil {
 					return err
 				}
-				ctx.Statements["UserDao.Lock"] = stmt
+				ctx.Statements["UserDao.LockUserByUsername"] = stmt
 			}
 		}
-		{ //// UserDao.Unlock
-			if _, exists := ctx.Statements["UserDao.Unlock"]; !exists {
+		{ //// UserDao.UnlockUserByUsername
+			if _, exists := ctx.Statements["UserDao.UnlockUserByUsername"]; !exists {
 				var sb strings.Builder
 				sb.WriteString("UPDATE ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
@@ -425,14 +915,14 @@ func init() {
 				sb.WriteString("\r\n       SET locked_at = NULL WHERE lower(name) = lower(#{username})")
 				sqlStr := sb.String()
 
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.Unlock",
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.UnlockUserByUsername",
 					gobatis.StatementTypeUpdate,
 					gobatis.ResultStruct,
 					sqlStr)
 				if err != nil {
 					return err
 				}
-				ctx.Statements["UserDao.Unlock"] = stmt
+				ctx.Statements["UserDao.UnlockUserByUsername"] = stmt
 			}
 		}
 		{ //// UserDao.CreateUser
@@ -456,50 +946,6 @@ func init() {
 				ctx.Statements["UserDao.CreateUser"] = stmt
 			}
 		}
-		{ //// UserDao.DisableUser
-			if _, exists := ctx.Statements["UserDao.DisableUser"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("UPDATE ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString("\r\n       SET disabled = true WHERE id=#{id}")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.DisableUser",
-					gobatis.StatementTypeUpdate,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UserDao.DisableUser"] = stmt
-			}
-		}
-		{ //// UserDao.EnableUser
-			if _, exists := ctx.Statements["UserDao.EnableUser"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("UPDATE ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString("\r\n       SET disabled = false WHERE id=#{id}")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.EnableUser",
-					gobatis.StatementTypeUpdate,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UserDao.EnableUser"] = stmt
-			}
-		}
 		{ //// UserDao.UpdateUser
 			if _, exists := ctx.Statements["UserDao.UpdateUser"]; !exists {
 				sqlStr, err := gobatis.GenerateUpdateSQL(ctx.Dialect, ctx.Mapper,
@@ -521,6 +967,115 @@ func init() {
 					return err
 				}
 				ctx.Statements["UserDao.UpdateUser"] = stmt
+			}
+		}
+		{ //// UserDao.UpdateUserPassword
+			if _, exists := ctx.Statements["UserDao.UpdateUserPassword"]; !exists {
+				sqlStr, err := gobatis.GenerateUpdateSQL2(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&User{}), reflect.TypeOf(new(int64)), "id", []string{
+						"password",
+					})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.UpdateUserPassword error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.UpdateUserPassword",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.UpdateUserPassword"] = stmt
+			}
+		}
+		{ //// UserDao.DeleteUser
+			if _, exists := ctx.Statements["UserDao.DeleteUser"]; !exists {
+				sqlStr, err := gobatis.GenerateDeleteSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&User{}),
+					[]string{
+						"id",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.DeleteUser error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.DeleteUser",
+					gobatis.StatementTypeDelete,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.DeleteUser"] = stmt
+			}
+		}
+		{ //// UserDao.DisableUser
+			if _, exists := ctx.Statements["UserDao.DisableUser"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("UPDATE ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("\r\n       SET disabled = true <if test=\"name.Valid\">, name= #{name} </if>\r\n           <if test=\"nickname.Valid\">, nickname= #{nickname} </if>\r\n       WHERE id=#{id}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.DisableUser",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.DisableUser"] = stmt
+			}
+		}
+		{ //// UserDao.EnableUser
+			if _, exists := ctx.Statements["UserDao.EnableUser"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("UPDATE ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("\r\n       SET disabled = false <if test=\"name.Valid\">, name= #{name} </if>\r\n           <if test=\"nickname.Valid\">, nickname= #{nickname} </if>\r\n       WHERE id=#{id}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.EnableUser",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.EnableUser"] = stmt
+			}
+		}
+		{ //// UserDao.HasRoleForUser
+			if _, exists := ctx.Statements["UserDao.HasRoleForUser"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT count(*) > 0 FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("\r\n          WHERE user_id = #{userid} AND role_id = #{roleid}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.HasRoleForUser",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.HasRoleForUser"] = stmt
 			}
 		}
 		{ //// UserDao.AddRoleToUser
@@ -547,16 +1102,20 @@ func init() {
 		}
 		{ //// UserDao.RemoveRoleFromUser
 			if _, exists := ctx.Statements["UserDao.RemoveRoleFromUser"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("DELETE FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
+				sqlStr, err := gobatis.GenerateDeleteSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&UserAndRole{}),
+					[]string{
+						"userid",
+						"roleid",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.RemoveRoleFromUser error")
 				}
-				sb.WriteString(" WHERE user_id = #{userid} and role_id = #{roleid}")
-				sqlStr := sb.String()
-
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.RemoveRoleFromUser",
 					gobatis.StatementTypeDelete,
 					gobatis.ResultStruct,
@@ -565,6 +1124,98 @@ func init() {
 					return err
 				}
 				ctx.Statements["UserDao.RemoveRoleFromUser"] = stmt
+			}
+		}
+		{ //// UserDao.RemoveRolesFromUser
+			if _, exists := ctx.Statements["UserDao.RemoveRolesFromUser"]; !exists {
+				sqlStr, err := gobatis.GenerateDeleteSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&UserAndRole{}),
+					[]string{
+						"userid",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.RemoveRolesFromUser error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.RemoveRolesFromUser",
+					gobatis.StatementTypeDelete,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.RemoveRolesFromUser"] = stmt
+			}
+		}
+		{ //// UserDao.CreateRole
+			if _, exists := ctx.Statements["UserDao.CreateRole"]; !exists {
+				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{"role"},
+					[]reflect.Type{
+						reflect.TypeOf((*Role)(nil)),
+					}, false)
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.CreateRole error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.CreateRole",
+					gobatis.StatementTypeInsert,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.CreateRole"] = stmt
+			}
+		}
+		{ //// UserDao.UpdateRole
+			if _, exists := ctx.Statements["UserDao.UpdateRole"]; !exists {
+				sqlStr, err := gobatis.GenerateUpdateSQL(ctx.Dialect, ctx.Mapper,
+					"role.", reflect.TypeOf(&Role{}),
+					[]string{
+						"id",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+					})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.UpdateRole error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.UpdateRole",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.UpdateRole"] = stmt
+			}
+		}
+		{ //// UserDao.DeleteRole
+			if _, exists := ctx.Statements["UserDao.DeleteRole"]; !exists {
+				sqlStr, err := gobatis.GenerateDeleteSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&Role{}),
+					[]string{
+						"id",
+					},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+					},
+					[]gobatis.Filter{})
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate UserDao.DeleteRole error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserDao.DeleteRole",
+					gobatis.StatementTypeDelete,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserDao.DeleteRole"] = stmt
 			}
 		}
 		return nil
@@ -593,8 +1244,30 @@ type UserDaoImpl struct {
 	session gobatis.SqlSession
 }
 
-func (impl *UserDaoImpl) Lock(ctx context.Context, username string) error {
-	_, err := impl.session.Update(ctx, "UserDao.Lock",
+func (impl *UserDaoImpl) LockUser(ctx context.Context, id int64) error {
+	_, err := impl.session.Update(ctx, "UserDao.LockUser",
+		[]string{
+			"id",
+		},
+		[]interface{}{
+			id,
+		})
+	return err
+}
+
+func (impl *UserDaoImpl) UnlockUser(ctx context.Context, id int64) error {
+	_, err := impl.session.Update(ctx, "UserDao.UnlockUser",
+		[]string{
+			"id",
+		},
+		[]interface{}{
+			id,
+		})
+	return err
+}
+
+func (impl *UserDaoImpl) LockUserByUsername(ctx context.Context, username string) error {
+	_, err := impl.session.Update(ctx, "UserDao.LockUserByUsername",
 		[]string{
 			"username",
 		},
@@ -604,8 +1277,8 @@ func (impl *UserDaoImpl) Lock(ctx context.Context, username string) error {
 	return err
 }
 
-func (impl *UserDaoImpl) Unlock(ctx context.Context, username string) error {
-	_, err := impl.session.Update(ctx, "UserDao.Unlock",
+func (impl *UserDaoImpl) UnlockUserByUsername(ctx context.Context, username string) error {
+	_, err := impl.session.Update(ctx, "UserDao.UnlockUserByUsername",
 		[]string{
 			"username",
 		},
@@ -625,28 +1298,6 @@ func (impl *UserDaoImpl) CreateUser(ctx context.Context, user *User) (int64, err
 		})
 }
 
-func (impl *UserDaoImpl) DisableUser(ctx context.Context, id int64) error {
-	_, err := impl.session.Update(ctx, "UserDao.DisableUser",
-		[]string{
-			"id",
-		},
-		[]interface{}{
-			id,
-		})
-	return err
-}
-
-func (impl *UserDaoImpl) EnableUser(ctx context.Context, id int64) error {
-	_, err := impl.session.Update(ctx, "UserDao.EnableUser",
-		[]string{
-			"id",
-		},
-		[]interface{}{
-			id,
-		})
-	return err
-}
-
 func (impl *UserDaoImpl) UpdateUser(ctx context.Context, id int64, user *User) (int64, error) {
 	return impl.session.Update(ctx, "UserDao.UpdateUser",
 		[]string{
@@ -657,6 +1308,82 @@ func (impl *UserDaoImpl) UpdateUser(ctx context.Context, id int64, user *User) (
 			id,
 			user,
 		})
+}
+
+func (impl *UserDaoImpl) UpdateUserPassword(ctx context.Context, id int64, password string) (int64, error) {
+	return impl.session.Update(ctx, "UserDao.UpdateUserPassword",
+		[]string{
+			"id",
+			"password",
+		},
+		[]interface{}{
+			id,
+			password,
+		})
+}
+
+func (impl *UserDaoImpl) DeleteUser(ctx context.Context, id int64) (int64, error) {
+	return impl.session.Delete(ctx, "UserDao.DeleteUser",
+		[]string{
+			"id",
+		},
+		[]interface{}{
+			id,
+		})
+}
+
+func (impl *UserDaoImpl) DisableUser(ctx context.Context, id int64, name sql.NullString, nickname sql.NullString) error {
+	_, err := impl.session.Update(ctx, "UserDao.DisableUser",
+		[]string{
+			"id",
+			"name",
+			"nickname",
+		},
+		[]interface{}{
+			id,
+			name,
+			nickname,
+		})
+	return err
+}
+
+func (impl *UserDaoImpl) EnableUser(ctx context.Context, id int64, name sql.NullString, nickname sql.NullString) error {
+	_, err := impl.session.Update(ctx, "UserDao.EnableUser",
+		[]string{
+			"id",
+			"name",
+			"nickname",
+		},
+		[]interface{}{
+			id,
+			name,
+			nickname,
+		})
+	return err
+}
+
+func (impl *UserDaoImpl) HasRoleForUser(ctx context.Context, userid int64, roleid int64) (bool, error) {
+	var instance bool
+	var nullable gobatis.Nullable
+	nullable.Value = &instance
+
+	err := impl.session.SelectOne(ctx, "UserDao.HasRoleForUser",
+		[]string{
+			"userid",
+			"roleid",
+		},
+		[]interface{}{
+			userid,
+			roleid,
+		}).Scan(&nullable)
+	if err != nil {
+		return false, err
+	}
+	if !nullable.Valid {
+		return false, sql.ErrNoRows
+	}
+
+	return instance, nil
 }
 
 func (impl *UserDaoImpl) AddRoleToUser(ctx context.Context, userid int64, roleid int64) error {
@@ -684,4 +1411,47 @@ func (impl *UserDaoImpl) RemoveRoleFromUser(ctx context.Context, userid int64, r
 			roleid,
 		})
 	return err
+}
+
+func (impl *UserDaoImpl) RemoveRolesFromUser(ctx context.Context, userid int64) error {
+	_, err := impl.session.Delete(ctx, "UserDao.RemoveRolesFromUser",
+		[]string{
+			"userid",
+		},
+		[]interface{}{
+			userid,
+		})
+	return err
+}
+
+func (impl *UserDaoImpl) CreateRole(ctx context.Context, role *Role) (int64, error) {
+	return impl.session.Insert(ctx, "UserDao.CreateRole",
+		[]string{
+			"role",
+		},
+		[]interface{}{
+			role,
+		})
+}
+
+func (impl *UserDaoImpl) UpdateRole(ctx context.Context, id int64, role *Role) (int64, error) {
+	return impl.session.Update(ctx, "UserDao.UpdateRole",
+		[]string{
+			"id",
+			"role",
+		},
+		[]interface{}{
+			id,
+			role,
+		})
+}
+
+func (impl *UserDaoImpl) DeleteRole(ctx context.Context, id int64) (int64, error) {
+	return impl.session.Delete(ctx, "UserDao.DeleteRole",
+		[]string{
+			"id",
+		},
+		[]interface{}{
+			id,
+		})
 }

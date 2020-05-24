@@ -2,8 +2,8 @@ package db
 
 import (
 	"database/sql"
-	"strings"
 	"errors"
+	"strings"
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
@@ -13,7 +13,7 @@ import (
 func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	args := GetTableNames()
 	for k := range args {
-		newName := env.Config.StringWithDefault("moo.tablename." + k, "")
+		newName := env.Config.StringWithDefault("moo.tablename."+k, "")
 		if newName == "" {
 			continue
 		}
@@ -47,13 +47,12 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 }
 
 func GetTableNames() map[string]string {
-	return map[string]string {
-		"moo_operation_logs" : "moo_operation_logs",
-		"moo_online_users": "moo_online_users",
-		"moo_permission_and_roles":"moo_permission_and_roles", 
+	return map[string]string{
+		"moo_operation_logs":  "moo_operation_logs",
+		"moo_online_users":    "moo_online_users",
 		"moo_users_and_roles": "moo_users_and_roles",
-		"moo_users": "moo_users",
-		"moo_roles":"moo_roles",
+		"moo_users":           "moo_users",
+		"moo_roles":           "moo_roles",
 	}
 }
 
@@ -71,7 +70,6 @@ func ReplaceTableName(sqlStr string, args map[string]string) string {
 	return sqlStr
 }
 
-
 func init() {
 	moo.On(func() moo.Option {
 		return moo.Invoke(func(env *moo.Environment, logger log.Logger, db InModelDB) error {
@@ -85,7 +83,6 @@ var CleanDataSQL = `
 
 DELETE FROM moo_operation_logs;
 DELETE FROM moo_online_users;
-DELETE FROM moo_permission_and_roles;
 DELETE FROM moo_users_and_roles;
 DELETE FROM moo_users;
 DELETE FROM moo_roles;
@@ -96,7 +93,6 @@ var CleanSQL = `
 
 DROP TABLE IF EXISTS moo_operation_logs CASCADE;
 DROP TABLE IF EXISTS moo_online_users CASCADE;
-DROP TABLE IF EXISTS moo_permission_and_roles CASCADE;
 DROP TABLE IF EXISTS moo_users_and_roles CASCADE;
 DROP TABLE IF EXISTS moo_users CASCADE;
 DROP TABLE IF EXISTS moo_roles CASCADE;
@@ -148,12 +144,6 @@ CREATE TABLE IF NOT EXISTS moo_users_and_roles (
 		UNIQUE(user_id,role_id)
 );
 
-CREATE TABLE IF NOT EXISTS moo_permission_and_roles (
-		role_id             bigint REFERENCES moo_roles ON DELETE CASCADE,
-		permission          varchar(100),
-		UNIQUE(role_id,permission)
-);
-
 CREATE TABLE IF NOT EXISTS moo_online_users (
 		user_id     bigint REFERENCES moo_users ON DELETE CASCADE,
 		address     inet,
@@ -168,9 +158,9 @@ CREATE TABLE IF NOT EXISTS moo_online_users (
 -- +statementBegin
 CREATE OR REPLACE FUNCTION add_admin_user() RETURNS VOID AS $$ 
 BEGIN 
-	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='`+ api.UserAdmin +`') THEN
+	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='` + api.UserAdmin + `') THEN
 		INSERT INTO moo_users (name, nickname, password, created_at, updated_at)
-								VALUES('`+ api.UserAdmin +`', '`+ api.UserAdmin +`', 'Admin', now(), now());
+								VALUES('` + api.UserAdmin + `', '` + api.UserAdmin + `', 'Admin', now(), now());
 	END IF;
 END; 
 $$ language 'plpgsql'; 
@@ -181,9 +171,9 @@ DROP FUNCTION add_admin_user();
 -- +statementBegin
 CREATE OR REPLACE FUNCTION add_bgopuser_user() RETURNS VOID AS $$ 
 BEGIN 
-	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='`+ api.UserBgOperator +`') THEN
+	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='` + api.UserBgOperator + `') THEN
 		INSERT INTO moo_users (name, nickname, password, disabled, created_at, updated_at)
-								VALUES('`+ api.UserBgOperator +`', '`+ api.UserBgOperator +`', 'Admin', true, now(), now());
+								VALUES('` + api.UserBgOperator + `', '` + api.UserBgOperator + `', 'Admin', true, now(), now());
 	END IF;
 END; 
 $$ language 'plpgsql'; 

@@ -78,6 +78,11 @@ func init() {
 				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
 			}
 
+			err = initDb(env, logger, dbModels)
+			if nil != err {
+				dbModels.Close()
+				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
+			}
 
 			constants := map[string]interface{}{
 				// "discriminator_request": itsm_models.DiscriminatorRequest,
