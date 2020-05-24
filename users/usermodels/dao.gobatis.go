@@ -127,28 +127,6 @@ func init() {
 				ctx.Statements["UserQueryer.GetUsers"] = stmt
 			}
 		}
-		{ //// UserQueryer.GetPermissionsByRoleIDs
-			if _, exists := ctx.Statements["UserQueryer.GetPermissionsByRoleIDs"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("SELECT FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&PermissionAndRole{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" WHERE role_id in <foreach collection=\"roleIDs\" open=\"(\" separator=\",\" close=\")\">#{item}</foreach>")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetPermissionsByRoleIDs",
-					gobatis.StatementTypeSelect,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UserQueryer.GetPermissionsByRoleIDs"] = stmt
-			}
-		}
 		{ //// UserQueryer.GetRolesByUser
 			if _, exists := ctx.Statements["UserQueryer.GetRolesByUser"]; !exists {
 				var sb strings.Builder
@@ -166,7 +144,9 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as users_roles\r\n     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})")
+				sb.WriteString(" AS ")
+				sb.WriteString("users_roles")
+				sb.WriteString("\r\n     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRolesByUser",
@@ -335,22 +315,6 @@ func (impl *UserQueryerImpl) GetUsers(ctx context.Context) ([]User, error) {
 	results := impl.session.Select(ctx, "UserQueryer.GetUsers",
 		[]string{},
 		[]interface{}{})
-	err := results.ScanSlice(&instances)
-	if err != nil {
-		return nil, err
-	}
-	return instances, nil
-}
-
-func (impl *UserQueryerImpl) GetPermissionsByRoleIDs(ctx context.Context, roleIDs []int64) ([]string, error) {
-	var instances []string
-	results := impl.session.Select(ctx, "UserQueryer.GetPermissionsByRoleIDs",
-		[]string{
-			"roleIDs",
-		},
-		[]interface{}{
-			roleIDs,
-		})
 	err := results.ScanSlice(&instances)
 	if err != nil {
 		return nil, err

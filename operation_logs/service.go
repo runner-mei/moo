@@ -4,13 +4,13 @@ package operation_logs
 
 import (
 	"context"
-	"log"
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/db"
+	"github.com/runner-mei/log"
 )
 
 type OperationLog = api.OperationLog

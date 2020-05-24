@@ -309,6 +309,7 @@ func (c *CASClient) LoginCallback(w http.ResponseWriter, r *http.Request) {
 		user = &usermodels.User{
 			Name:        username,
 			Nickname:    username,
+			CanLogin:    true,
 			Description: "",
 			Attributes:  map[string]interface{}{},
 			Source:      "cas",

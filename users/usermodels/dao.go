@@ -57,6 +57,9 @@ type User struct {
 	LockedAt    *time.Time             `json:"locked_at,omitempty" xorm:"locked_at null"`
 	CreatedAt   time.Time              `json:"created_at,omitempty" xorm:"created_at created"`
 	UpdatedAt   time.Time              `json:"updated_at,omitempty" xorm:"updated_at updated"`
+
+	// Type        int                    `json:"type,omitempty" xorm:"type"`
+	Reserved1 map[string]string `json:"profiles" xorm:"profiles <- null"`
 }
 
 func (user *User) IsDisabled() bool {
@@ -98,12 +101,6 @@ type UserAndRole struct {
 	RoleID    int64    `json:"role_id" xorm:"role_id unique(user_role) notnull"`
 }
 
-type PermissionAndRole struct {
-	TableName  struct{} `json:"-" xorm:"moo_permission_and_roles"`
-	RoleID     int64    `json:"role_id" xorm:"role_id unique(permission_role) notnull"`
-	Permission string   `json:"permission" xorm:"permission unique(permission_role) notnull"`
-}
-
 type UserQueryer interface {
 	// @type select
 	// @default SELECT count(*) > 0 FROM <tablename type="User" /> WHERE nickname = #{name}
@@ -121,11 +118,8 @@ type UserQueryer interface {
 	// @record_type User
 	GetUsers(ctx context.Context) ([]User, error)
 
-	// @default SELECT FROM <tablename type="PermissionAndRole" /> WHERE role_id in <foreach collection="roleIDs" open="(" separator="," close=")">#{item}</foreach>
-	GetPermissionsByRoleIDs(ctx context.Context, roleIDs []int64) ([]string, error)
-
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
-	//  exists (select * from <tablename type="UserAndRole" /> as users_roles
+	//  exists (select * from <tablename type="UserAndRole" as="users_roles" />
 	//     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})
 	GetRolesByUser(ctx context.Context, userID int64) ([]Role, error)
 

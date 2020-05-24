@@ -23,8 +23,8 @@ type loginServer struct {
 
 	responseText string
 	client       *http.Client
-	sessions auth.SessionsForTest
-	userManager auth.UserManager
+	sessions authn.SessionsForTest
+	userManager authn.UserManager
 }
 
 func (srv *loginServer) newHTTPClient(t *testing.T, hasJar bool) *http.Client {
@@ -223,7 +223,7 @@ func TestLoginOnline(t *testing.T) {
 		"sso/login?_method=POST&username=adm&password=123&service="+
 			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), "上登录，最后一次活动时间为",
 		map[string]string{
-			auth.HeaderXForwardedFor: "192.168.1.2",
+			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
 
 	// fmt.Println("=============================")
@@ -250,7 +250,7 @@ func TestLoginOnline(t *testing.T) {
 		"sso/login?_method=POST&username=adm&password=123&service="+
 			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText,
 		map[string]string{
-			auth.HeaderXForwardedFor: "192.168.1.2",
+			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
 
 	hwsrv.assertOnlineCount(t, "adm", "127.0.0.1", 0)
@@ -262,7 +262,7 @@ func TestLoginOnline(t *testing.T) {
 		"sso/login?_method=POST&username=adm&password=123&service="+
 			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText,
 		map[string]string{
-			auth.HeaderXForwardedFor: "192.168.1.2",
+			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
 
 	hwsrv.assertOnlineCount(t, "adm", "127.0.0.1", 0)
@@ -278,7 +278,7 @@ func TestLoginOnline(t *testing.T) {
 			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"),
 		"上登录，最后一次活动时间为",
 		map[string]string{
-			auth.HeaderXForwardedFor: "192.168.1.9",
+			authn.HeaderXForwardedFor: "192.168.1.9",
 		})
 
 	hwsrv.assertOnlineCount(t, "adm", "127.0.0.1", 0)
@@ -293,7 +293,7 @@ func TestLoginBlockIP(t *testing.T) {
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="), "用户不能在该地址访问",
 		map[string]string{
-			auth.HeaderXForwardedFor: "192.168.100.9",
+			authn.HeaderXForwardedFor: "192.168.100.9",
 		})
 }
 
