@@ -159,8 +159,8 @@ CREATE TABLE IF NOT EXISTS moo_online_users (
 CREATE OR REPLACE FUNCTION add_admin_user() RETURNS VOID AS $$ 
 BEGIN 
 	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='` + api.UserAdmin + `') THEN
-		INSERT INTO moo_users (name, nickname, password, created_at, updated_at)
-								VALUES('` + api.UserAdmin + `', '` + api.UserAdmin + `', 'Admin', now(), now());
+		INSERT INTO moo_users (name, nickname, password, can_login, created_at, updated_at)
+								VALUES('` + api.UserAdmin + `', '` + api.UserAdmin + `', 'Admin', true, now(), now());
 	END IF;
 END; 
 $$ language 'plpgsql'; 
@@ -172,7 +172,7 @@ DROP FUNCTION add_admin_user();
 CREATE OR REPLACE FUNCTION add_bgopuser_user() RETURNS VOID AS $$ 
 BEGIN 
 	IF NOT EXISTS (SELECT * FROM moo_users WHERE name='` + api.UserBgOperator + `') THEN
-		INSERT INTO moo_users (name, nickname, password, disabled, created_at, updated_at)
+		INSERT INTO moo_users (name, nickname, password, can_login, created_at, updated_at)
 								VALUES('` + api.UserBgOperator + `', '` + api.UserBgOperator + `', 'Admin', true, now(), now());
 	END IF;
 END; 
