@@ -12,6 +12,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/atomic"
 )
@@ -23,7 +24,7 @@ type userManager struct {
 	secretKey     string
 	lockedTimeExpires time.Duration
 	users             *usermodels.Users
-	permissionQueryer PermissionQueryer
+	authorizer        authz.Authorizer
 	userByName        *cache.Cache
 	userByID          *cache.Cache
 	lastErr           atomic.Error
@@ -246,25 +247,12 @@ func (um *userManager) load(ctx context.Context, u *user) error {
 		}
 	}
 
-	var roleIDs = make([]int64, len(u.roles))
-	for idx := range u.roles {
-		roleIDs[idx] = u.roles[idx].ID
-	}
-
-	if len(roleIDs) > 0 {
-		u.permissionsAndRoles, err = um.users.UserDao.GetPermissionsByRoleIDs(ctx, roleIDs)
-		//err = um.db.PermissionGroupsAndRoles().Where(orm.Cond{"role_id IN": roleIDs}).All(&u.permissionsAndRoles)
-		if err != nil {
-			return errors.Wrap(err, "query permissions and roles with user is "+u.Name()+" fail")
-		}
-	}
 
 	return nil
 }
 
 type user struct {
 	um                  *userManager
-	permissionsAndRoles []string
 	u                   usermodels.User
 	roles               []usermodels.Role
 	roleNames           []string
@@ -448,20 +436,20 @@ func (u *user) HasPermission(permissionID string) bool {
 	// 	}
 	// }
 
-	for _, perm := range u.permissionsAndRoles {
-		if perm == permissionID {
-			return true
-		}
-	}
+	// for _, perm := range u.permissionsAndRoles {
+	// 	if perm == permissionID {
+	// 		return true
+	// 	}
+	// }
 
-	parents := u.um.permissionQueryer.Parents(permissionID)
-	for _, parent := range parents {
-		for _, perm := range u.permissionsAndRoles {
-			if perm == parent {
-				return true
-			}
-		}
-	}
+	// parents := u.um.permissionQueryer.Parents(permissionID)
+	// for _, parent := range parents {
+	// 	for _, perm := range u.permissionsAndRoles {
+	// 		if perm == parent {
+	// 			return true
+	// 		}
+	// 	}
+	// }
 
 	return false
 }

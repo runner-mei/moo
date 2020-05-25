@@ -27,6 +27,7 @@ func getenv(name string, args ...string) string {
 func (a *AppTest) init() {
 	a.Args.CommandArgs = append(a.Args.CommandArgs,
 		"test.clean_data=true",
+		"test.clean_database=true",
 		"users.init_database=true",
 		"moo.db.host="+getenv("MOO_MODEL_DB_HOST", "MOO_DB_HOST", "127.0.0.1"),
 		"moo.db.port="+getenv("MOO_MODEL_DB_PORT", "MOO_DB_PORT", "35432"),

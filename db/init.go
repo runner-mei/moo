@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"strings"
+	"errors"
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
@@ -22,13 +23,13 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	if env.Config.BoolWithDefault("test.clean_database", false) {
 		_, err := db.Exec(ReplaceTableName(CleanSQL, args))
 		if err != nil {
-			return err
+			return errors.New("清理用户相关的表失败: " + err.Error())
 		}
 		logger.Info("清理用户相关的表成功")
 	} else if env.Config.BoolWithDefault("test.clean_data", false) {
 		_, err := db.Exec(ReplaceTableName(CleanDataSQL, args))
 		if err != nil {
-			return err
+			return errors.New("清理用户相关的数据失败: " + err.Error())
 		}
 		logger.Info("清理用户相关的数据成功")
 	}
@@ -36,7 +37,7 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	if env.Config.BoolWithDefault("users.init_database", false) {
 		_, err := db.Exec(ReplaceTableName(InitSQL, args))
 		if err != nil {
-			return err
+			return errors.New("初始化用户相关的表失败: " + err.Error())
 		}
 		logger.Info("初始化用户相关的表成功")
 	} else {

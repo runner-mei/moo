@@ -29,13 +29,13 @@ var (
 )
 
 type WelcomeLocator interface {
-	Locate(userID interface{}, username, defaultURL string) (string, error)
+	Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
 }
 
-type WelcomeFunc func(userID interface{}, username, defaultURL string) (string, error)
+type WelcomeFunc func(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
 
-func (f WelcomeFunc) Locate(userID interface{}, username, defaultURL string) (string, error) {
-	return f(userID, username, defaultURL)
+func (f WelcomeFunc) Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
+	return f(ctx, userID, username, defaultURL)
 }
 
 // Renderer SSO 服务器
@@ -234,7 +234,7 @@ func (srv *Renderer) LoginOK(authCtx *services.AuthContext, w http.ResponseWrite
 	var urlStr string
 	if srv.welcomeLocator != nil {
 		var err error
-		urlStr, err = srv.welcomeLocator.Locate(authCtx.Request.UserID, authCtx.Request.Username, "")
+		urlStr, err = srv.welcomeLocator.Locate(authCtx.Ctx, authCtx.Request.UserID, authCtx.Request.Username, "")
 		if err != nil {
 			authCtx.Logger.Warn("获取 welcome 页地址失败", 
 				log.Any("userid", authCtx.Request.UserID),

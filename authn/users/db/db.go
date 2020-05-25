@@ -12,34 +12,26 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/authn/services"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/fx"
 )
 
-type PermissionQueryer interface {
-	Parents(groupID string) []string
-}
 
-type emptyPermissionQueryer struct{}
-
-func (emptyPermissionQueryer) Parents(groupID string) []string {
-	return nil
-}
-
-func Create(env *moo.Environment, users *usermodels.Users, permissionQueryer PermissionQueryer, logger log.Logger) (authn.UserManager, error) {
-	if permissionQueryer == nil {
-		permissionQueryer = &emptyPermissionQueryer{}
+func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
+	if authorizer == nil {
+		authorizer = authz.EmptyAuthorizer{}
 	}
 
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	um := &userManager{
 		logger:            logger,
-		signingMethod: authn.GetSigningMethod(signingMethod),
-		secretKey:     env.Config.StringWithDefault("users.signing.secret_key", ""),
+		signingMethod:     authn.GetSigningMethod(signingMethod),
+		secretKey:     	   env.Config.StringWithDefault("users.signing.secret_key", ""),
 		users:             users,
-		permissionQueryer: permissionQueryer,
+		authorizer: 	   authorizer,
 		userByName:        cache.New(5*time.Minute, 10*time.Minute),
 		userByID:          cache.New(5*time.Minute, 10*time.Minute),
 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
