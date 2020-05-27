@@ -25,13 +25,8 @@ require (
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v0.21.0 // indirect
 	github.com/runner-mei/GoBatis v1.1.10
-<<<<<<< HEAD
 	github.com/runner-mei/errors v0.0.0-20200618124538-b19100e7b20f
 	github.com/runner-mei/goutils v0.0.0-20200624084507-c61f96de9ab7
-=======
-	github.com/runner-mei/errors v0.0.0-20200428055959-3abd159d904f
-	github.com/runner-mei/goutils v0.0.0-20200525092936-ff6399e254c4
->>>>>>> 43ea57b... 修复 sql 初始化
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6

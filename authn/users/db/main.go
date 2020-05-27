@@ -40,8 +40,8 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 	if um.signingMethod == nil {
 		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")
 	}
-	um.users.logger = logger
-	um.users.loadUsers = um.loadUsers
+	um.userCache.logger = logger
+	um.userCache.loadUsers = um.loadUsers
 
 	if refresher, ok := authorizer.(Authorizer); ok {
 		refresh := func() {
@@ -73,22 +73,22 @@ type UserManager struct {
 	// permissionGroupCache  PermGroupCache
 	// permissionGroupTicker syncx.Tickable
 
-	users   UserCache
-	lastErr syncx.ErrorValue
+	userCache UserCache
+	lastErr   syncx.ErrorValue
 }
 
 func (um *UserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
 	if e := um.lastErr.Get(); e != nil {
 		return nil, e
 	}
-	return um.users.Users(ctx, opts...)
+	return um.userCache.Users(ctx, opts...)
 }
 
 func (um *UserManager) UserByName(ctx context.Context, username string, opts ...api.Option) (api.User, error) {
 	if e := um.lastErr.Get(); e != nil {
 		return nil, e
 	}
-	u, err := um.users.UserByName(ctx, username, opts...)
+	u, err := um.userCache.UserByName(ctx, username, opts...)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			for _, name := range um.InnerUsers {
@@ -109,7 +109,7 @@ func (um *UserManager) UserByID(ctx context.Context, userID int64, opts ...api.O
 	if e := um.lastErr.Get(); e != nil {
 		return nil, e
 	}
-	return um.users.UserByID(ctx, userID, opts...)
+	return um.userCache.UserByID(ctx, userID, opts...)
 }
 
 func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
