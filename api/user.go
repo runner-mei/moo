@@ -63,7 +63,7 @@ func UserIncludeDisabled() Option {
 
 // UserManager 用户管理
 type UserManager interface {
-	Users(ctx context.Context, opts ...Option) ([]User, error)
+	// Users(ctx context.Context, opts ...Option) ([]User, error)
 
 	UserByName(ctx context.Context, username string, opts ...Option) (User, error)
 	UserByID(ctx context.Context, userID int64, opts ...Option) (User, error)

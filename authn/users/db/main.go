@@ -30,9 +30,9 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	um := &UserManager{
-		logger:            logger,
-		userDao:           users,
-		authorizer:        authorizer,
+		logger:     logger,
+		Users:    users,
+		authorizer: authorizer,
 		signingMethod:     authn.GetSigningMethod(signingMethod),
 		secretKey:         env.Config.StringWithDefault("users.signing.secret_key", ""),
 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
@@ -51,9 +51,9 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 		um.authorizeTicker.Init(5*time.Minute, refresh)
 	}
 
-	time.AfterFunc(1*time.Minute, func() {
-		um.Users(context.Background())
-	})
+	// time.AfterFunc(1*time.Minute, func() {
+	// 	um.Users(context.Background())
+	// })
 	return um, nil
 }
 
@@ -61,7 +61,7 @@ type UserManager struct {
 	InnerUsers []string
 
 	logger          log.Logger
-	userDao         *usermodels.Users
+	Users         *usermodels.Users
 	authorizer      authz.Authorizer
 	authorizeTicker syncx.Tickable
 
@@ -69,20 +69,16 @@ type UserManager struct {
 	secretKey         string
 	lockedTimeExpires time.Duration
 
-	// permissionGroups      usermodels.PermissionGroups
-	// permissionGroupCache  PermGroupCache
-	// permissionGroupTicker syncx.Tickable
-
-	userCache UserCache
-	lastErr   syncx.ErrorValue
+	userCache      UserCache
+	lastErr        syncx.ErrorValue
 }
 
-func (um *UserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
-	if e := um.lastErr.Get(); e != nil {
-		return nil, e
-	}
-	return um.userCache.Users(ctx, opts...)
-}
+// func (um *UserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
+// 	if e := um.lastErr.Get(); e != nil {
+// 		return nil, e
+// 	}
+// 	return um.userCache.Users(ctx, opts...)
+// }
 
 func (um *UserManager) UserByName(ctx context.Context, username string, opts ...api.Option) (api.User, error) {
 	if e := um.lastErr.Get(); e != nil {
@@ -113,12 +109,12 @@ func (um *UserManager) UserByID(ctx context.Context, userID int64, opts ...api.O
 }
 
 func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
-	roleList, err := um.userDao.GetRoles(context.Background(), "", 0, 0)
+	roleList, err := um.Users.GetRoles(context.Background(), "", 0, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "read roles fail")
 	}
 
-	next, closer := um.userDao.UserDao.GetUsers(ctx, "", sql.NullBool{Valid: true, Bool: true}, sql.NullBool{}, sql.NullString{}, 0, 0)
+	next, closer := um.Users.UserDao.GetUsers(ctx, "", sql.NullBool{Valid: true, Bool: true}, sql.NullBool{}, sql.NullString{}, 0, 0)
 	defer util.CloseWith(closer)
 
 	var allList = make([]api.User, 0, 64)
@@ -138,7 +134,7 @@ func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
 		allList = append(allList, u)
 	}
 
-	urnext, urcloser := um.userDao.UserDao.GetUserAndRoleList(context.Background())
+	urnext, urcloser := um.Users.UserDao.GetUserAndRoleList(context.Background())
 	defer util.CloseWith(urcloser)
 	for {
 		r := usermodels.UserAndRole{}
@@ -210,7 +206,7 @@ func (um *UserManager) loadUser(ctx context.Context, u *user) (err error) {
 	// }
 
 	// if u.ID() > 0 {
-	// 	u.groups, err = um.userDao.GetGroupIDsByUserID(ctx, u.ID())
+	// 	u.groups, err = um.Users.GetGroupIDsByUserID(ctx, u.ID())
 	// 	if err != nil {
 	// 		return errors.Wrap(err, "query user and usergroup with user is "+u.Name()+" fail")
 	// 	}
@@ -220,7 +216,7 @@ func (um *UserManager) loadUser(ctx context.Context, u *user) (err error) {
 
 func (um *UserManager) loadRolesForUser(ctx context.Context, u *user) (err error) {
 	if len(u.roles) == 0 {
-		u.roles, err = um.userDao.UserDao.GetRolesByUserID(ctx, u.ID())
+		u.roles, err = um.Users.UserDao.GetRolesByUserID(ctx, u.ID())
 		if err != nil {
 			return errors.Wrap(err, "query permissions and roles with user is "+u.Name()+" fail")
 		}

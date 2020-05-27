@@ -49,7 +49,7 @@ func (um *UserManager) Create(ctx context.Context, name, nickname, source, passw
 		Source:     source,
 		Attributes: fields,
 	}
-	id, err := um.userDao.CreateUserWithRoleNames(ctx, user, roles)
+	id, err := um.Users.CreateUserWithRoleNames(ctx, user, roles)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.Us
 		um: 			    um,
 		user:              &usermodels.User{},
 	}
-	err := um.userDao.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
+	err := um.Users.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -69,11 +69,11 @@ func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.Us
 }
 
 func (um *UserManager) Unlock(ctx *services.AuthContext) error {
-	return um.userDao.UserDao.UnlockUserByUsername(ctx.Ctx, ctx.Request.Username)
+	return um.Users.UserDao.UnlockUserByUsername(ctx.Ctx, ctx.Request.Username)
 }
 
 func (um *UserManager) Lock(ctx *services.AuthContext) error {
-	return um.userDao.UserDao.LockUserByUsername(ctx.Ctx, ctx.Request.Username)
+	return um.Users.UserDao.LockUserByUsername(ctx.Ctx, ctx.Request.Username)
 }
 
 var _ services.User = &userInfo{}
