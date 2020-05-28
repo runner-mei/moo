@@ -1,3 +1,5 @@
+// +build all_users
+
 package dbusers
 
 import (
@@ -110,17 +112,17 @@ func (cache *UserCache) load(checkCached bool) (*userEntries, error) {
 	return entries, nil
 }
 
-func (cache *UserCache) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
-	entries, err := cache.read()
-	if err != nil {
-		return nil, err
-	}
-	var options = api.InternalApply(opts...)
-	if options.IncludeDisabled {
-		return entries.allUsers, nil
-	}
-	return entries.enableUsers, nil
-}
+// func (cache *UserCache) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
+// 	entries, err := cache.read()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	var options = api.InternalApply(opts...)
+// 	if options.IncludeDisabled {
+// 		return entries.allUsers, nil
+// 	}
+// 	return entries.enableUsers, nil
+// }
 
 func (cache *UserCache) UserByName(ctx context.Context, username string, opts ...api.Option) (api.User, error) {
 	entries, err := cache.read()

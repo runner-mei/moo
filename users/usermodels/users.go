@@ -72,8 +72,25 @@ func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit in
 		userList = append(userList, u)
 	}
 
-
 	return userList, nil
+}
+
+func (c *Users) GetUserByID(ctx context.Context, userid int64) (*User, error) {
+	var user User
+	err := c.UserDao.GetUserByID(ctx, userid)(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
+	var user User
+	err := c.UserDao.GetUserByName(ctx, name)(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 
@@ -99,6 +116,16 @@ func (c *Users) GetRoles(ctx context.Context, name string, offset, limit int64) 
 	return roles, nil
 }
 
+func (c *Users) GetRoleByID(ctx context.Context, roleid int64) (*Role, error) {
+	var role Role
+	err := c.UserDao.GetRoleByID(ctx, roleid)(&role)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+
 func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	var role Role
 	err := c.UserDao.GetRoleByName(ctx, name)(&role)
@@ -108,14 +135,6 @@ func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	return &role, nil
 }
 
-func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
-	var user User
-	err := c.UserDao.GetUserByName(ctx, name)(&user)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
 
 func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles []string) (int64, error) {
 	var roleIDs []int64

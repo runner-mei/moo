@@ -38,10 +38,17 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
 	}
 	if um.signingMethod == nil {
-		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")
-	}
-	um.userCache.logger = logger
-	um.userCache.loadUsers = um.loadUsers
+		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
+	} 
+	// um.userCache.logger = logger
+	// um.userCache.loadUsers = um.loadUsers
+
+
+	um.userCache.defaultExpiration = um.lockedTimeExpires
+	um.userCache.items           =  map[int64]userCacheItem{}
+	um.userCache.findByName = users.GetUserByName
+	um.userCache.findByID   = users.GetUserByID
+	um.userCache.load = um.loadUser2
 
 	if refresher, ok := authorizer.(Authorizer); ok {
 		refresh := func() {
@@ -176,6 +183,13 @@ func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
 	}
 
 	return allList, nil
+}
+
+func (um *UserManager) loadUser2(ctx context.Context, u *usermodels.User) (api.User, error) {
+	var au user
+	au.um = um
+	au.u = *u
+	return &au, um.loadUser(ctx, &au)
 }
 
 func (um *UserManager) loadUser(ctx context.Context, u *user) (err error) {
