@@ -51,6 +51,25 @@ type OnlineUsers interface {
 	List(ctx context.Context, interval string) ([]OnlineUser, error)
 }
 
+type OnlineUserDao interface {
+	// @default SELECT * FROM <tablename /> <if test="isNotEmpty(interval)">WHERE (updated_at + #{interval}::INTERVAL) &gt; now() </if>
+	List(ctx context.Context, interval string) ([]OnlineUser, error)
+	Create(ctx context.Context, userID int64, address, uuid string) (int64, error)
+
+	// @type insert
+	// @default INSERT INTO <tablename type="OnlineUser" />(user_id, address, uuid, created_at, updated_at)
+	//          VALUES(#{userID}, #{address}, #{uuid}, now(), now())  ON CONFLICT (user_id, address)
+	//          DO UPDATE SET updated = now()
+	CreateOrTouch(ctx context.Context, userID int64, address, uuid string) (int64, error)
+
+	// @type update
+	// @default UPDATE <tablename type="OnlineUser" /> SET updated_at = now() WHERE user_id = #{userID} AND address = #{address}
+	Touch(ctx context.Context, userID int64, address, uuid string) (int64, error)
+
+	// @default DELETE FROM <tablename type="OnlineUser" /> WHERE user_id = #{userID} AND address = #{address}
+	Delete(ctx context.Context, userID int64, address string) (int64, error)
+}
+
 type User struct {
 	TableName   struct{}               `json:"-" xorm:"moo_users"`
 	ID          int64                  `json:"id" xorm:"id pk autoincr"`

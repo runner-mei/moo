@@ -1,6 +1,6 @@
 // +build !all_users
 
-package dbusers
+package users
 
 import (
 	"context"

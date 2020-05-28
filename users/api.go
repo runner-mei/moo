@@ -30,6 +30,7 @@ const (
 )
 
 type ReadCurrentUserFunc = api.ReadCurrentUserFunc
-type UserManager = api.UserManager
+
+// type UserManager = api.UserManager
 type User = api.User
 type Option = api.Option
