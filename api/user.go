@@ -8,6 +8,11 @@ import (
 	"github.com/runner-mei/errors"
 )
 
+// 常用的错误
+var (
+	ErrUnauthorized = errors.ErrUnauthorized
+)
+
 const (
 	// UserAdmin admin 用户名
 	UserAdmin = "admin"

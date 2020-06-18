@@ -36,7 +36,7 @@ type userManager struct {
 }
 
 func (um *userManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
-	options := internalApply(opts)
+	options := InternalApply(opts)
 	if options.IncludeDisabled {
 		if o, found := um.userByName.Get("____all____"); found && o != nil {
 			if ugArray, ok := o.([]api.User); ok && ugArray != nil {
@@ -113,7 +113,7 @@ func (um *userManager) ensureRoles(ctx context.Context) {
 }
 
 func (um *userManager) UserByName(ctx context.Context, userName string, opts ...api.Option) (api.User, error) {
-	options := internalApply(opts)
+	options := InternalApply(opts)
 
 	if o, found := um.userByName.Get(userName); found && o != nil {
 		if u, ok := o.(api.User); ok && u != nil {
@@ -175,7 +175,7 @@ func (um *userManager) UserByName(ctx context.Context, userName string, opts ...
 }
 
 func (um *userManager) UserByID(ctx context.Context, userID int64, opts ...api.Option) (api.User, error) {
-	options := internalApply(opts)
+	options := InternalApply(opts)
 
 	if o, found := um.userByID.Get(strconv.FormatInt(userID, 10)); found && o != nil {
 		if u, ok := o.(api.User); ok && u != nil {
@@ -458,7 +458,7 @@ type InternalOptions struct {
 	IncludeDisabled bool
 }
 
-func internalApply(opts []api.Option) InternalOptions {
+func InternalApply(opts []api.Option) InternalOptions {
 	var o InternalOptions
 	for _, opt := range opts {
 		if _, ok := opt.(interface {
