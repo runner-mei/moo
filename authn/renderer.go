@@ -6,6 +6,7 @@ import (
 	"hash"
 	"html/template"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
+	bgo "github.com/digitalcrab/browscap_go"
 	"github.com/mojocn/base64Captcha"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/urlutil"
@@ -43,9 +45,10 @@ type Renderer struct {
 	config         Config
 	sessonHashFunc func() hash.Hash
 	data           map[string]interface{}
+	hasAutoLoad    bool
 	templates      templates
 	redirect       func(c context.Context, w http.ResponseWriter, r *http.Request, url string) error
-	AssetsHandler  http.Handler
+	assetsHandler  http.Handler
 	captchaStore   base64Captcha.Store
 	welcomeLocator WelcomeLocator
 
@@ -64,6 +67,10 @@ func (srv *Renderer) readContextPath(r *http.Request) string {
 		return srv.config.ContextPath
 	}
 	return pa[:idx]
+}
+
+func (srv *Renderer) StaticDir(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	srv.assetsHandler.ServeHTTP(w, r)
 }
 
 func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseWriter, r *http.Request, rawerr error) error {
@@ -134,7 +141,8 @@ func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseW
 		authCtx.Logger.Warn("登录失败", log.String("username", authCtx.Request.Username),
 			log.String("address", authCtx.Request.Address), log.Error(rawerr))
 	}
-	return srv.templates.Render(w, r, "login.html", data)
+
+	return srv.renderLogin(authCtx.Ctx, w, r, data)
 }
 
 func (srv *Renderer) Relogin(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -148,14 +156,32 @@ func (srv *Renderer) Relogin(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	queryParams := r.URL.Query()
-	return srv.templates.Render(w, r, "login.html", map[string]interface{}{
+	data := map[string]interface{}{
 		"global":           srv.data,
 		"context_path":     srv.readContextPath(r),
 		"service":          queryParams.Get("service"),
 		"login_fail_count": 0,
 		"username":         "",
 		"errorMessage":     "",
-	})
+	}
+	return srv.renderLogin(ctx, w, r, data)
+}
+
+func (srv *Renderer) renderLogin(ctx context.Context, w http.ResponseWriter, r *http.Request, data map[string]interface{}) error {
+	browser, _ := bgo.GetBrowser(r.UserAgent())
+	if browser != nil && browser.Browser == "IE" {
+		data["browser"] = browser.Browser
+	}
+	data["randomString"] = rand.Int()
+	data["isDebug"] = isDebug
+
+	if srv.hasAutoLoad {
+		autoload, err := srv.templates.RenderText("autoload.html", data)
+		if err == nil {
+			data["autoload"] = autoload
+		}
+	}
+	return srv.templates.Render(w, r, "login.html", data)
 }
 
 func (srv *Renderer) isRootPath(pa string) bool {
@@ -236,7 +262,7 @@ func (srv *Renderer) LoginOK(authCtx *services.AuthContext, w http.ResponseWrite
 		var err error
 		urlStr, err = srv.welcomeLocator.Locate(authCtx.Ctx, authCtx.Request.UserID, authCtx.Request.Username, "")
 		if err != nil {
-			authCtx.Logger.Warn("获取 welcome 页地址失败", 
+			authCtx.Logger.Warn("获取 welcome 页地址失败",
 				log.Any("userid", authCtx.Request.UserID),
 				log.String("username", authCtx.Request.Username),
 				log.String("address", authCtx.Request.Address))
@@ -326,6 +352,19 @@ type templates struct {
 	templateBox   *rice.Box
 }
 
+func (r *templates) RenderText(name string, data interface{}) (string, error) {
+	t, err := r.loadTemplate(name)
+	if err != nil {
+		return "", err
+	}
+	var sb strings.Builder
+	err = t.Execute(&sb, data)
+	if err != nil {
+		return "", err
+	}
+	return sb.String(), nil
+}
+
 func (r *templates) Render(w http.ResponseWriter, req *http.Request, name string, data interface{}) error {
 	var t *template.Template
 	var err error
@@ -408,7 +447,7 @@ func (r *templates) loadTemplate(name string) (*template.Template, error) {
 		}
 		if len(bs) == 0 {
 			r.srv.config.Logger.Error("failed to load template(" + name + ") from rice box, file is empty.")
-			return nil, err
+			return nil, errors.New("template(" + name + ") is empty")
 		}
 
 		t, err = template.New(name).Funcs(funcs).Parse(string(bs))
@@ -518,8 +557,17 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 		templateBox:   templateBox,
 	}
 
+	if config.AutoLoad != "" {
+		t, err := template.New("autoload").Funcs(funcs).Parse(config.AutoLoad)
+		if err != nil {
+			return nil, errors.Wrap(err, "解析 autoload 失败")
+		}
+		srv.templates.templates["autoload.html"] = t
+		srv.hasAutoLoad = true
+	}
+
 	fs := http.FileServer(templateBox.HTTPBox())
-	srv.AssetsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv.assetsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		upath := r.URL.Path
 		if strings.HasPrefix(upath, "/") {
 			upath = strings.TrimPrefix(upath, "/")
@@ -531,7 +579,6 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 				return
 			}
 		}
-
 		fs.ServeHTTP(w, r)
 	})
 

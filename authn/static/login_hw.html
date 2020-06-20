@@ -40,11 +40,14 @@
 			.customer_name
 			{font-size:18px !important;color: #ffffff !important;margin-bottom:10px !important;}
 		</style>
+		<script src="js/jquery-2.1.1.js" type="text/javascript" />
 	</head>
 	<body>
 		<div class="login-wrap">
 			<div class="login">
-
+				{{- if .autoLoad}}
+					{{html .autoLoad}}
+				{{- end}}
 				<label class="customer_name">{{.global.client_title_text}}</label>
 				<label>{{.global.header_title_text}}</label>
 				<div class="login-input clearfix">

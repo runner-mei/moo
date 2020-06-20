@@ -1,10 +1,13 @@
 package authn
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"hash"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/mojocn/base64Captcha"
@@ -31,6 +34,7 @@ type Config struct {
 	LogoPath        string
 	TampletePaths   []string
 	ShowForce       bool
+	AutoLoad        string
 
 	SessionKey       string
 	SessionPath      string
@@ -142,5 +146,20 @@ func readConfig(env *moo.Environment) *Config {
 		config.DefaultWelcomeURL = urlutil.JoinURLPath(env.DaemonUrlPath, "home")
 	}
 
+	filename := env.Fs.FromConfig("autoload.html")
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+		filename = env.Fs.FromDataConfig("autoload.html")
+		bs, err = ioutil.ReadFile(filename)
+		if err != nil && !os.IsNotExist(err) {
+			panic(err)
+		}
+	}
+	if bs := bytes.TrimSpace(bs); len(bs) > 0 {
+		config.AutoLoad = string(bs)
+	}
 	return config
 }

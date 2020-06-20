@@ -85,7 +85,7 @@ func (mgr *LoginManager) Close() error {
 }
 
 func (mgr *LoginManager) StaticDir(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	mgr.Renderer.AssetsHandler.ServeHTTP(w, r)
+	mgr.Renderer.StaticDir(ctx, w, r)
 }
 
 func (mgr *LoginManager) LoginGet(ctx context.Context, w http.ResponseWriter, r *http.Request) {
