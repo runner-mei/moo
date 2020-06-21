@@ -112,7 +112,10 @@ func (mgr *LoginManager) LoginGet(ctx context.Context, w http.ResponseWriter, r 
 			return
 		}
 
-		mgr.Renderer.LoginOK(authCtx, w, r)
+		err = mgr.Renderer.LoginOK(authCtx, w, r)
+		if err != nil {
+			mgr.logger.Warn("生成登录页面出错", log.Error(err))
+		}
 		return
 	}
 
@@ -122,7 +125,10 @@ func (mgr *LoginManager) LoginGet(ctx context.Context, w http.ResponseWriter, r 
 		return
 	}
 
-	mgr.Renderer.Relogin(ctx, w, r)
+	err = mgr.Renderer.Relogin(ctx, w, r)
+	if err != nil {
+		mgr.logger.Warn("生成登录页面出错", log.Error(err))
+	}
 }
 
 type LoginType int
@@ -175,10 +181,16 @@ func (mgr *LoginManager) LoginWith(ctx context.Context, w http.ResponseWriter, r
 
 	if loginType == tokenNone {
 		returnError = func(authCtx *services.AuthContext, w http.ResponseWriter, r *http.Request, err error) {
-			mgr.Renderer.ReturnError(authCtx, w, r, err)
+			e := mgr.Renderer.ReturnError(authCtx, w, r, err)
+			if e != nil {
+				mgr.logger.Warn("生成登录页面出错", log.Error(e))
+			}
 		}
 		returnOK = func(authCtx *services.AuthContext, w http.ResponseWriter, r *http.Request, value interface{}) {
-			mgr.Renderer.LoginOK(authCtx, w, r)
+			err := mgr.Renderer.LoginOK(authCtx, w, r)
+			if err != nil {
+				mgr.logger.Warn("生成登录页面出错", log.Error(err))
+			}
 		}
 	}
 
@@ -370,10 +382,16 @@ func (mgr *LoginManager) Logout(ctx context.Context, w http.ResponseWriter, r *h
 		returnError = func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 			log.LoggerOrEmptyFromContext(ctx).Warn("登出失败", log.Error(err))
 
-			mgr.Renderer.Logout(ctx, w, r)
+			e := mgr.Renderer.Logout(ctx, w, r)
+			if e != nil {
+				mgr.logger.Warn("生成登出页面出错", log.Error(e))
+			}
 		}
 		returnOK = func(ctx context.Context, w http.ResponseWriter, r *http.Request, value interface{}) {
-			mgr.Renderer.Logout(ctx, w, r)
+			err := mgr.Renderer.Logout(ctx, w, r)
+			if err != nil {
+				mgr.logger.Warn("生成登出页面出错", log.Error(err))
+			}
 		}
 	}
 
