@@ -6,6 +6,7 @@ import (
 	"hash"
 	"html/template"
 	"io/ioutil"
+	stdlog "log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -169,8 +170,10 @@ func (srv *Renderer) Relogin(ctx context.Context, w http.ResponseWriter, r *http
 
 func (srv *Renderer) renderLogin(ctx context.Context, w http.ResponseWriter, r *http.Request, data map[string]interface{}) error {
 	browser, _ := bgo.GetBrowser(r.UserAgent())
-	if browser != nil && browser.Browser == "IE" {
+	if browser != nil {
 		data["browser"] = browser.Browser
+	} else {
+		stdlog.Println("判断浏览器版本失败: ", r.UserAgent())
 	}
 	data["randomString"] = rand.Int()
 	data["isDebug"] = isDebug
@@ -179,6 +182,8 @@ func (srv *Renderer) renderLogin(ctx context.Context, w http.ResponseWriter, r *
 		autoload, err := srv.templates.RenderText("autoload.html", data)
 		if err == nil {
 			data["autoload"] = autoload
+		} else {
+			stdlog.Println("生成 autoload 失败", err)
 		}
 	}
 	return srv.templates.Render(w, r, "login.html", data)
@@ -564,6 +569,10 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 		}
 		srv.templates.templates["autoload.html"] = t
 		srv.hasAutoLoad = true
+
+		stdlog.Println("登录页面载入 autoload.html")
+	} else {
+		stdlog.Println("登录页面没有载入 autoload.html")
 	}
 
 	fs := http.FileServer(templateBox.HTTPBox())

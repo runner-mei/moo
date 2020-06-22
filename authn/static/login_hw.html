@@ -46,7 +46,9 @@
 		<div class="login-wrap">
 			<div class="login">
 				{{- if .autoLoad}}
-					{{html .autoLoad}}
+					{{- html .autoLoad}}
+				{{- else}}
+				   <!-- noautoload -->
 				{{- end}}
 				<label class="customer_name">{{.global.client_title_text}}</label>
 				<label>{{.global.header_title_text}}</label>
