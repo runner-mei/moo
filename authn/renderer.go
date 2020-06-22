@@ -180,10 +180,13 @@ func (srv *Renderer) renderLogin(ctx context.Context, w http.ResponseWriter, r *
 
 	if srv.hasAutoLoad {
 		autoload, err := srv.templates.RenderText("autoload.html", data)
-		if err == nil {
-			data["autoload"] = autoload
-		} else {
+		if err != nil {
 			stdlog.Println("生成 autoload 失败", err)
+		} else if autoload == "" {
+			stdlog.Println("生成 autoload 失败: 内容为空， browser =", data["browser"])
+		} else {
+			data["autoload"] = autoload
+			stdlog.Println("生成 autoload 成功: browser =", data["browser"])
 		}
 	}
 	return srv.templates.Render(w, r, "login.html", data)
