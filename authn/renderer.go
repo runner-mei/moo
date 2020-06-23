@@ -31,6 +31,35 @@ var (
 	isDebug = os.Getenv("IsSSODebug") == "true"
 )
 
+type ctxRedirectFuncKey struct{}
+
+func (ctxRedirectFuncKey) String() string {
+	return "ctxRedirectFuncKey"
+}
+
+var ctxRedirectKey = ctxRedirectFuncKey{}
+
+func ContextWithRedirectFunc(c context.Context, redirect func(context.Context, http.ResponseWriter, *http.Request, string) error) context.Context {
+	return context.WithValue(c, ctxRedirectKey, redirect)
+}
+
+func RedirectFuncFromContext(c context.Context) func(context.Context, http.ResponseWriter, *http.Request, string) error {
+	if c == nil {
+		return nil
+	}
+
+	o := c.Value(ctxRedirectKey)
+	if o == nil {
+		return nil
+	}
+
+	f, ok := o.(func(context.Context, http.ResponseWriter, *http.Request, string) error)
+	if !ok {
+		return nil
+	}
+	return f
+}
+
 type WelcomeLocator interface {
 	Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
 }
@@ -298,7 +327,11 @@ func (srv *Renderer) LoginOK(authCtx *services.AuthContext, w http.ResponseWrite
 	authCtx.Logger.Info("登录成功", log.String("username", authCtx.Request.Username),
 		log.String("address", authCtx.Request.Address), log.String("redirect", urlStr))
 
-	return srv.redirect(authCtx.Ctx, w, r, urlStr)
+	redirect := RedirectFuncFromContext(authCtx.Ctx)
+	if redirect == nil {
+		redirect = srv.redirect
+	}
+	return redirect(authCtx.Ctx, w, r, urlStr)
 }
 
 func (srv *Renderer) Logout(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -349,7 +382,12 @@ func (srv *Renderer) LogoutWithRedirect(ctx context.Context, w http.ResponseWrit
 	}
 
 	log.LoggerOrEmptyFromContext(ctx).Info("登出成功", log.String("redirect", redirectURL))
-	return srv.redirect(ctx, w, r, redirectURL)
+
+	redirect := RedirectFuncFromContext(ctx)
+	if redirect == nil {
+		redirect = srv.redirect
+	}
+	return redirect(ctx, w, r, redirectURL)
 }
 
 type templates struct {
