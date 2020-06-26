@@ -151,7 +151,7 @@ func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 
 	_, err := srv.userManager.Create(context.Background(), "adm", "adm", "", "123",
 		map[string]interface{}{
-			"welcome_url":        "url,`+hsrv.URL+`",
+			"welcome_url":        "url,"+srv.URL,
 			"white_address_list": []string{"192.168.1.2", "192.168.1.9"},
 		}, nil)
 	if err != nil {

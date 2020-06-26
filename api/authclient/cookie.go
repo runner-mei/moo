@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"hash"
 	"io"
 	"net/http"
@@ -157,7 +156,6 @@ func GetValuesFromString(value string, verify func(data, sig string) bool) (url.
 func GetValuesFromCookie(req *http.Request, sessionKey string, verify func(data, sig string) bool) (url.Values, error) {
 	cookie, err := req.Cookie(sessionKey)
 	if err != nil {
-		fmt.Println("====================", sessionKey, err)
 		if err == http.ErrNoCookie {
 			return nil, ErrCookieNotFound
 		}
@@ -171,7 +169,6 @@ func GetValues(req *http.Request, sessionKey string, h func() hash.Hash, secretK
 		if secretKey == nil {
 			return true
 		}
-		fmt.Println("==================== GetValues", string(secretKey))
 		return Verify(data, sig, h, secretKey)
 	})
 }

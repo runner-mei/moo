@@ -120,9 +120,6 @@ func LdapUserCheck(env *moo.Environment, logger log.Logger) AuthOption {
 			if err == nil {
 				roles := make([]string, 0, 4)
 				for _, ent := range searchResult.Entries {
-					//fmt.Println("==============================")
-					//fmt.Println(ent.DN)
-
 					for _, attr := range ent.Attributes {
 						// fmt.Println(attr.Name, attr.Values)
 						if len(attr.Values) > 0 {
