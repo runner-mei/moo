@@ -24,11 +24,11 @@ require (
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v0.21.0 // indirect
 	github.com/runner-mei/GoBatis v1.1.10
-	github.com/runner-mei/errors v0.0.0-20200428055959-3abd159d904f
-	github.com/runner-mei/goutils v0.0.0-20200430115545-6f9a404daa90
+	github.com/runner-mei/errors v0.0.0-20200618124538-b19100e7b20f
+	github.com/runner-mei/goutils v0.0.0-20200624084507-c61f96de9ab7
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
-	github.com/runner-mei/resty v0.0.0-20191102140647-fa73802f0b7f
+	github.com/runner-mei/resty v0.0.0-20200521093815-aee39a86ef0a
 	github.com/stretchr/testify v1.4.0
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
