@@ -8,11 +8,6 @@ import (
 	"github.com/runner-mei/errors"
 )
 
-// 常用的错误
-var (
-	ErrUnauthorized = errors.ErrUnauthorized
-)
-
 const (
 	// UserAdmin admin 用户名
 	UserAdmin = "admin"
@@ -38,7 +33,7 @@ const (
 
 // 常用的错误
 var (
-	ErrUnauthorized       = errors.NewError(http.StatusUnauthorized, "user is unauthorized")
+	ErrUnauthorized       = errors.ErrUnauthorized
 	ErrCacheInvalid       = errors.New("permission cache is invald")
 	ErrTagNotFound        = errors.New("permission tag is not found")
 	ErrPermissionNotFound = errors.New("permission is not found")
