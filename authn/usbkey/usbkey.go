@@ -42,12 +42,11 @@ func NewUSBKey(env *moo.Environment,
 
 func (c *UsbKey) validate(ctx context.Context, w http.ResponseWriter, r *http.Request) (string, error) {
 	urlStr := c.usbCheckURL
-	queryParams := r.URL.Query()
-	if len(queryParams) > 0 {
+	if len(r.URL.RawQuery) > 0 {
 		if strings.Contains(urlStr, "?") {
-			urlStr = urlStr + "&" + queryParams.Encode()
+			urlStr = urlStr + "&" + r.URL.RawQuery
 		} else {
-			urlStr = urlStr + "?" + queryParams.Encode()
+			urlStr = urlStr + "?" + r.URL.RawQuery
 		}
 	}
 
@@ -119,13 +118,37 @@ func (c *UsbKey) validate(ctx context.Context, w http.ResponseWriter, r *http.Re
 }
 
 func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	isLogin := queryParams.Get("login") == "true"
+
+	renderError := func(statusCode int, err string) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		io.WriteString(w, "{\"success\": false, \"message\": \"")
+		io.WriteString(w, strings.Replace(err, "\"", "'", -1))
+		io.WriteString(w, "\"}")
+	}
+	renderOK := func(statusCode int, to string) {
+		w.WriteHeader(statusCode)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		io.WriteString(w, "{\"success\": true, \"message\": \"登录成功\", \"redirect\": \"")
+		io.WriteString(w, strings.Replace(to, "\"", "'", -1))
+		io.WriteString(w, "\"}")
+	}
+
+	if isLogin {
+		renderError = func(statusCode int, err string) {
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			io.WriteString(w, err)
+		}
+	}
+
 	username, err := c.validate(ctx, w, r)
 	if err != nil {
 		c.logger.Info("验证失败", log.Error(err))
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		io.WriteString(w, err.Error())
+		renderError(http.StatusUnauthorized, "验证失败: "+err.Error())
 		return
 	}
 
@@ -133,18 +156,10 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		c.logger.Info("读用户信息失败", log.Error(err))
 		if errors.IsNotFound(err) {
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			io.WriteString(w, "{\"success\": false, \"message\": \"用户信息没找到，请添加这个用户： ")
-			io.WriteString(w, strings.Replace(username, "\"", "'", -1))
-			io.WriteString(w, "\"}")
+			renderError(http.StatusUnauthorized, "用户信息没找到，请添加这个用户： "+err.Error())
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		io.WriteString(w, "{\"success\": false, \"message\": \"读用户信息失败： ")
-		io.WriteString(w, strings.Replace(err.Error(), "\"", "'", -1))
-		io.WriteString(w, "\"}")
+		renderError(http.StatusUnauthorized, "读用户信息失败： "+err.Error())
 		return
 	}
 
@@ -154,12 +169,7 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	if err != nil && errors.IsNotFound(err) {
 		c.logger.Info("创建在线用户信息失败", log.Error(err))
 
-		w.WriteHeader(http.StatusOK)
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		io.WriteString(w, "{\"success\": false, \"message\": \"创建在线用户信息失败： ")
-		io.WriteString(w, strings.Replace(err.Error(), "\"", "'", -1))
-		io.WriteString(w, "\"}")
+		renderError(http.StatusUnauthorized, "创建在线用户信息失败： "+err.Error())
 		return
 	}
 
@@ -172,14 +182,7 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		}
 	}
 	authCtx := &services.AuthContext{
-		Ctx: authn.ContextWithRedirectFunc(ctx, func(c context.Context, w http.ResponseWriter, r *http.Request, to string) error {
-			w.WriteHeader(http.StatusOK)
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			io.WriteString(w, "{\"success\": true, \"message\": \"登录成功\", \"redirect\": \"")
-			io.WriteString(w, strings.Replace(to, "\"", "'", -1))
-			io.WriteString(w, "\"}")
-			return nil
-		}),
+		Ctx:    ctx,
 		Logger: c.logger,
 		Request: services.LoginRequest{
 			UserID:   user.ID,
@@ -191,6 +194,13 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 			SessionID: sessionID,
 			IsNewUser: false,
 		},
+	}
+
+	if !isLogin {
+		authCtx.Ctx = authn.ContextWithRedirectFunc(ctx, func(c context.Context, w http.ResponseWriter, r *http.Request, to string) error {
+			renderOK(http.StatusOK, to)
+			return nil
+		})
 	}
 	c.renderer.LoginOK(authCtx, w, r)
 }
