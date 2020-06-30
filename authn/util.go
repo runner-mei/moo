@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/tls"
 	"database/sql/driver"
 	"encoding/binary"
 	"encoding/hex"
@@ -17,6 +18,15 @@ import (
 	"sync/atomic"
 	"time"
 )
+
+var InsecureHttpTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	},
+}
+
+var InsecureHttpClent = &http.Client{Transport: InsecureHttpTransport}
 
 const (
 	defaultMemory = 32 << 20 // 32 MB

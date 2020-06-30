@@ -69,7 +69,7 @@ func (c *UsbKey) validate(ctx context.Context, w http.ResponseWriter, r *http.Re
 		}
 	}
 	if c.client == nil {
-		c.client = http.DefaultClient
+		c.client = authn.InsecureHttpClent
 	}
 	response, err := c.client.Do(request)
 	if err != nil {
