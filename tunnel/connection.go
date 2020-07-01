@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"bufio"
+	"crypto/tls"
 	"io"
 	"io/ioutil"
 	"net"
@@ -84,6 +85,10 @@ func Listen(logger log.Logger, threads int, network, address, path string) (*Tun
 		network = "tcp"
 	}
 
+	if network != "tcp" && network != "tls" {
+		return nil, errors.New("netowrk is invalid")
+	}
+
 	srv := &TunnelListener{
 		logger: logger,
 		c:      make(chan net.Conn),
@@ -152,7 +157,15 @@ func (listener *TunnelListener) run(idx int) {
 }
 
 func (listener *TunnelListener) connect() error {
-	conn, err := net.Dial(listener.addr.network, listener.addr.address)
+	var conn net.Conn
+	var err error
+	if listener.addr.network == "tls" {
+		conn, err = tls.Dial("tcp", listener.addr.address, &tls.Config{
+			InsecureSkipVerify: true,
+		})
+	} else {
+		conn, err = net.Dial(listener.addr.network, listener.addr.address)
+	}
 	if err != nil {
 		return err
 	}

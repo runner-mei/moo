@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/runner-mei/log"
-	"github.com/runner-mei/moo/tunnel"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/tunnel"
 	"go.uber.org/fx"
 )
 
@@ -16,7 +16,7 @@ func init() {
 				uint32(env.Config.IntWithDefault("tunnel.max_threads", 10)),
 				env.Config.DurationWithDefault("tunnel.dail_timeout", 10),
 				nil)
-			if  err != nil {
+			if err != nil {
 				return nil, err
 			}
 
@@ -29,6 +29,13 @@ func init() {
 				},
 			})
 			return tunnelSrv, nil
+		})
+	})
+
+	moo.On(func() moo.Option {
+		return fx.Invoke(func(httpSrv *moo.HTTPServer, tunnelSrv *tunnel.TunnelServer) error {
+			httpSrv.FastRoute(false, "tunnel", tunnelSrv)
+			return nil
 		})
 	})
 }
