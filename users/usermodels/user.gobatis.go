@@ -14,6 +14,214 @@ import (
 
 func init() {
 	gobatis.Init(func(ctx *gobatis.InitContext) error {
+		{ //// OnlineUserDao.List
+			if _, exists := ctx.Statements["OnlineUserDao.List"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OnlineUser{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" <if test=\"isNotEmpty(interval)\">WHERE (updated_at + #{interval}::INTERVAL) &gt; now() </if>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OnlineUserDao.List",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OnlineUserDao.List"] = stmt
+			}
+		}
+		{ //// OnlineUserDao.Create
+			if _, exists := ctx.Statements["OnlineUserDao.Create"]; !exists {
+
+				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
+					reflect.TypeOf(&OnlineUser{}),
+					[]string{"userID", "address", "uuid"},
+					[]reflect.Type{
+						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf(new(string)).Elem(),
+						reflect.TypeOf(new(string)).Elem(),
+					}, false)
+				if err != nil {
+					return gobatis.ErrForGenerateStmt(err, "generate OnlineUserDao.Create error")
+				}
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OnlineUserDao.Create",
+					gobatis.StatementTypeInsert,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OnlineUserDao.Create"] = stmt
+			}
+		}
+		{ //// OnlineUserDao.CreateOrTouch
+			if _, exists := ctx.Statements["OnlineUserDao.CreateOrTouch"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("INSERT INTO ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OnlineUser{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("(user_id, address, uuid, created_at, updated_at)\r\n          VALUES(#{userID}, #{address}, #{uuid}, now(), now())  ON CONFLICT (user_id, address)\r\n          DO UPDATE SET updated = now()")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OnlineUserDao.CreateOrTouch",
+					gobatis.StatementTypeInsert,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OnlineUserDao.CreateOrTouch"] = stmt
+			}
+		}
+		{ //// OnlineUserDao.Touch
+			if _, exists := ctx.Statements["OnlineUserDao.Touch"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("UPDATE ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OnlineUser{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" SET updated_at = now() WHERE user_id = #{userID} AND address = #{address}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OnlineUserDao.Touch",
+					gobatis.StatementTypeUpdate,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OnlineUserDao.Touch"] = stmt
+			}
+		}
+		{ //// OnlineUserDao.Delete
+			if _, exists := ctx.Statements["OnlineUserDao.Delete"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("DELETE FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&OnlineUser{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE user_id = #{userID} AND address = #{address}")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "OnlineUserDao.Delete",
+					gobatis.StatementTypeDelete,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["OnlineUserDao.Delete"] = stmt
+			}
+		}
+		return nil
+	})
+}
+
+func NewOnlineUserDao(ref gobatis.SqlSession) OnlineUserDao {
+	if ref == nil {
+		panic(errors.New("param 'ref' is nil"))
+	}
+	if reference, ok := ref.(*gobatis.Reference); ok {
+		if reference.SqlSession == nil {
+			panic(errors.New("param 'ref.SqlSession' is nil"))
+		}
+	} else if valueReference, ok := ref.(gobatis.Reference); ok {
+		if valueReference.SqlSession == nil {
+			panic(errors.New("param 'ref.SqlSession' is nil"))
+		}
+	}
+	return &OnlineUserDaoImpl{session: ref}
+}
+
+type OnlineUserDaoImpl struct {
+	session gobatis.SqlSession
+}
+
+func (impl *OnlineUserDaoImpl) List(ctx context.Context, interval string) ([]OnlineUser, error) {
+	var instances []OnlineUser
+	results := impl.session.Select(ctx, "OnlineUserDao.List",
+		[]string{
+			"interval",
+		},
+		[]interface{}{
+			interval,
+		})
+	err := results.ScanSlice(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (impl *OnlineUserDaoImpl) Create(ctx context.Context, userID int64, address string, uuid string) (int64, error) {
+	return impl.session.Insert(ctx, "OnlineUserDao.Create",
+		[]string{
+			"userID",
+			"address",
+			"uuid",
+		},
+		[]interface{}{
+			userID,
+			address,
+			uuid,
+		})
+}
+
+func (impl *OnlineUserDaoImpl) CreateOrTouch(ctx context.Context, userID int64, address string, uuid string) (int64, error) {
+	return impl.session.Insert(ctx, "OnlineUserDao.CreateOrTouch",
+		[]string{
+			"userID",
+			"address",
+			"uuid",
+		},
+		[]interface{}{
+			userID,
+			address,
+			uuid,
+		})
+}
+
+func (impl *OnlineUserDaoImpl) Touch(ctx context.Context, userID int64, address string, uuid string) (int64, error) {
+	return impl.session.Update(ctx, "OnlineUserDao.Touch",
+		[]string{
+			"userID",
+			"address",
+			"uuid",
+		},
+		[]interface{}{
+			userID,
+			address,
+			uuid,
+		})
+}
+
+func (impl *OnlineUserDaoImpl) Delete(ctx context.Context, userID int64, address string) (int64, error) {
+	return impl.session.Delete(ctx, "OnlineUserDao.Delete",
+		[]string{
+			"userID",
+			"address",
+		},
+		[]interface{}{
+			userID,
+			address,
+		})
+}
+
+func init() {
+	gobatis.Init(func(ctx *gobatis.InitContext) error {
 		{ //// UserQueryer.RolenameExists
 			if _, exists := ctx.Statements["UserQueryer.RolenameExists"]; !exists {
 				var sb strings.Builder
@@ -296,24 +504,46 @@ func init() {
 		}
 		{ //// UserQueryer.GetUserCount
 			if _, exists := ctx.Statements["UserQueryer.GetUserCount"]; !exists {
-				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&User{}),
-					[]string{
-						"nameLike",
-						"canLogin",
-						"disabled",
-						"source",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(new(string)).Elem(),
-						reflect.TypeOf(&sql.NullBool{}).Elem(),
-						reflect.TypeOf(&sql.NullBool{}).Elem(),
-						reflect.TypeOf(&sql.NullString{}).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUserCount error")
+				var sb strings.Builder
+				sb.WriteString("SELECT COUNT(*) FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" AS ")
+				sb.WriteString("users")
+				sb.WriteString(" <where>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("ug")
+				sb.WriteString(" WHERE <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n             <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>\r\n             UNION ALL\r\n           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("D")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n         SELECT ID FROM ALLGROUPS))\r\n   </if>\r\n   <if test=\"!params.UsergroupRecursive\">\r\n      exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n    <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserCount",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
@@ -326,28 +556,46 @@ func init() {
 		}
 		{ //// UserQueryer.GetUsers
 			if _, exists := ctx.Statements["UserQueryer.GetUsers"]; !exists {
-				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&User{}),
-					[]string{
-						"nameLike",
-						"canLogin",
-						"disabled",
-						"source",
-						"offset",
-						"limit",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(new(string)).Elem(),
-						reflect.TypeOf(&sql.NullBool{}).Elem(),
-						reflect.TypeOf(&sql.NullBool{}).Elem(),
-						reflect.TypeOf(&sql.NullString{}).Elem(),
-						reflect.TypeOf(new(int64)).Elem(),
-						reflect.TypeOf(new(int64)).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate UserQueryer.GetUsers error")
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" AS ")
+				sb.WriteString("users")
+				sb.WriteString(" <where>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("ug")
+				sb.WriteString(" WHERE <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n             <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>\r\n             UNION ALL\r\n           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("D")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n         SELECT ID FROM ALLGROUPS))\r\n   </if>\r\n   <if test=\"!params.UsergroupRecursive\">\r\n      exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n    <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsers",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
@@ -702,23 +950,17 @@ func (impl *UserQueryerImpl) GetUserByNameOrNickname(ctx context.Context, name s
 	}
 }
 
-func (impl *UserQueryerImpl) GetUserCount(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString) (int64, error) {
+func (impl *UserQueryerImpl) GetUserCount(ctx context.Context, params *UserQueryParams) (int64, error) {
 	var instance int64
 	var nullable gobatis.Nullable
 	nullable.Value = &instance
 
 	err := impl.session.SelectOne(ctx, "UserQueryer.GetUserCount",
 		[]string{
-			"nameLike",
-			"canLogin",
-			"disabled",
-			"source",
+			"params",
 		},
 		[]interface{}{
-			nameLike,
-			canLogin,
-			disabled,
-			source,
+			params,
 		}).Scan(&nullable)
 	if err != nil {
 		return 0, err
@@ -730,21 +972,15 @@ func (impl *UserQueryerImpl) GetUserCount(ctx context.Context, nameLike string, 
 	return instance, nil
 }
 
-func (impl *UserQueryerImpl) GetUsers(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString, offset int64, limit int64) (func(*User) (bool, error), io.Closer) {
+func (impl *UserQueryerImpl) GetUsers(ctx context.Context, params *UserQueryParams, offset int64, limit int64) (func(*User) (bool, error), io.Closer) {
 	results := impl.session.Select(ctx, "UserQueryer.GetUsers",
 		[]string{
-			"nameLike",
-			"canLogin",
-			"disabled",
-			"source",
+			"params",
 			"offset",
 			"limit",
 		},
 		[]interface{}{
-			nameLike,
-			canLogin,
-			disabled,
-			source,
+			params,
 			offset,
 			limit,
 		})

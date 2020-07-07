@@ -31,10 +31,7 @@ func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger o
 }
 
 type UserQuery struct {
-	NameLike string
-	CanLogin sql.NullBool
-	Disabled sql.NullBool
-	Source   sql.NullString
+	UserQueryParams
 
 	HasOnlineInfo  bool
 	HasRoleInfo    bool
@@ -53,7 +50,7 @@ func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
 }
 
 func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit int64) ([]User, error) {
-	next, closer := c.UserDao.GetUsers(ctx, query.NameLike, query.CanLogin, query.Disabled, query.Source, offset, limit)
+	next, closer := c.UserDao.GetUsers(ctx, &query.UserQueryParams, offset, limit)
 	defer util.CloseWith(closer)
 
 	var userList []User
@@ -93,7 +90,6 @@ func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
 	return &user, nil
 }
 
-
 func (c *Users) GetRoles(ctx context.Context, name string, offset, limit int64) ([]Role, error) {
 	next, closer := c.UserDao.GetRoles(ctx, name, offset, limit)
 	defer util.CloseWith(closer)
@@ -125,7 +121,6 @@ func (c *Users) GetRoleByID(ctx context.Context, roleid int64) (*Role, error) {
 	return &role, nil
 }
 
-
 func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	var role Role
 	err := c.UserDao.GetRoleByName(ctx, name)(&role)
@@ -134,7 +129,6 @@ func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	}
 	return &role, nil
 }
-
 
 func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles []string) (int64, error) {
 	var roleIDs []int64

@@ -1,4 +1,4 @@
-//go:generate gobatis dao.go
+//go:generate gobatis user.go
 
 package usermodels
 
@@ -145,6 +145,7 @@ type UserProfile struct {
 type Role struct {
 	TableName   struct{}  `json:"-" xorm:"moo_roles"`
 	ID          int64     `json:"id" xorm:"id pk autoincr"`
+	Type        int64     `json:"type" xorm:"type"`
 	Name        string    `json:"name" xorm:"name unique notnull"`
 	Description string    `json:"description,omitempty" xorm:"description null"`
 	IsDefault   bool      `json:"is_default,omitempty" xorm:"is_default null"`
@@ -171,6 +172,16 @@ type UserAndRole struct {
 	TableName struct{} `json:"-" xorm:"moo_users_and_roles"`
 	UserID    int64    `json:"user_id" xorm:"user_id unique(user_role)"`
 	RoleID    int64    `json:"role_id" xorm:"role_id unique(user_role) notnull"`
+}
+
+type UserQueryParams struct {
+	NameLike string
+	CanLogin sql.NullBool
+	Enabled  sql.NullBool
+	Source   sql.NullString
+
+	UsergroupIDs       []int64
+	UsergroupRecursive bool
 }
 
 type UserQueryer interface {
@@ -213,11 +224,59 @@ type UserQueryer interface {
 	// @default SELECT * FROM <tablename type="User" /> WHERE lower(name) = lower(#{name}) OR lower(nickname) = lower(#{nickname})
 	GetUserByNameOrNickname(ctx context.Context, name, nickname string) func(*User) error
 
-	// @record_type User
-	GetUserCount(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString) (int64, error)
+	// @default SELECT COUNT(*) FROM <tablename type="User" as="users" /> <where>
+	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
+	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
+	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
+	//  <if test="len(params.UsergroupIDs) &gt; 0">
+	//   <if test="params.UsergroupRecursive">
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//       where u2g.user_id = users.id and u2g.group_id in (
+	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
+	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>
+	//             UNION ALL
+	//           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//         SELECT ID FROM ALLGROUPS))
+	//   </if>
+	//   <if test="!params.UsergroupRecursive">
+	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
+	//    <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>)
+	//   </if>
+	//  </if>
+	//  </where>
+	//  <pagination />
+	GetUserCount(ctx context.Context, params *UserQueryParams) (int64, error)
 
-	// @record_type User
-	GetUsers(ctx context.Context, nameLike string, canLogin sql.NullBool, disabled sql.NullBool, source sql.NullString, offset, limit int64) (func(*User) (bool, error), io.Closer)
+	// @default SELECT * FROM <tablename type="User" as="users" /> <where>
+	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
+	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
+	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
+	//  <if test="len(params.UsergroupIDs) &gt; 0">
+	//   <if test="params.UsergroupRecursive">
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//       where u2g.user_id = users.id and u2g.group_id in (
+	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
+	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>
+	//             UNION ALL
+	//           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//         SELECT ID FROM ALLGROUPS))
+	//   </if>
+	//   <if test="!params.UsergroupRecursive">
+	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
+	//    <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>)
+	//   </if>
+	//  </if>
+	//  </where>
+	//  <pagination />
+	GetUsers(ctx context.Context, params *UserQueryParams, offset, limit int64) (func(*User) (bool, error), io.Closer)
 
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
 	//  exists (select * from <tablename type="UserAndRole" /> as users_roles

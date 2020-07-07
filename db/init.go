@@ -48,11 +48,13 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 
 func GetTableNames() map[string]string {
 	return map[string]string{
-		"moo_operation_logs":  "moo_operation_logs",
-		"moo_online_users":    "moo_online_users",
-		"moo_users_and_roles": "moo_users_and_roles",
-		"moo_users":           "moo_users",
-		"moo_roles":           "moo_roles",
+		"moo_operation_logs":       "moo_operation_logs",
+		"moo_online_users":         "moo_online_users",
+		"moo_users_and_roles":      "moo_users_and_roles",
+		"moo_users":                "moo_users",
+		"moo_roles":                "moo_roles",
+		"moo_usergroups":           "moo_usergroups",
+		"moo_users_and_usergroups": "moo_users_and_usergroups",
 	}
 }
 
@@ -131,7 +133,8 @@ CREATE TABLE IF NOT EXISTS moo_user_profiles (
 
 CREATE TABLE IF NOT EXISTS moo_roles (
 		id          bigserial PRIMARY KEY,
-		name        character varying(100) NOT NULL UNIQUE,
+    name        varchar(100) NOT NULL UNIQUE,
+    type        integer,
 		is_default  boolean,
 		description text,
 		created_at  timestamp,
@@ -153,6 +156,41 @@ CREATE TABLE IF NOT EXISTS moo_online_users (
 
 		PRIMARY KEY(user_id, address),
 		UNIQUE(uuid)
+);
+
+CREATE TABLE IF NOT EXISTS moo_usergroups
+(
+		id          bigserial PRIMARY KEY,
+    name        varchar(100) NOT NULL UNIQUE,
+    description text,
+    parent_id   integer REFERENCES moo_usergroups (id) MATCH SIMPLE
+								        ON UPDATE NO ACTION
+								        ON DELETE CASCADE,
+    created_at  timestamp with time zone,
+    updated_at  timestamp with time zone,
+    disabled    boolean
+);
+
+CREATE TABLE IF NOT EXISTS moo_users_and_usergroups
+(
+    user_id  integer REFERENCES moo_users (id) MATCH SIMPLE
+							        ON UPDATE NO ACTION
+							        ON DELETE CASCADE,
+    group_id integer REFERENCES moo_usergroups (id) MATCH SIMPLE
+							        ON UPDATE NO ACTION
+							        ON DELETE CASCADE,
+    UNIQUE (user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS moo_operation_logs (
+	id           BIGSERIAL PRIMARY KEY,
+	userid       bigint REFERENCES moo_users ON DELETE SET NULL,
+	username     varchar(100),
+	type         varchar(100),
+	successful   boolean,
+	content      text,
+	attributes   jsonb,
+	created_at   timestamp without time zone
 );
 
 -- +statementBegin
@@ -180,15 +218,4 @@ $$ language 'plpgsql';
 -- +statementEnd
 SELECT add_bgopuser_user();
 DROP FUNCTION add_bgopuser_user();
-
-CREATE TABLE IF NOT EXISTS moo_operation_logs (
-	id           BIGSERIAL PRIMARY KEY,
-	userid       bigint REFERENCES moo_users ON DELETE CASCADE,
-	username     varchar(100),
-	type         varchar(100),
-	successful   boolean,
-	content      text,
-	attributes   jsonb,
-	created_at   timestamp without time zone
-);
 `

@@ -30,24 +30,23 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 
 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
 	um := &UserManager{
-		logger:     logger,
-		Users:    users,
-		authorizer: authorizer,
+		logger:            logger,
+		Users:             users,
+		authorizer:        authorizer,
 		signingMethod:     authn.GetSigningMethod(signingMethod),
 		secretKey:         env.Config.StringWithDefault("users.signing.secret_key", ""),
 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
 	}
 	if um.signingMethod == nil {
-		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
-	} 
+		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")
+	}
 	// um.userCache.logger = logger
 	// um.userCache.loadUsers = um.loadUsers
 
-
 	um.userCache.defaultExpiration = um.lockedTimeExpires
-	um.userCache.items           =  map[int64]userCacheItem{}
+	um.userCache.items = map[int64]userCacheItem{}
 	um.userCache.findByName = users.GetUserByName
-	um.userCache.findByID   = users.GetUserByID
+	um.userCache.findByID = users.GetUserByID
 	um.userCache.load = um.loadUser2
 
 	if refresher, ok := authorizer.(Authorizer); ok {
@@ -68,7 +67,7 @@ type UserManager struct {
 	InnerUsers []string
 
 	logger          log.Logger
-	Users         *usermodels.Users
+	Users           *usermodels.Users
 	authorizer      authz.Authorizer
 	authorizeTicker syncx.Tickable
 
@@ -76,8 +75,8 @@ type UserManager struct {
 	secretKey         string
 	lockedTimeExpires time.Duration
 
-	userCache      UserCache
-	lastErr        syncx.ErrorValue
+	userCache UserCache
+	lastErr   syncx.ErrorValue
 }
 
 // func (um *UserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
@@ -121,7 +120,7 @@ func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
 		return nil, errors.Wrap(err, "read roles fail")
 	}
 
-	next, closer := um.Users.UserDao.GetUsers(ctx, "", sql.NullBool{Valid: true, Bool: true}, sql.NullBool{}, sql.NullString{}, 0, 0)
+	next, closer := um.Users.UserDao.GetUsers(ctx, &usermodels.UserQueryParams{Enabled: sql.NullBool{Valid: true, Bool: true}}, 0, 0)
 	defer util.CloseWith(closer)
 
 	var allList = make([]api.User, 0, 64)

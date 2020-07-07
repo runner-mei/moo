@@ -107,6 +107,33 @@ type User interface {
 	ForEach(func(string, interface{}))
 }
 
+// Usergroup 用户组信息
+type Usergroup interface {
+	ID() int64
+
+	// 用户登录名
+	Name() string
+
+	// 父用户组 ID
+	ParentID() int64
+
+	// 父用户组
+	Parent(ctx context.Context) Usergroup
+
+	// 组中是不是有这个用户
+	HasUser(ctx context.Context, userID int64) bool
+
+	// 用户成员
+	Users(ctx context.Context, opts ...Option) ([]User, error)
+}
+
+// UsergroupManager 用户管理
+type UsergroupManager interface {
+	UsergroupsByUserID(ctx context.Context, userID int64, opts ...Option) ([]Usergroup, error)
+	UsergroupByName(ctx context.Context, username string, opts ...Option) (Usergroup, error)
+	UsergroupByID(ctx context.Context, groupID int64, opts ...Option) (Usergroup, error)
+}
+
 type userKey struct{}
 
 func (*userKey) String() string {
