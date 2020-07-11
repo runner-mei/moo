@@ -41,7 +41,11 @@ func init() {
 
 				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&OnlineUser{}),
-					[]string{"userID", "address", "uuid"},
+					[]string{
+						"userID",
+						"address",
+						"uuid",
+					},
 					[]reflect.Type{
 						reflect.TypeOf(new(int64)).Elem(),
 						reflect.TypeOf(new(string)).Elem(),
@@ -848,6 +852,9 @@ func (impl *UserQueryerImpl) GetRoles(ctx context.Context, nameLike string, offs
 		})
 	return func(value *Role) (bool, error) {
 		if !results.Next() {
+			if results.Err() == sql.ErrNoRows {
+				return false, nil
+			}
 			return false, results.Err()
 		}
 		return true, results.Scan(value)
@@ -890,6 +897,9 @@ func (impl *UserQueryerImpl) GetRolesByNames(ctx context.Context, name []string)
 		})
 	return func(value *Role) (bool, error) {
 		if !results.Next() {
+			if results.Err() == sql.ErrNoRows {
+				return false, nil
+			}
 			return false, results.Err()
 		}
 		return true, results.Scan(value)
@@ -986,6 +996,9 @@ func (impl *UserQueryerImpl) GetUsers(ctx context.Context, params *UserQueryPara
 		})
 	return func(value *User) (bool, error) {
 		if !results.Next() {
+			if results.Err() == sql.ErrNoRows {
+				return false, nil
+			}
 			return false, results.Err()
 		}
 		return true, results.Scan(value)
@@ -1065,6 +1078,9 @@ func (impl *UserQueryerImpl) GetUserAndRoleList(ctx context.Context) (func(*User
 		[]interface{}{})
 	return func(value *UserAndRole) (bool, error) {
 		if !results.Next() {
+			if results.Err() == sql.ErrNoRows {
+				return false, nil
+			}
 			return false, results.Err()
 		}
 		return true, results.Scan(value)
@@ -1165,7 +1181,9 @@ func init() {
 			if _, exists := ctx.Statements["UserDao.CreateUser"]; !exists {
 				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&User{}),
-					[]string{"user"},
+					[]string{
+						"user",
+					},
 					[]reflect.Type{
 						reflect.TypeOf((*User)(nil)),
 					}, false)
@@ -1390,7 +1408,9 @@ func init() {
 			if _, exists := ctx.Statements["UserDao.CreateRole"]; !exists {
 				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&Role{}),
-					[]string{"role"},
+					[]string{
+						"role",
+					},
 					[]reflect.Type{
 						reflect.TypeOf((*Role)(nil)),
 					}, false)

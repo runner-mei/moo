@@ -42,6 +42,16 @@ type UsergroupQueryer interface {
 	// @record_type Usergroup
 	GetUsergroupByID(ctx context.Context, id int64) func(*Usergroup) error
 
+	// @default SELECT * FROM <tablename type="Usergroup" /> where id in (
+	//   WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id = #{id} <foreach collection="list" open="AND id in (" close=")">#{item}</foreach>
+	//     UNION ALL
+	//     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//        FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//   SELECT ID FROM ALLGROUPS ORDER BY PATH)
+	GetUsergroupsByRecursive(ctx context.Context, id int64, list ...int64) (func(*Usergroup) (bool, error), io.Closer)
+
 	// @record_type Usergroup
 	GetUsergroupByName(ctx context.Context, name string) func(*Usergroup) error
 
@@ -74,7 +84,15 @@ type UsergroupQueryer interface {
 	GetGroupIDsByUserID(ctx context.Context, userID int64) ([]int64, error)
 
 	// @record_type UserAndUsergroup
-	GetUserAndGroupList(ctx context.Context) (func(*UserAndUsergroup) (bool, error), io.Closer)
+	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64) (func(*UserAndUsergroup) (bool, error), io.Closer)
+
+	// @default SELECT id, name FROM <tablename type="User" as="users" /> where
+	//  EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> WHERE u2r.user_id = users.id AND u2r.role_id = #{roleID})
+	//  OR EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID})
+	GetUsernamesByRoleID(ctx context.Context, roleID int64) (map[int64]string, error)
+
+	// @default SELECT id, name FROM <tablename type="Role" /> <if test="type.Valid"> WHERE type = #{type} </if>
+	GetRolenames(ctx context.Context, _type sql.NullInt64) (map[int64]string, error)
 }
 
 type UsergroupDao interface {
@@ -84,8 +102,20 @@ type UsergroupDao interface {
 
 	UpdateUsergroup(ctx context.Context, id int64, usergroup *Usergroup) (int64, error)
 
-	// @record_type Usergroup
-	DeleteUsergroup(ctx context.Context, id int64) (int64, error)
+	// @default <if test="recursive">
+	// SELECT * FROM <tablename type="Usergroup" /> where id in (
+	//   WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id=#{groupID}
+	//     UNION ALL
+	//     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//        FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//   SELECT ID FROM ALLGROUPS ORDER BY PATH)
+	// </if>
+	// <if test="!recursive">
+	//    SELECT * FROM <tablename type="Usergroup" /> where id = #{id}
+	// </if>
+	DeleteUsergroup(ctx context.Context, id int64, recursive bool) (int64, error)
 
 	// @type select
 	// @default SELECT count(*) > 0 FROM <tablename type="UserAndUsergroup" />
