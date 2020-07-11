@@ -409,6 +409,10 @@ func (u *fileUser) HasRole(role string) bool {
 	return false
 }
 
+func (u *fileUser) HasRoleID(int64) bool {
+	return false
+}
+
 func (u *fileUser) HasAdminRole() bool {
 	return u.HasRole(api.RoleAdministrator)
 }
@@ -449,8 +453,8 @@ func (u *fileUser) ReadProfile(key string) (string, error) {
 	return "", nil // errors.New("ReadProfile")
 }
 
-func (u *fileUser) HasPermission(permissionID string) bool {
-	return true
+func (u *fileUser) HasPermission(ctx context.Context, permissionID string) (bool, error) {
+	return true, nil
 }
 
 var _ services.Authorizer = &fileUser{}
