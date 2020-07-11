@@ -8,11 +8,6 @@ import (
 	"github.com/runner-mei/errors"
 )
 
-// 常用的错误
-var (
-	ErrUnauthorized = errors.ErrUnauthorized
-)
-
 const (
 	// UserAdmin admin 用户名
 	UserAdmin = "admin"
@@ -36,6 +31,15 @@ const (
 	RoleGuest = "guest"
 )
 
+// 常用的错误
+var (
+	ErrUnauthorized       = errors.ErrUnauthorized
+	ErrCacheInvalid       = errors.New("permission cache is invald")
+	ErrTagNotFound        = errors.New("permission tag is not found")
+	ErrPermissionNotFound = errors.New("permission is not found")
+	ErrAlreadyClosed      = errors.New("server is closed")
+)
+
 type userIncludeDisabled struct{}
 
 func (u userIncludeDisabled) IsIncludeDisabled() {}
@@ -54,7 +58,7 @@ func UserIncludeDisabled() Option {
 
 // UserManager 用户管理
 type UserManager interface {
-	Users(ctx context.Context, opts ...Option) ([]User, error)
+	// Users(ctx context.Context, opts ...Option) ([]User, error)
 
 	UserByName(ctx context.Context, username string, opts ...Option) (User, error)
 	UserByID(ctx context.Context, userID int64, opts ...Option) (User, error)
@@ -67,17 +71,16 @@ type User interface {
 	// 用户登录名
 	Name() string
 
-	// 是不是有一个管理员角色
-	HasAdminRole() bool
+	// // 是不是有一个管理员角色
+	// HasAdminRole() bool
 
-	// 是不是有一个 Guest 角色
-	IsGuest() bool
+	// // 是不是有一个 Guest 角色
+	// IsGuest() bool
 
 	// 呢称
 	Nickname() string
 
 	// Profile 是用于保存用户在界面上的一些个性化数据
-
 	// WriteProfile 保存 profiles
 	WriteProfile(key, value string) error
 
@@ -92,13 +95,43 @@ type User interface {
 	Roles() []string
 
 	// 用户是否有指定的权限
-	HasPermission(permissionName string) bool
+	HasPermission(ctx context.Context, permissionID string) (bool, error)
 
 	// 是不是有一个指定的角色
 	HasRole(string) bool
 
+	// // 本用户是不是指定的用户组的成员
+	// IsMemberOf(int64) bool
+
 	// 用户属性
 	ForEach(func(string, interface{}))
+}
+
+// Usergroup 用户组信息
+type Usergroup interface {
+	ID() int64
+
+	// 用户登录名
+	Name() string
+
+	// 父用户组 ID
+	ParentID() int64
+
+	// 父用户组
+	Parent(ctx context.Context) Usergroup
+
+	// 组中是不是有这个用户
+	HasUser(ctx context.Context, userID int64) bool
+
+	// 用户成员
+	Users(ctx context.Context, opts ...Option) ([]User, error)
+}
+
+// UsergroupManager 用户管理
+type UsergroupManager interface {
+	UsergroupsByUserID(ctx context.Context, userID int64, opts ...Option) ([]Usergroup, error)
+	UsergroupByName(ctx context.Context, username string, opts ...Option) (Usergroup, error)
+	UsergroupByID(ctx context.Context, groupID int64, opts ...Option) (Usergroup, error)
 }
 
 type userKey struct{}
@@ -138,4 +171,19 @@ func ReadUserFromContext(ctx context.Context) (User, error) {
 		return u, nil
 	}
 	return nil, errors.NewError(http.StatusInternalServerError, fmt.Sprintf("user is unknown type - %T", o))
+}
+
+type InternalOptions struct {
+	IncludeDisabled bool
+}
+
+func InternalApply(opts ...Option) InternalOptions {
+	var o InternalOptions
+	for _, opt := range opts {
+		switch opt.(type) {
+		case userIncludeDisabled:
+			o.IncludeDisabled = true
+		}
+	}
+	return o
 }

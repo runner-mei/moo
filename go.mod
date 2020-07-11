@@ -4,6 +4,7 @@ require (
 	emperror.dev/emperror v0.32.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/astaxie/beego v1.12.1
 	github.com/certifi/gocertifi v0.0.0-20200104152315-a6d78f326758 // indirect
 	github.com/cockroachdb/errors v1.2.4 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
@@ -29,6 +30,7 @@ require (
 	github.com/runner-mei/log v1.0.2
 	github.com/runner-mei/loong v1.0.7
 	github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6
+	github.com/runner-mei/validation v0.0.0-20200502031035-5bdf89f9a1d9
 	github.com/stretchr/testify v1.4.0
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
@@ -37,7 +39,7 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/tools v0.0.0-20200501005904-d351ea090f9b // indirect
 	gopkg.in/cas.v2 v2.2.0
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect

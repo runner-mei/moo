@@ -1,50 +1,47 @@
-package dbusers
+package users
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
 	"github.com/runner-mei/goutils/as"
 	"github.com/runner-mei/goutils/netutil"
 	"github.com/runner-mei/log"
-	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/authn/services"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/fx"
 )
 
+// func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
+// 	if authorizer == nil {
+// 		authorizer = authz.EmptyAuthorizer{}
+// 	}
 
-func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
-	if authorizer == nil {
-		authorizer = authz.EmptyAuthorizer{}
-	}
+// 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
+// 	um := &UserManager{
+// 		logger:            logger,
+// 		signingMethod:     authn.GetSigningMethod(signingMethod),
+// 		secretKey:     	   env.Config.StringWithDefault("users.signing.secret_key", ""),
+// 		users:             users,
+// 		authorizer: 	   authorizer,
+// 		userByName:        cache.New(5*time.Minute, 10*time.Minute),
+// 		userByID:          cache.New(5*time.Minute, 10*time.Minute),
+// 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
+// 	}
+// 	if um.signingMethod == nil {
+// 		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
+// 	}
 
-	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
-	um := &userManager{
-		logger:            logger,
-		signingMethod:     authn.GetSigningMethod(signingMethod),
-		secretKey:     	   env.Config.StringWithDefault("users.signing.secret_key", ""),
-		users:             users,
-		authorizer: 	   authorizer,
-		userByName:        cache.New(5*time.Minute, 10*time.Minute),
-		userByID:          cache.New(5*time.Minute, 10*time.Minute),
-		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
-	}
-	if um.signingMethod == nil {
-		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
-	} 
+// 	um.ensureRoles(context.Background())
+// 	return um, nil
+// }
 
-	um.ensureRoles(context.Background())
-	return um, nil
-}
-
-func (um *userManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
+func (um *UserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
 	user := &usermodels.User{
 		Name:       name,
 		Nickname:   nickname,
@@ -52,38 +49,38 @@ func (um *userManager) Create(ctx context.Context, name, nickname, source, passw
 		Source:     source,
 		Attributes: fields,
 	}
-	id, err := um.users.CreateUserWithRoleNames(ctx, user, roles)
+	id, err := um.Users.CreateUserWithRoleNames(ctx, user, roles)
 	if err != nil {
 		return nil, err
 	}
 	return id, nil
 }
 
-func (um *userManager) Read(ctx *services.AuthContext) (interface{}, services.User, error) {
+func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.User, error) {
 	var user = &userInfo{
 		um: 			    um,
 		user:              &usermodels.User{},
 	}
-	err := um.users.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
+	err := um.Users.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
 	if err != nil {
 		return nil, nil, err
 	}
 	return user.user.ID, user, err
 }
 
-func (um *userManager) Unlock(ctx *services.AuthContext) error {
-	return um.users.UserDao.Unlock(ctx.Ctx, ctx.Request.Username)
+func (um *UserManager) Unlock(ctx *services.AuthContext) error {
+	return um.Users.UserDao.UnlockUserByUsername(ctx.Ctx, ctx.Request.Username)
 }
 
-func (um *userManager) Lock(ctx *services.AuthContext) error {
-	return um.users.UserDao.Lock(ctx.Ctx, ctx.Request.Username)
+func (um *UserManager) Lock(ctx *services.AuthContext) error {
+	return um.Users.UserDao.LockUserByUsername(ctx.Ctx, ctx.Request.Username)
 }
 
 var _ services.User = &userInfo{}
 var _ services.Authorizer = &userInfo{}
 
 type userInfo struct {
-	um   *userManager
+	um   *UserManager
 	user *usermodels.User
 
 	ingressIPList     []netutil.IPChecker
@@ -184,7 +181,7 @@ func (u *userInfo) IngressIPList() ([]netutil.IPChecker, error) {
 func init() {
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, logger log.Logger) (authn.UserManager, api.UserManager, error) {
-			um, err := Create(env, users, nil, logger)
+			um, err := Create(env, users, authz.EmptyAuthorizer{}, logger)
 			return um, um, err
 		})
 	})

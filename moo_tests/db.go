@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/runner-mei/moo/authn/users/db"
+	_ "github.com/runner-mei/moo/users"
 )
 
 func getenv(name string, args ...string) string {
@@ -26,6 +26,7 @@ func getenv(name string, args ...string) string {
 
 func (a *AppTest) init() {
 	a.Args.CommandArgs = append(a.Args.CommandArgs,
+		"moo.log.level=true",
 		"test.clean_data=true",
 		"test.clean_database=true",
 		"users.init_database=true",

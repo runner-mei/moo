@@ -113,7 +113,8 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 	resposeAll := string(bs)
 	if res.StatusCode != http.StatusOK {
 		t.Error("响应码不正确",  res.Status)
-		t.Log(resposeAll)
+		t.Error("excepted is", responseText)
+		t.Error("actual   is", resposeAll)
 		return
 	}
 

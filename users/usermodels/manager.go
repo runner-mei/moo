@@ -30,6 +30,14 @@ func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger o
 	}
 }
 
+type UserQuery struct {
+	UserQueryParams
+
+	HasOnlineInfo  bool
+	HasRoleInfo    bool
+	HasWelcomeInfo bool
+}
+
 type Users struct {
 	env       *moo.Environment
 	dbFactory *gobatis.SessionFactory
@@ -41,17 +49,36 @@ func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
 	return c.UserDao.NicknameExists(ctx, name)
 }
 
-func (c *Users) GetUsers(ctx context.Context) ([]User, error) {
-	return c.UserDao.GetUsers(ctx)
+func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit int64) ([]User, error) {
+	next, closer := c.UserDao.GetUsers(ctx, &query.UserQueryParams, offset, limit)
+	defer util.CloseWith(closer)
+
+	var userList []User
+	for {
+		var u User
+		ok, err := next(&u)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+		userList = append(userList, u)
+	}
+
+	return userList, nil
 }
 
-func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
-	var role Role
-	err := c.UserDao.GetRoleByName(ctx, name)(&role)
+func (c *Users) GetUserByID(ctx context.Context, userid int64) (*User, error) {
+	var user User
+	err := c.UserDao.GetUserByID(ctx, userid)(&user)
 	if err != nil {
 		return nil, err
 	}
-	return &role, nil
+	return &user, nil
 }
 
 func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
@@ -61,6 +88,46 @@ func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (c *Users) GetRoles(ctx context.Context, name string, offset, limit int64) ([]Role, error) {
+	next, closer := c.UserDao.GetRoles(ctx, name, offset, limit)
+	defer util.CloseWith(closer)
+
+	var roles []Role
+	for {
+		var role Role
+		ok, err := next(&role)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
+}
+
+func (c *Users) GetRoleByID(ctx context.Context, roleid int64) (*Role, error) {
+	var role Role
+	err := c.UserDao.GetRoleByID(ctx, roleid)(&role)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
+	var role Role
+	err := c.UserDao.GetRoleByName(ctx, name)(&role)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
 }
 
 func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles []string) (int64, error) {
