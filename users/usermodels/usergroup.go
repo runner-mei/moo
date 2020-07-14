@@ -85,14 +85,6 @@ type UsergroupQueryer interface {
 
 	// @record_type UserAndUsergroup
 	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64) (func(*UserAndUsergroup) (bool, error), io.Closer)
-
-	// @default SELECT id, name FROM <tablename type="User" as="users" /> where
-	//  EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> WHERE u2r.user_id = users.id AND u2r.role_id = #{roleID})
-	//  OR EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID})
-	GetUsernamesByRoleID(ctx context.Context, roleID int64) (map[int64]string, error)
-
-	// @default SELECT id, name FROM <tablename type="Role" /> <if test="type.Valid"> WHERE type = #{type} </if>
-	GetRolenames(ctx context.Context, _type sql.NullInt64) (map[int64]string, error)
 }
 
 type UsergroupDao interface {

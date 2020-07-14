@@ -254,68 +254,6 @@ func init() {
 				ctx.Statements["UsergroupQueryer.GetUserAndGroupList"] = stmt
 			}
 		}
-		{ //// UsergroupQueryer.GetUsernamesByRoleID
-			if _, exists := ctx.Statements["UsergroupQueryer.GetUsernamesByRoleID"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("SELECT id, name FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("users")
-				sb.WriteString(" where\r\n  EXISTS(SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2r")
-				sb.WriteString(" WHERE u2r.user_id = users.id AND u2r.role_id = #{roleID})\r\n  OR EXISTS(SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString(" WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID})")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUsernamesByRoleID",
-					gobatis.StatementTypeSelect,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UsergroupQueryer.GetUsernamesByRoleID"] = stmt
-			}
-		}
-		{ //// UsergroupQueryer.GetRolenames
-			if _, exists := ctx.Statements["UsergroupQueryer.GetRolenames"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("SELECT id, name FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" <if test=\"type.Valid\"> WHERE type = #{type} </if>")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetRolenames",
-					gobatis.StatementTypeSelect,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UsergroupQueryer.GetRolenames"] = stmt
-			}
-		}
 		return nil
 	})
 }
@@ -477,40 +415,6 @@ func (impl *UsergroupQueryerImpl) GetUserAndGroupList(ctx context.Context, useri
 		}
 		return true, results.Scan(value)
 	}, results
-}
-
-func (impl *UsergroupQueryerImpl) GetUsernamesByRoleID(ctx context.Context, roleID int64) (map[int64]string, error) {
-	var instances = map[int64]string{}
-
-	results := impl.session.Select(ctx, "UsergroupQueryer.GetUsernamesByRoleID",
-		[]string{
-			"roleID",
-		},
-		[]interface{}{
-			roleID,
-		})
-	err := results.ScanBasicMap(&instances)
-	if err != nil {
-		return nil, err
-	}
-	return instances, nil
-}
-
-func (impl *UsergroupQueryerImpl) GetRolenames(ctx context.Context, _type sql.NullInt64) (map[int64]string, error) {
-	var instances = map[int64]string{}
-
-	results := impl.session.Select(ctx, "UsergroupQueryer.GetRolenames",
-		[]string{
-			"type",
-		},
-		[]interface{}{
-			_type,
-		})
-	err := results.ScanBasicMap(&instances)
-	if err != nil {
-		return nil, err
-	}
-	return instances, nil
 }
 
 func init() {

@@ -296,6 +296,25 @@ type UserQueryer interface {
 
 	// @record_type UserAndRole
 	GetUserAndRoleList(ctx context.Context) (func(*UserAndRole) (bool, error), io.Closer)
+
+	// @default SELECT id, name FROM <tablename type="User" as="users" /> <where>
+	//  <if test="!isJobPostion.Valid">
+	//       <if test="groupID.Valid">EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.group_id = #{groupID})</if>
+	//       <if test="roleID.Valid"> AND
+	//            (EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> WHERE u2r.user_id = users.id AND u2r.role_id = #{roleID}) OR
+	//             EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID}))
+	//       </if>
+	//  </if>
+	//  <if test="isJobPostion.Valid">
+	//    <if test="groupID.Valid">EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.group_id = #{groupID}
+	//        <if test="roleID.Valid">AND u2g.role_id = #{roleID}</if>)</if>
+	//    <if test="roleID.Valid">AND EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID})</if>
+	//  </if>
+	// </where>
+	GetUsernames(ctx context.Context, groupID, roleID sql.NullInt64, isJobPostion sql.NullBool) (map[int64]string, error)
+
+	// @default SELECT id, name FROM <tablename type="Role" /> <if test="type.Valid"> WHERE type = #{type} </if>
+	GetRolenames(ctx context.Context, _type sql.NullInt64) (map[int64]string, error)
 }
 
 type UserDao interface {

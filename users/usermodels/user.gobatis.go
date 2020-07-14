@@ -726,6 +726,92 @@ func init() {
 				ctx.Statements["UserQueryer.GetUserAndRoleList"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetUsernames
+			if _, exists := ctx.Statements["UserQueryer.GetUsernames"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT id, name FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("users")
+				sb.WriteString(" <where>\r\n  <if test=\"!isJobPostion.Valid\">\r\n       <if test=\"groupID.Valid\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString(" WHERE u2g.user_id = users.id AND u2g.group_id = #{groupID})</if>\r\n       <if test=\"roleID.Valid\"> AND\r\n            (EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" WHERE u2r.user_id = users.id AND u2r.role_id = #{roleID}) OR\r\n             EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString(" WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID}))\r\n       </if>\r\n  </if>\r\n  <if test=\"isJobPostion.Valid\">\r\n    <if test=\"groupID.Valid\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString(" WHERE u2g.user_id = users.id AND u2g.group_id = #{groupID}\r\n        <if test=\"roleID.Valid\">AND u2g.role_id = #{roleID}</if>)</if>\r\n    <if test=\"roleID.Valid\">AND EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString(" WHERE u2g.user_id = users.id AND u2g.role_id = #{roleID})</if>\r\n  </if>\r\n </where>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsernames",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUsernames"] = stmt
+			}
+		}
+		{ //// UserQueryer.GetRolenames
+			if _, exists := ctx.Statements["UserQueryer.GetRolenames"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT id, name FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" <if test=\"type.Valid\"> WHERE type = #{type} </if>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetRolenames",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetRolenames"] = stmt
+			}
+		}
 		return nil
 	})
 }
@@ -1085,6 +1171,44 @@ func (impl *UserQueryerImpl) GetUserAndRoleList(ctx context.Context) (func(*User
 		}
 		return true, results.Scan(value)
 	}, results
+}
+
+func (impl *UserQueryerImpl) GetUsernames(ctx context.Context, groupID sql.NullInt64, roleID sql.NullInt64, isJobPostion sql.NullBool) (map[int64]string, error) {
+	var instances = map[int64]string{}
+
+	results := impl.session.Select(ctx, "UserQueryer.GetUsernames",
+		[]string{
+			"groupID",
+			"roleID",
+			"isJobPostion",
+		},
+		[]interface{}{
+			groupID,
+			roleID,
+			isJobPostion,
+		})
+	err := results.ScanBasicMap(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (impl *UserQueryerImpl) GetRolenames(ctx context.Context, _type sql.NullInt64) (map[int64]string, error) {
+	var instances = map[int64]string{}
+
+	results := impl.session.Select(ctx, "UserQueryer.GetRolenames",
+		[]string{
+			"type",
+		},
+		[]interface{}{
+			_type,
+		})
+	err := results.ScanBasicMap(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
 }
 
 func init() {
