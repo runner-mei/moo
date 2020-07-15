@@ -62,6 +62,12 @@ func (c *UuidLogin) Login(ctx context.Context, w http.ResponseWriter, r *http.Re
 		io.WriteString(w, err)
 	}
 
+	if !ok {
+		c.logger.Info("UUID 不可识别", log.String("uuid", uuid))
+		renderError(http.StatusUnauthorized, "没有找到这个 UUID, 可能已经用过了")
+		return
+	}
+
 	user, err := c.users.GetUserByName(ctx, username)
 	if err != nil {
 		c.logger.Info("读用户信息失败", log.Error(err))
