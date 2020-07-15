@@ -281,6 +281,8 @@ type UserQueryer interface {
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
 	//  exists (select * from <tablename type="UserAndRole" /> as users_roles
 	//     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})
+	//  OR exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//     where u2g.role_id = roles.id and u2g.user_id = #{userID})
 	GetRolesByUserID(ctx context.Context, userID int64) ([]Role, error)
 
 	// @default SELECT value FROM <tablename type="UserProfile" /> WHERE id = #{userID} AND name = #{name}
