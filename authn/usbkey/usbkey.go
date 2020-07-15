@@ -9,10 +9,12 @@ import (
 	"strings"
 
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/tid"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/authn/services"
+	"github.com/runner-mei/moo/authn/uuidlogin"
 	"github.com/runner-mei/moo/users/usermodels"
 )
 
@@ -23,17 +25,20 @@ type UsbKey struct {
 	client      *http.Client
 	sessions    authn.Sessions
 	users       *usermodels.Users
+	uuidLogin   *uuidlogin.UuidLogin
 }
 
 // NewUSBKey creates a Client with the provided Options.
 func NewUSBKey(env *moo.Environment,
 	usbCheckURL string,
+	uuidLogin *uuidlogin.UuidLogin,
 	renderer *authn.Renderer,
 	sessions authn.Sessions,
 	users *usermodels.Users) *UsbKey {
 	return &UsbKey{
 		logger:      env.Logger.Named("usbkey"),
 		usbCheckURL: usbCheckURL,
+		uuidLogin:   uuidLogin,
 		renderer:    renderer,
 		sessions:    sessions,
 		users:       users,
@@ -120,6 +125,7 @@ func (c *UsbKey) validate(ctx context.Context, w http.ResponseWriter, r *http.Re
 func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	isLogin := queryParams.Get("login") == "true"
+	isUUID := queryParams.Get("uuid") == "true"
 
 	renderError := func(statusCode int, err string) {
 		w.WriteHeader(http.StatusOK)
@@ -128,11 +134,18 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		io.WriteString(w, strings.Replace(err, "\"", "'", -1))
 		io.WriteString(w, "\"}")
 	}
-	renderOK := func(statusCode int, to string) {
+	renderOK := func(statusCode int, to, username string) {
 		w.WriteHeader(statusCode)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		io.WriteString(w, "{\"success\": true, \"message\": \"登录成功\", \"redirect\": \"")
 		io.WriteString(w, strings.Replace(to, "\"", "'", -1))
+		if isUUID {
+			io.WriteString(w, "\", \"uuid\": \"")
+			uuid := tid.GenerateID()
+			c.uuidLogin.Set(ctx, uuid, username)
+			io.WriteString(w, uuid)
+		}
+
 		io.WriteString(w, "\"}")
 	}
 
@@ -198,7 +211,7 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 
 	if !isLogin {
 		authCtx.Ctx = authn.ContextWithRedirectFunc(ctx, func(c context.Context, w http.ResponseWriter, r *http.Request, to string) error {
-			renderOK(http.StatusOK, to)
+			renderOK(http.StatusOK, to, username)
 			return nil
 		})
 	}

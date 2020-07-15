@@ -11,6 +11,7 @@ import (
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/moo/authn/uuidlogin"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/fx"
 )
@@ -18,9 +19,10 @@ import (
 type Params struct {
 	fx.In
 
-	Renderer *authn.Renderer
-	Sessions authn.Sessions
-	Users    *usermodels.Users
+	Renderer  *authn.Renderer
+	Sessions  authn.Sessions
+	Users     *usermodels.Users
+	UuidLogin *uuidlogin.UuidLogin
 }
 
 func init() {
@@ -42,7 +44,7 @@ func init() {
 			}
 
 			usbPrefix := urlutil.Join(env.DaemonUrlPath, "usbkey")
-			usbkeyProxy := NewUSBKey(env, "http://"+net.JoinHostPort(host, port), params.Renderer, params.Sessions, params.Users)
+			usbkeyProxy := NewUSBKey(env, "http://"+net.JoinHostPort(host, port), params.UuidLogin, params.Renderer, params.Sessions, params.Users)
 			ssoEcho := httpSrv.Engine().Group("usbkey", middlewares.Funcs...)
 			ssoEcho.GET(usbPrefix, loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 				if r.URL.RawQuery == "" {
