@@ -187,3 +187,79 @@ func InternalApply(opts ...Option) InternalOptions {
 	}
 	return o
 }
+
+func MakeMockUser(id int64, name string) *mockUser {
+	return &mockUser{id: id, name: name}
+}
+
+// User 用户信息
+type mockUser struct {
+	id   int64
+	name string
+}
+
+func (u *mockUser) ID() int64 {
+	return u.id
+}
+
+func (u *mockUser) Name() string {
+	return u.name
+}
+
+// 是不是有一个管理员角色
+func (u *mockUser) HasAdminRole() bool {
+	return false
+}
+
+// 是不是有一个 Guest 角色
+func (u *mockUser) IsGuest() bool {
+	return false
+}
+
+// 呢称
+func (u *mockUser) Nickname() string {
+	return u.name
+}
+
+func (u *mockUser) WriteProfile(key, value string) error {
+	return nil
+}
+
+func (u *mockUser) ReadProfile(key string) (string, error) {
+	return "", nil
+}
+
+func (u *mockUser) Data(key string) interface{} {
+	switch key {
+	case "id":
+		return u.id
+	case "name", "nickname":
+		return u.name
+	}
+	return nil
+}
+
+func (u *mockUser) Roles() []string {
+	return nil
+}
+
+func (u *mockUser) HasPermission(ctx context.Context, permissionID string) (bool, error) {
+	return false, nil
+}
+
+func (u *mockUser) HasRole(string) bool {
+	return false
+}
+func (u *mockUser) HasRoleID(roleid int64) bool {
+	return false
+}
+
+func (u *mockUser) IsMemberOf(id int64) bool {
+	return false
+}
+
+func (u *mockUser) ForEach(cb func(string, interface{})) {
+	cb("id", u.id)
+	cb("name", u.name)
+	cb("nickname", u.name)
+}
