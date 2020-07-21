@@ -169,6 +169,7 @@ func NewWelcomeLocator(env *moo.Environment, logger log.Logger, factory *gobatis
 	if err != nil {
 		return nil, errors.New("读用户的表名失败")
 	}
+	todoListTable := env.Config.StringWithDefault("users.todolist.tablename", "moo_todolists")
 
 	apps, err := ReadWelcomeConfigs(env)
 	if err != nil {
@@ -184,9 +185,9 @@ func NewWelcomeLocator(env *moo.Environment, logger log.Logger, factory *gobatis
 			"select attributes->>'"+WelcomeFieldName+"' from "+tablename+" where name = $1"),
 		todolistDisabled: env.Config.BoolWithDefault("users.todolist.disabled", true),
 		todolistCountByUserID: env.Config.StringWithDefault("users.welcome.todolist_by_userid",
-			"select count(*) from tpt_todolists where user_id = $1)"),
+			"select count(*) from "+todoListTable+" where user_id = $1)"),
 		todolistCountByUsername: env.Config.StringWithDefault("users.welcome.todolist_by_username",
-			"select count(*) from tpt_todolists as todolists where "+
+			"select count(*) from "+todoListTable+" as todolists where "+
 				"exists(SELECT * FROM "+tablename+" WHERE "+tablename+".id = todolists.user_id AND "+tablename+".name = $1)"),
 		todolistURL: env.Config.StringWithDefault("users.welcome.todolist_url", ""),
 	}
