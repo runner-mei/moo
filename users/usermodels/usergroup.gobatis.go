@@ -272,7 +272,42 @@ func init() {
 		}
 		{ //// UsergroupQueryer.GetUserAndGroupList
 			if _, exists := ctx.Statements["UsergroupQueryer.GetUserAndGroupList"]; !exists {
-				return errors.New("sql 'UsergroupQueryer.GetUserAndGroupList' error : statement not found - Generate SQL fail: recordType is unknown")
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("uug")
+				sb.WriteString(" <where>\r\n   <if test=\"groupEnabled\"> EXISTS (SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("g")
+				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.group_id = g.id) </if>\r\n   <if test=\"userid.Valid\"> AND EXISTS (SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u")
+				sb.WriteString(" WHERE uug.user_id = #{userid}) </if>\r\n  </where>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUserAndGroupList",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UsergroupQueryer.GetUserAndGroupList"] = stmt
 			}
 		}
 		return nil

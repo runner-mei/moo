@@ -97,7 +97,7 @@ type UsergroupQueryer interface {
 	// </if>
 	GetUsersAndGroups(ctx context.Context, groupID int64, recursive, userEnabled bool) ([]UserAndUsergroup, error)
 
-	// SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> <where>
+	// @default SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> <where>
 	//   <if test="groupEnabled"> EXISTS (SELECT * FROM <tablename type="Usergroup" as="g" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.group_id = g.id) </if>
 	//   <if test="userid.Valid"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE uug.user_id = #{userid}) </if>
 	//  </where>
@@ -144,5 +144,4 @@ type UsergroupDao interface {
 	// @default DELETE FROM <tablename type="UserAndUsergroup"/>
 	//           WHERE user_id = #{userid}
 	RemoveUserFromAllGroups(ctx context.Context, userid int64) error
-
 }
