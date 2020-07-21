@@ -206,52 +206,73 @@ func init() {
 				ctx.Statements["UsergroupQueryer.GetUserIDsByGroupID"] = stmt
 			}
 		}
-		{ //// UsergroupQueryer.GetGroupIDsByUserID
-			if _, exists := ctx.Statements["UsergroupQueryer.GetGroupIDsByUserID"]; !exists {
+		{ //// UsergroupQueryer.GetUsersAndGroups
+			if _, exists := ctx.Statements["UsergroupQueryer.GetUsersAndGroups"]; !exists {
 				var sb strings.Builder
-				sb.WriteString("SELECT group_id FROM ")
+				sb.WriteString("<if test=\"recursive\">\r\n SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
 					sb.WriteString(tablename)
 				}
 				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString(" WHERE user_id = #{userID}")
+				sb.WriteString("uug")
+				sb.WriteString(" where uug.group_id in (\r\n WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n   SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n      FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("ug")
+				sb.WriteString(" WHERE id=#{groupID}\r\n   UNION ALL\r\n   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n      FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("D")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n  SELECT ID FROM ALLGROUPS ORDER BY PATH)\r\n  <if test=\"userEnabled\"> AND EXISTS (SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u")
+				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>\r\n </if>\r\n <if test=\"!recursive\">\r\n    SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("uug")
+				sb.WriteString(" where uug.group_id = #{groupID}\r\n      <if test=\"userEnabled\"> AND EXISTS (SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u")
+				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>\r\n </if>")
 				sqlStr := sb.String()
 
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetGroupIDsByUserID",
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUsersAndGroups",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
 					sqlStr)
 				if err != nil {
 					return err
 				}
-				ctx.Statements["UsergroupQueryer.GetGroupIDsByUserID"] = stmt
+				ctx.Statements["UsergroupQueryer.GetUsersAndGroups"] = stmt
 			}
 		}
 		{ //// UsergroupQueryer.GetUserAndGroupList
 			if _, exists := ctx.Statements["UsergroupQueryer.GetUserAndGroupList"]; !exists {
-				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&UserAndUsergroup{}),
-					[]string{
-						"userid",
-					},
-					[]reflect.Type{
-						reflect.TypeOf(&sql.NullInt64{}).Elem(),
-					},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate UsergroupQueryer.GetUserAndGroupList error")
-				}
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUserAndGroupList",
-					gobatis.StatementTypeSelect,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UsergroupQueryer.GetUserAndGroupList"] = stmt
+				return errors.New("sql 'UsergroupQueryer.GetUserAndGroupList' error : statement not found - Generate SQL fail: recordType is unknown")
 			}
 		}
 		return nil
@@ -382,14 +403,18 @@ func (impl *UsergroupQueryerImpl) GetUserIDsByGroupID(ctx context.Context, group
 	return instances, nil
 }
 
-func (impl *UsergroupQueryerImpl) GetGroupIDsByUserID(ctx context.Context, userID int64) ([]int64, error) {
-	var instances []int64
-	results := impl.session.Select(ctx, "UsergroupQueryer.GetGroupIDsByUserID",
+func (impl *UsergroupQueryerImpl) GetUsersAndGroups(ctx context.Context, groupID int64, recursive bool, userEnabled bool) ([]UserAndUsergroup, error) {
+	var instances []UserAndUsergroup
+	results := impl.session.Select(ctx, "UsergroupQueryer.GetUsersAndGroups",
 		[]string{
-			"userID",
+			"groupID",
+			"recursive",
+			"userEnabled",
 		},
 		[]interface{}{
-			userID,
+			groupID,
+			recursive,
+			userEnabled,
 		})
 	err := results.ScanSlice(&instances)
 	if err != nil {
@@ -398,13 +423,15 @@ func (impl *UsergroupQueryerImpl) GetGroupIDsByUserID(ctx context.Context, userI
 	return instances, nil
 }
 
-func (impl *UsergroupQueryerImpl) GetUserAndGroupList(ctx context.Context, userid sql.NullInt64) (func(*UserAndUsergroup) (bool, error), io.Closer) {
+func (impl *UsergroupQueryerImpl) GetUserAndGroupList(ctx context.Context, userid sql.NullInt64, groupEnabled bool) (func(*UserAndUsergroup) (bool, error), io.Closer) {
 	results := impl.session.Select(ctx, "UsergroupQueryer.GetUserAndGroupList",
 		[]string{
 			"userid",
+			"groupEnabled",
 		},
 		[]interface{}{
 			userid,
+			groupEnabled,
 		})
 	return func(value *UserAndUsergroup) (bool, error) {
 		if !results.Next() {
@@ -597,70 +624,6 @@ func init() {
 				ctx.Statements["UsergroupDao.RemoveUserFromAllGroups"] = stmt
 			}
 		}
-		{ //// UsergroupDao.GetUsersAndGroups
-			if _, exists := ctx.Statements["UsergroupDao.GetUsersAndGroups"]; !exists {
-				var sb strings.Builder
-				sb.WriteString("<if test=\"recursive\">\r\n SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("uug")
-				sb.WriteString(" where uug.group_id in (\r\n WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n   SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n      FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("ug")
-				sb.WriteString(" WHERE id=#{groupID}\r\n   UNION ALL\r\n   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n      FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("D")
-				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n  SELECT ID FROM ALLGROUPS ORDER BY PATH)\r\n  <if test=\"userEnabled\"> AND EXISTS (SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u")
-				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>\r\n </if>\r\n <if test=\"!recursive\">\r\n    SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("uug")
-				sb.WriteString(" where uug.group_id = #{groupID}\r\n      <if test=\"userEnabled\"> AND EXISTS (SELECT * FROM ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u")
-				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>\r\n </if>")
-				sqlStr := sb.String()
-
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupDao.GetUsersAndGroups",
-					gobatis.StatementTypeSelect,
-					gobatis.ResultStruct,
-					sqlStr)
-				if err != nil {
-					return err
-				}
-				ctx.Statements["UsergroupDao.GetUsersAndGroups"] = stmt
-			}
-		}
 		return nil
 	})
 }
@@ -781,24 +744,4 @@ func (impl *UsergroupDaoImpl) RemoveUserFromAllGroups(ctx context.Context, useri
 			userid,
 		})
 	return err
-}
-
-func (impl *UsergroupDaoImpl) GetUsersAndGroups(ctx context.Context, groupID int64, recursive bool, userEnabled bool) ([]UserAndUsergroup, error) {
-	var instances []UserAndUsergroup
-	results := impl.session.Select(ctx, "UsergroupDao.GetUsersAndGroups",
-		[]string{
-			"groupID",
-			"recursive",
-			"userEnabled",
-		},
-		[]interface{}{
-			groupID,
-			recursive,
-			userEnabled,
-		})
-	err := results.ScanSlice(&instances)
-	if err != nil {
-		return nil, err
-	}
-	return instances, nil
 }

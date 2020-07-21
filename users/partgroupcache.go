@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/moo/users/usermodels"
 )
 
@@ -293,14 +294,21 @@ type UsergroupCache struct {
 }
 
 func (c *UsergroupCache) UsergroupsByUserID(ctx context.Context, userID int64, opts ...Option) ([]Usergroup, error) {
-	groupIDs, err := c.queryer.GetGroupIDsByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
+	next, closer := c.queryer.GetUserAndGroupList(ctx, sql.NullInt64{Valid: true, Int64: userID}, false)
+	defer util.CloseWith(closer)
 
-	var groups = make([]Usergroup, 0, len(groupIDs))
-	for _, id := range groupIDs {
-		group, err := c.usergroupByID(ctx, id, false, opts, c.loadByID)
+	var groups = make([]Usergroup, 0, 8)
+	for {
+		var u2g usermodels.UserAndUsergroup
+		ok, err := next(&u2g)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+
+		group, err := c.usergroupByID(ctx, u2g.GroupID, false, opts, c.loadByID)
 		if err != nil {
 			if IsUsergroupDisabled(err) {
 				continue

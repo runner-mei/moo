@@ -80,11 +80,28 @@ type UsergroupQueryer interface {
 	// </if>
 	GetUserIDsByGroupID(ctx context.Context, groupID int64, recursive bool, userEnabled sql.NullBool) ([]int64, error)
 
-	// @default SELECT group_id FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE user_id = #{userID}
-	GetGroupIDsByUserID(ctx context.Context, userID int64) ([]int64, error)
+	// @default <if test="recursive">
+	// SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id in (
+	// WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//   SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//      FROM <tablename type="Usergroup" as="ug" /> WHERE id=#{groupID}
+	//   UNION ALL
+	//   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//      FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//  SELECT ID FROM ALLGROUPS ORDER BY PATH)
+	//  <if test="userEnabled"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>
+	// </if>
+	// <if test="!recursive">
+	//    SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id = #{groupID}
+	//      <if test="userEnabled"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>
+	// </if>
+	GetUsersAndGroups(ctx context.Context, groupID int64, recursive, userEnabled bool) ([]UserAndUsergroup, error)
 
-	// @record_type UserAndUsergroup
-	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64) (func(*UserAndUsergroup) (bool, error), io.Closer)
+	// SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> <where>
+	//   <if test="groupEnabled"> EXISTS (SELECT * FROM <tablename type="Usergroup" as="g" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.group_id = g.id) </if>
+	//   <if test="userid.Valid"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE uug.user_id = #{userid}) </if>
+	//  </where>
+	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64, groupEnabled bool) (func(*UserAndUsergroup) (bool, error), io.Closer)
 }
 
 type UsergroupDao interface {
@@ -128,20 +145,4 @@ type UsergroupDao interface {
 	//           WHERE user_id = #{userid}
 	RemoveUserFromAllGroups(ctx context.Context, userid int64) error
 
-	// @default <if test="recursive">
-	// SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id in (
-	// WITH RECURSIVE ALLGROUPS (ID)  AS (
-	//   SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//      FROM <tablename type="Usergroup" as="ug" /> WHERE id=#{groupID}
-	//   UNION ALL
-	//   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
-	//      FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
-	//  SELECT ID FROM ALLGROUPS ORDER BY PATH)
-	//  <if test="userEnabled"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>
-	// </if>
-	// <if test="!recursive">
-	//    SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id = #{groupID}
-	//      <if test="userEnabled"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>
-	// </if>
-	GetUsersAndGroups(ctx context.Context, groupID int64, recursive, userEnabled bool) ([]UserAndUsergroup, error)
 }
