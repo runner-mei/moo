@@ -18,7 +18,9 @@ func init() {
 			if _, exists := ctx.Statements["OldOperationLogDao.Insert"]; !exists {
 				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&OldOperationLog{}),
-					[]string{"ol"},
+					[]string{
+						"ol",
+					},
 					[]reflect.Type{
 						reflect.TypeOf((*OldOperationLog)(nil)),
 					}, true)
@@ -44,7 +46,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\" separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>")
+				sb.WriteString(" <where>\r\n <if test=\"len(usernames) &gt; 0\"> <foreach collection=\"usernames\" open=\"user_name in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"successful\"> AND successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\" separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.Count",
@@ -66,7 +68,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" <where>\r\n <if test=\"successful\"> successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>\r\n <pagination />")
+				sb.WriteString(" <where>\r\n <if test=\"len(usernames) &gt; 0\"> <foreach collection=\"usernames\" open=\"user_name in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"successful\"> AND successful = #{successful} </if>\r\n <if test=\"len(typeList) &gt; 0\"> AND <foreach collection=\"typeList\" open=\"type in (\" close=\")\"  separator=\",\" >#{item}</foreach> </if>\r\n <if test=\"!createdAt.Start.IsZero()\"> AND created_at &gt;= #{createdAt.Start} </if>\r\n <if test=\"!createdAt.End.IsZero()\"> AND created_at &lt; #{createdAt.End} </if>\r\n </where>\r\n <pagination />")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "OldOperationLogDao.List",
@@ -115,20 +117,20 @@ func (impl *OldOperationLogDaoImpl) Insert(ctx context.Context, ol *OldOperation
 	return err
 }
 
-func (impl *OldOperationLogDaoImpl) Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt api.TimeRange) (int64, error) {
+func (impl *OldOperationLogDaoImpl) Count(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt api.TimeRange) (int64, error) {
 	var instance int64
 	var nullable gobatis.Nullable
 	nullable.Value = &instance
 
 	err := impl.session.SelectOne(ctx, "OldOperationLogDao.Count",
 		[]string{
-			"userid",
+			"usernames",
 			"successful",
 			"typeList",
 			"createdAt",
 		},
 		[]interface{}{
-			userid,
+			usernames,
 			successful,
 			typeList,
 			createdAt,
@@ -143,11 +145,11 @@ func (impl *OldOperationLogDaoImpl) Count(ctx context.Context, userid int64, suc
 	return instance, nil
 }
 
-func (impl *OldOperationLogDaoImpl) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt api.TimeRange, offset int64, limit int64, sortBy string) ([]OldOperationLog, error) {
+func (impl *OldOperationLogDaoImpl) List(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt api.TimeRange, offset int64, limit int64, sortBy string) ([]OldOperationLog, error) {
 	var instances []OldOperationLog
 	results := impl.session.Select(ctx, "OldOperationLogDao.List",
 		[]string{
-			"userid",
+			"usernames",
 			"successful",
 			"typeList",
 			"createdAt",
@@ -156,7 +158,7 @@ func (impl *OldOperationLogDaoImpl) List(ctx context.Context, userid int64, succ
 			"sortBy",
 		},
 		[]interface{}{
-			userid,
+			usernames,
 			successful,
 			typeList,
 			createdAt,

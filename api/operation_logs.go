@@ -6,6 +6,7 @@ package api
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,8 +45,8 @@ type TimeRange struct {
 type OperationLogDao interface {
 	Insert(ctx context.Context, ol *OperationLog) error
 	DeleteBy(ctx context.Context, createdAt TimeRange) error
-	Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
-	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
+	Count(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
+	List(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
 // @gobatis.ignore
@@ -58,10 +59,10 @@ type OperationLogger interface {
 // @gobatis.ignore
 type OperationQueryer interface {
 	// @http.GET(path="/count")
-	Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error)
+	Count(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error)
 
 	// @http.GET(path="")
-	List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
+	List(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
 func BoolToString(value bool) string {
@@ -74,4 +75,22 @@ func BoolToString(value bool) string {
 func toBool(s string) bool {
 	s = strings.ToLower(s)
 	return s == "true"
+}
+
+func ToInt64Array(array []string) ([]int64, error) {
+	var int64Array []int64
+	for _, s := range array {
+		ss := strings.Split(s, ",")
+		for _, v := range ss {
+			if v == "" {
+				continue
+			}
+			i64, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			int64Array = append(int64Array, i64)
+		}
+	}
+	return int64Array, nil
 }

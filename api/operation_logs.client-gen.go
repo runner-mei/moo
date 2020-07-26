@@ -20,12 +20,14 @@ type OperationQueryerClient struct {
 	Proxy *resty.Proxy
 }
 
-func (client OperationQueryerClient) Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt time.Time, endAt time.Time) (int64, error) {
+func (client OperationQueryerClient) Count(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt time.Time, endAt time.Time) (int64, error) {
 	var result int64
 
-	request := resty.NewRequest(client.Proxy, "/count").
-		SetParam("userid", strconv.FormatInt(userid, 10)).
-		SetParam("successful", BoolToString(successful))
+	request := resty.NewRequest(client.Proxy, "/count")
+	for idx := range useridList {
+		request = request.AddParam("userid_list", strconv.FormatInt(useridList[idx], 10))
+	}
+	request = request.SetParam("successful", BoolToString(successful))
 	for idx := range typeList {
 		request = request.AddParam("type_list", typeList[idx])
 	}
@@ -38,12 +40,14 @@ func (client OperationQueryerClient) Count(ctx context.Context, userid int64, su
 	return result, err
 }
 
-func (client OperationQueryerClient) List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt time.Time, endAt time.Time, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
+func (client OperationQueryerClient) List(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt time.Time, endAt time.Time, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
 	var result []OperationLog
 
-	request := resty.NewRequest(client.Proxy, "/").
-		SetParam("userid", strconv.FormatInt(userid, 10)).
-		SetParam("successful", BoolToString(successful))
+	request := resty.NewRequest(client.Proxy, "/")
+	for idx := range useridList {
+		request = request.AddParam("userid_list", strconv.FormatInt(useridList[idx], 10))
+	}
+	request = request.SetParam("successful", BoolToString(successful))
 	for idx := range typeList {
 		request = request.AddParam("type_list", typeList[idx])
 	}

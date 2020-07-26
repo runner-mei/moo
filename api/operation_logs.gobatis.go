@@ -16,7 +16,9 @@ func init() {
 			if _, exists := ctx.Statements["OperationLogDao.Insert"]; !exists {
 				sqlStr, err := gobatis.GenerateInsertSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&OperationLog{}),
-					[]string{"ol"},
+					[]string{
+						"ol",
+					},
 					[]reflect.Type{
 						reflect.TypeOf((*OperationLog)(nil)),
 					}, true)
@@ -62,13 +64,13 @@ func init() {
 				sqlStr, err := gobatis.GenerateCountSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&OperationLog{}),
 					[]string{
-						"userid",
+						"userids",
 						"successful",
 						"typeList",
 						"createdAt",
 					},
 					[]reflect.Type{
-						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf([]int64{}),
 						reflect.TypeOf(new(bool)).Elem(),
 						reflect.TypeOf([]string{}),
 						reflect.TypeOf(&TimeRange{}).Elem(),
@@ -92,7 +94,7 @@ func init() {
 				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
 					reflect.TypeOf(&OperationLog{}),
 					[]string{
-						"userid",
+						"userids",
 						"successful",
 						"typeList",
 						"createdAt",
@@ -101,7 +103,7 @@ func init() {
 						"sortBy",
 					},
 					[]reflect.Type{
-						reflect.TypeOf(new(int64)).Elem(),
+						reflect.TypeOf([]int64{}),
 						reflect.TypeOf(new(bool)).Elem(),
 						reflect.TypeOf([]string{}),
 						reflect.TypeOf(&TimeRange{}).Elem(),
@@ -170,20 +172,20 @@ func (impl *OperationLogDaoImpl) DeleteBy(ctx context.Context, createdAt TimeRan
 	return err
 }
 
-func (impl *OperationLogDaoImpl) Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error) {
+func (impl *OperationLogDaoImpl) Count(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange) (int64, error) {
 	var instance int64
 	var nullable gobatis.Nullable
 	nullable.Value = &instance
 
 	err := impl.session.SelectOne(ctx, "OperationLogDao.Count",
 		[]string{
-			"userid",
+			"userids",
 			"successful",
 			"typeList",
 			"createdAt",
 		},
 		[]interface{}{
-			userid,
+			userids,
 			successful,
 			typeList,
 			createdAt,
@@ -198,11 +200,11 @@ func (impl *OperationLogDaoImpl) Count(ctx context.Context, userid int64, succes
 	return instance, nil
 }
 
-func (impl *OperationLogDaoImpl) List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
+func (impl *OperationLogDaoImpl) List(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
 	var instances []OperationLog
 	results := impl.session.Select(ctx, "OperationLogDao.List",
 		[]string{
-			"userid",
+			"userids",
 			"successful",
 			"typeList",
 			"createdAt",
@@ -211,7 +213,7 @@ func (impl *OperationLogDaoImpl) List(ctx context.Context, userid int64, success
 			"sortBy",
 		},
 		[]interface{}{
-			userid,
+			userids,
 			successful,
 			typeList,
 			createdAt,

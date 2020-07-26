@@ -120,7 +120,7 @@ func (um *UserManager) loadUsers(ctx context.Context) ([]api.User, error) {
 		return nil, errors.Wrap(err, "read roles fail")
 	}
 
-	next, closer := um.Users.UserDao.GetUsers(ctx, &usermodels.UserQueryParams{Enabled: sql.NullBool{Valid: true, Bool: true}}, 0, 0)
+	next, closer := um.Users.UserDao.GetUsers(ctx, &usermodels.UserQueryParams{Enabled: sql.NullBool{Valid: true, Bool: true}}, 0, 0, "")
 	defer util.CloseWith(closer)
 
 	var allList = make([]api.User, 0, 64)

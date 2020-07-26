@@ -7,10 +7,10 @@ import (
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
-	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/db"
+	"github.com/runner-mei/log"
 )
 
 type OperationLog = api.OperationLog
@@ -39,21 +39,23 @@ type OldOperationLogDao interface {
 	Insert(ctx context.Context, ol *OldOperationLog) error
 
 	// @default SELECT count(*) FROM <tablename type="OldOperationLog" /> <where>
-	// <if test="successful"> successful = #{successful} </if>
+	// <if test="len(usernames) &gt; 0"> <foreach collection="usernames" open="user_name in (" close=")"  separator="," >#{item}</foreach> </if>
+	// <if test="successful"> AND successful = #{successful} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")" separator="," >#{item}</foreach> </if>
 	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
 	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
-	Count(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
+	Count(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange) (int64, error)
 
 	// @default SELECT * FROM <tablename type="OldOperationLog" /> <where>
-	// <if test="successful"> successful = #{successful} </if>
+	// <if test="len(usernames) &gt; 0"> <foreach collection="usernames" open="user_name in (" close=")"  separator="," >#{item}</foreach> </if>
+	// <if test="successful"> AND successful = #{successful} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")"  separator="," >#{item}</foreach> </if>
 	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
 	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
 	// <pagination />
-	List(ctx context.Context, userid int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OldOperationLog, error)
+	List(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OldOperationLog, error)
 }
 
 var InitOperationQueryer = api.InitOperationQueryer
@@ -133,24 +135,45 @@ type operationQueryer struct {
 	dao OperationLogDao
 }
 
-func (queryer operationQueryer) Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
+func (queryer operationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
 	return queryer.dao.Count(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt})
 }
 
-func (queryer operationQueryer) List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
+func (queryer operationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
 	return queryer.dao.List(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
 }
 
 type oldOperationQueryer struct {
 	dao OldOperationLogDao
+	findUsernameByID func(ctx context.Context, id int64) (string, error)
 }
 
-func (queryer oldOperationQueryer) Count(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
-	return queryer.dao.Count(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt})
+func (queryer oldOperationQueryer) getUsernames(ctx context.Context, userid []int64) ([]string, error) {
+	var names []string
+	for _, id := range userid {
+		name, err := queryer.findUsernameByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
 
-func (queryer oldOperationQueryer) List(ctx context.Context, userid int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
-	logList, err := queryer.dao.List(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
+func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
+	usernames, err := queryer.getUsernames(ctx, userid)
+	if err != nil {
+		return 0, err
+	}
+	return queryer.dao.Count(ctx, usernames, successful, typeList, TimeRange{Start: beginAt, End: endAt})
+}
+
+func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
+		usernames, err := queryer.getUsernames(ctx, userid)
+	if err != nil {
+		return nil, err
+	}
+	logList, err := queryer.dao.List(ctx, usernames, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
 	if err != nil {
 		return nil, err
 	}
@@ -167,12 +190,13 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid int64, succe
 	return results, nil
 }
 
-func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession) OperationQueryer {
+func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession, 
+	findUsernameByID func(ctx context.Context, id int64) (string, error)) OperationQueryer {
 	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
 		return operationQueryer{dao: api.NewOperationLogDao(session)}
 	}
 
-	return oldOperationQueryer{dao: NewOldOperationLogDao(session)}
+	return oldOperationQueryer{dao: NewOldOperationLogDao(session), findUsernameByID: findUsernameByID}
 }
 
 func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {

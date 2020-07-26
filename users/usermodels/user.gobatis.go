@@ -517,7 +517,15 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("users")
-				sb.WriteString(" <where>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" <where>\r\n  <if test=\"len(params.Roles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id in(<foreach collection=\"params.Roles\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
@@ -569,7 +577,15 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("users")
-				sb.WriteString(" <where>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" <where>\r\n  <if test=\"len(params.Roles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id in(<foreach collection=\"params.Roles\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\">users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
@@ -597,7 +613,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n    <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />")
+				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\">#{item}</foreach></if>\r\n    <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />\r\n  <order_by />")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsers",
@@ -1074,17 +1090,19 @@ func (impl *UserQueryerImpl) GetUserCount(ctx context.Context, params *UserQuery
 	return instance, nil
 }
 
-func (impl *UserQueryerImpl) GetUsers(ctx context.Context, params *UserQueryParams, offset int64, limit int64) (func(*User) (bool, error), io.Closer) {
+func (impl *UserQueryerImpl) GetUsers(ctx context.Context, params *UserQueryParams, offset int64, limit int64, sort string) (func(*User) (bool, error), io.Closer) {
 	results := impl.session.Select(ctx, "UserQueryer.GetUsers",
 		[]string{
 			"params",
 			"offset",
 			"limit",
+			"sort",
 		},
 		[]interface{}{
 			params,
 			offset,
 			limit,
+			sort,
 		})
 	return func(value *User) (bool, error) {
 		if !results.Next() {

@@ -18,13 +18,13 @@ import (
 
 func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 	mux.GET("/count", func(ctx *loong.Context) error {
-		var userid int64
-		if s := ctx.QueryParam("userid"); s != "" {
-			useridValue, err := strconv.ParseInt(s, 10, 64)
+		var useridList []int64
+		if ss := ctx.QueryParamArray("userid_list"); len(ss) != 0 {
+			useridListValue, err := ToInt64Array(ss)
 			if err != nil {
-				return ctx.ReturnError(loong.ErrBadArgument("userid", s, err), http.StatusBadRequest)
+				return ctx.ReturnError(loong.ErrBadArgument("userid_list", ss, err), http.StatusBadRequest)
 			}
-			userid = useridValue
+			useridList = useridListValue
 		}
 		var successful bool
 		if s := ctx.QueryParam("successful"); s != "" {
@@ -48,20 +48,20 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 			endAt = endAtValue
 		}
 
-		result, err := svc.Count(ctx.StdContext, userid, successful, typeList, beginAt, endAt)
+		result, err := svc.Count(ctx.StdContext, useridList, successful, typeList, beginAt, endAt)
 		if err != nil {
 			return ctx.ReturnError(err)
 		}
 		return ctx.ReturnQueryResult(result)
 	})
 	mux.GET("", func(ctx *loong.Context) error {
-		var userid int64
-		if s := ctx.QueryParam("userid"); s != "" {
-			useridValue, err := strconv.ParseInt(s, 10, 64)
+		var useridList []int64
+		if ss := ctx.QueryParamArray("userid_list"); len(ss) != 0 {
+			useridListValue, err := ToInt64Array(ss)
 			if err != nil {
-				return ctx.ReturnError(loong.ErrBadArgument("userid", s, err), http.StatusBadRequest)
+				return ctx.ReturnError(loong.ErrBadArgument("userid_list", ss, err), http.StatusBadRequest)
 			}
-			userid = useridValue
+			useridList = useridListValue
 		}
 		var successful bool
 		if s := ctx.QueryParam("successful"); s != "" {
@@ -102,7 +102,7 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 		}
 		var sortBy = ctx.QueryParam("sort_by")
 
-		result, err := svc.List(ctx.StdContext, userid, successful, typeList, beginAt, endAt, offset, limit, sortBy)
+		result, err := svc.List(ctx.StdContext, useridList, successful, typeList, beginAt, endAt, offset, limit, sortBy)
 		if err != nil {
 			return ctx.ReturnError(err)
 		}

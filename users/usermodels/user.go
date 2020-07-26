@@ -179,6 +179,7 @@ type UserQueryParams struct {
 	CanLogin sql.NullBool
 	Enabled  sql.NullBool
 	Source   sql.NullString
+	Roles    []int64
 
 	UsergroupIDs       []int64
 	UsergroupRecursive bool
@@ -225,6 +226,7 @@ type UserQueryer interface {
 	GetUserByNameOrNickname(ctx context.Context, name, nickname string) func(*User) error
 
 	// @default SELECT COUNT(*) FROM <tablename type="User" as="users" /> <where>
+	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in(<foreach collection="params.Roles">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
 	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
@@ -252,6 +254,7 @@ type UserQueryer interface {
 	GetUserCount(ctx context.Context, params *UserQueryParams) (int64, error)
 
 	// @default SELECT * FROM <tablename type="User" as="users" /> <where>
+	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in(<foreach collection="params.Roles">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
 	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
@@ -276,7 +279,8 @@ type UserQueryer interface {
 	//  </if>
 	//  </where>
 	//  <pagination />
-	GetUsers(ctx context.Context, params *UserQueryParams, offset, limit int64) (func(*User) (bool, error), io.Closer)
+	//  <order_by />
+	GetUsers(ctx context.Context, params *UserQueryParams, offset, limit int64, sort string) (func(*User) (bool, error), io.Closer)
 
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
 	//  exists (select * from <tablename type="UserAndRole" /> as users_roles

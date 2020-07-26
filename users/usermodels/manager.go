@@ -20,6 +20,7 @@ func init() {
 	})
 }
 
+
 func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger operation_logs.OperationLogger) *Users {
 	sessionRef := dbFactory.SessionReference()
 	return &Users{
@@ -50,7 +51,7 @@ func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
 }
 
 func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit int64) ([]User, error) {
-	next, closer := c.UserDao.GetUsers(ctx, &query.UserQueryParams, offset, limit)
+	next, closer := c.UserDao.GetUsers(ctx, &query.UserQueryParams, offset, limit, "")
 	defer util.CloseWith(closer)
 
 	var userList []User
