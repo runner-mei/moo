@@ -20,6 +20,7 @@ type OperationLog struct {
 	Username   string              `json:"username,omitempty" xorm:"username null"`
 	Successful bool                `json:"successful" xorm:"successful notnull"`
 	Type       string              `json:"type" xorm:"type notnull"`
+	TypeTitle  string              `json:"type_title" xorm:"-"`
 	Content    string              `json:"content,omitempty" xorm:"content null"`
 	Fields     *OperationLogRecord `json:"attributes,omitempty" xorm:"attributes json null"`
 	CreatedAt  time.Time           `json:"created_at,omitempty" xorm:"created_at"`
@@ -35,6 +36,11 @@ type OperationLogRecord struct {
 	ObjectType string         `json:"object_type,omitempty"`
 	ObjectID   int64          `json:"object_id,omitempty"`
 	Records    []ChangeRecord `json:"records,omitempty"`
+}
+
+type OperationLogLocaleConfig struct {
+	Title  string
+	Fields map[string]string
 }
 
 type TimeRange struct {
@@ -58,6 +64,8 @@ type OperationLogger interface {
 
 // @gobatis.ignore
 type OperationQueryer interface {
+	Types(ctx context.Context) map[string]OperationLogLocaleConfig
+
 	// @http.GET(path="/count")
 	Count(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error)
 

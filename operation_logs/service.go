@@ -4,13 +4,15 @@ package operation_logs
 
 import (
 	"context"
+	"os"
 	"time"
 
 	gobatis "github.com/runner-mei/GoBatis"
+	"github.com/runner-mei/goutils/util"
+	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/db"
-	"github.com/runner-mei/log"
 )
 
 type OperationLog = api.OperationLog
@@ -54,8 +56,9 @@ type OldOperationLogDao interface {
 	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
 	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
+	// <sort_by />
 	// <pagination />
-	List(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OldOperationLog, error)
+	List(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sort string) ([]OldOperationLog, error)
 }
 
 var InitOperationQueryer = api.InitOperationQueryer
@@ -132,7 +135,20 @@ func (logger oldOperationLogger) LogRecord(ctx context.Context, ol *OperationLog
 }
 
 type operationQueryer struct {
-	dao OperationLogDao
+	names map[string]OperationLogLocaleConfig
+	dao   OperationLogDao
+}
+
+func (queryer operationQueryer) Types(ctx context.Context) map[string]OperationLogLocaleConfig {
+	return queryer.names
+}
+
+func (queryer operationQueryer) toTypeTilte(ctx context.Context, typeName string) string {
+	s, ok := queryer.names[typeName]
+	if !ok && s.Title == "" {
+		return typeName
+	}
+	return s.Title
 }
 
 func (queryer operationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
@@ -140,12 +156,24 @@ func (queryer operationQueryer) Count(ctx context.Context, userid []int64, succe
 }
 
 func (queryer operationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
-	return queryer.dao.List(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
+	items, err := queryer.dao.List(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
+	if err != nil {
+		return nil, err
+	}
+	for idx := range items {
+		items[idx].TypeTitle = queryer.toTypeTilte(ctx, items[idx].Type)
+	}
+	return items, nil
 }
 
 type oldOperationQueryer struct {
-	dao OldOperationLogDao
+	names            map[string]OperationLogLocaleConfig
+	dao              OldOperationLogDao
 	findUsernameByID func(ctx context.Context, id int64) (string, error)
+}
+
+func (queryer oldOperationQueryer) Types(ctx context.Context) map[string]OperationLogLocaleConfig {
+	return queryer.names
 }
 
 func (queryer oldOperationQueryer) getUsernames(ctx context.Context, userid []int64) ([]string, error) {
@@ -160,6 +188,14 @@ func (queryer oldOperationQueryer) getUsernames(ctx context.Context, userid []in
 	return names, nil
 }
 
+func (queryer oldOperationQueryer) toTypeTilte(ctx context.Context, typeName string) string {
+	s, ok := queryer.names[typeName]
+	if !ok && s.Title == "" {
+		return typeName
+	}
+	return s.Title
+}
+
 func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
 	usernames, err := queryer.getUsernames(ctx, userid)
 	if err != nil {
@@ -169,9 +205,15 @@ func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, su
 }
 
 func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
-		usernames, err := queryer.getUsernames(ctx, userid)
+	usernames, err := queryer.getUsernames(ctx, userid)
 	if err != nil {
 		return nil, err
+	}
+	switch sortBy {
+	case "+userid", "userid":
+		sortBy = "+user_name"
+	case "-userid":
+		sortBy = "-user_name"
 	}
 	logList, err := queryer.dao.List(ctx, usernames, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
 	if err != nil {
@@ -183,6 +225,7 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, suc
 		results[idx].Username = logList[idx].Username
 		results[idx].Successful = logList[idx].Successful
 		results[idx].Type = logList[idx].Type
+		results[idx].TypeTitle = queryer.toTypeTilte(ctx, logList[idx].Type)
 		results[idx].Content = logList[idx].Content
 		results[idx].Fields = logList[idx].Fields
 		results[idx].CreatedAt = logList[idx].CreatedAt
@@ -190,13 +233,63 @@ func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, suc
 	return results, nil
 }
 
-func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession, 
-	findUsernameByID func(ctx context.Context, id int64) (string, error)) OperationQueryer {
-	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
-		return operationQueryer{dao: api.NewOperationLogDao(session)}
+type OperationLogLocaleConfig = api.OperationLogLocaleConfig
+
+func LoadOperationLogLocaleConfig(env *moo.Environment) (map[string]OperationLogLocaleConfig, error) {
+	filename := env.Fs.FromConfig("operation_logs.zh.json")
+	customFilename := env.Fs.FromDataConfig("operation_logs.zh.json")
+
+	var cfg map[string]OperationLogLocaleConfig
+	err := util.FromHjsonFile(filename, &cfg)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
 	}
 
-	return oldOperationQueryer{dao: NewOldOperationLogDao(session), findUsernameByID: findUsernameByID}
+	var customCfg map[string]OperationLogLocaleConfig
+	err = util.FromHjsonFile(customFilename, &customCfg)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return map[string]OperationLogLocaleConfig{}, nil
+		}
+	} else if len(cfg) == 0 {
+		cfg = customCfg
+	} else {
+		for key, newValue := range customCfg {
+			oldValue, ok := cfg[key]
+			if !ok {
+				cfg[key] = newValue
+				continue
+			}
+			if newValue.Title != "" {
+				oldValue.Title = newValue.Title
+			}
+
+			if len(oldValue.Fields) == 0 {
+				oldValue.Fields = newValue.Fields
+			} else {
+				for k, v := range newValue.Fields {
+					oldValue.Fields[k] = v
+				}
+			}
+			cfg[key] = newValue
+		}
+	}
+	return cfg, nil
+}
+
+func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession,
+	findUsernameByID func(ctx context.Context, id int64) (string, error)) (OperationQueryer, error) {
+	names, err := LoadOperationLogLocaleConfig(env)
+	if err != nil {
+		return nil, err
+	}
+	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
+		return operationQueryer{names: names, dao: api.NewOperationLogDao(session)}, nil
+	}
+
+	return oldOperationQueryer{names: names, dao: NewOldOperationLogDao(session), findUsernameByID: findUsernameByID}, nil
 }
 
 func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {
