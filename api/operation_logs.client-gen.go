@@ -12,6 +12,7 @@ import (
 // OperationLog is skipped
 // ChangeRecord is skipped
 // OperationLogRecord is skipped
+// OperationLogLocaleConfig is skipped
 // TimeRange is skipped
 // OperationLogDao is skipped
 // OperationLogger is skipped
@@ -19,6 +20,8 @@ import (
 type OperationQueryerClient struct {
 	Proxy *resty.Proxy
 }
+
+// Types: annotation is missing
 
 func (client OperationQueryerClient) Count(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt time.Time, endAt time.Time) (int64, error) {
 	var result int64

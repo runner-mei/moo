@@ -12,11 +12,13 @@ import (
 // OperationLog is skipped
 // ChangeRecord is skipped
 // OperationLogRecord is skipped
+// OperationLogLocaleConfig is skipped
 // TimeRange is skipped
 // OperationLogDao is skipped
 // OperationLogger is skipped
 
 func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
+	// Types: annotation is missing
 	mux.GET("/count", func(ctx *loong.Context) error {
 		var useridList []int64
 		if ss := ctx.QueryParamArray("userid_list"); len(ss) != 0 {

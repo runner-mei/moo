@@ -45,7 +45,7 @@ type UsergroupQueryer interface {
 	// @default SELECT * FROM <tablename type="Usergroup" /> where id in (
 	//   WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id = #{id} <foreach collection="list" open="AND id in (" close=")">#{item}</foreach>
+	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id = #{id} <foreach collection="list" open="AND id in (" close=")" separator=",">#{item}</foreach>
 	//     UNION ALL
 	//     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
 	//        FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
@@ -128,14 +128,13 @@ type UsergroupDao interface {
 
 	// @type select
 	// @default SELECT count(*) > 0 FROM <tablename type="UserAndUsergroup" />
-	//           WHERE group_id = #{groupid} and user_id = #{userid}
+	//           WHERE group_id = #{groupid} and user_id = #{userid}  <if test="roleid &gt; 0"> and role_id = #{roleid} </if>
 	HasUserForGroup(ctx context.Context, userid, roleid int64) (bool, error)
 
-	// @default INSERT INTO <tablename type="UserAndUsergroup"/>(group_id, user_id)
-	//       VALUES(#{groupid}, #{userid})
-	//       ON CONFLICT (group_id, user_id)
-	//       DO NOTHING
-	AddUserToGroup(ctx context.Context, groupid, userid int64) error
+	// @default INSERT INTO <tablename type="UserAndUsergroup"/>(group_id, user_id, role_id)
+	//       VALUES(#{groupid}, #{userid}<if test="roleid &gt; 0">, #{roleid}</if><if test="roleid &lt;= 0">, NULL</if>)
+	//       ON CONFLICT (group_id, user_id, role_id) DO NOTHING
+	AddUserToGroup(ctx context.Context, groupid, userid, roleid int64) error
 
 	// @default DELETE FROM <tablename type="UserAndUsergroup"/>
 	//           WHERE group_id = #{groupid} and user_id = #{userid}
