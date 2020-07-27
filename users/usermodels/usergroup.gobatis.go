@@ -77,7 +77,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("ug")
-				sb.WriteString(" WHERE id = #{id} <foreach collection=\"list\" open=\"AND id in (\" close=\")\">#{item}</foreach>\r\n     UNION ALL\r\n     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n        FROM ")
+				sb.WriteString(" WHERE id = #{id} <foreach collection=\"list\" open=\"AND id in (\" close=\")\" separator=\",\">#{item}</foreach>\r\n     UNION ALL\r\n     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n        FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -580,7 +580,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString("\r\n           WHERE group_id = #{groupid} and user_id = #{userid}")
+				sb.WriteString("\r\n           WHERE group_id = #{groupid} and user_id = #{userid}  <if test=\"roleid &gt; 0\"> and role_id = #{roleid} </if>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupDao.HasUserForGroup",
@@ -602,7 +602,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString("(group_id, user_id)\r\n       VALUES(#{groupid}, #{userid})\r\n       ON CONFLICT (group_id, user_id)\r\n       DO NOTHING")
+				sb.WriteString("(group_id, user_id, role_id)\r\n       VALUES(#{groupid}, #{userid}<if test=\"roleid &gt; 0\">, #{roleid}</if><if test=\"roleid &lt;= 0\">, NULL</if>)\r\n       ON CONFLICT (group_id, user_id, role_id) DO NOTHING")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupDao.AddUserToGroup",
@@ -743,15 +743,17 @@ func (impl *UsergroupDaoImpl) HasUserForGroup(ctx context.Context, userid int64,
 	return instance, nil
 }
 
-func (impl *UsergroupDaoImpl) AddUserToGroup(ctx context.Context, groupid int64, userid int64) error {
+func (impl *UsergroupDaoImpl) AddUserToGroup(ctx context.Context, groupid int64, userid int64, roleid int64) error {
 	_, err := impl.session.Insert(ctx, "UsergroupDao.AddUserToGroup",
 		[]string{
 			"groupid",
 			"userid",
+			"roleid",
 		},
 		[]interface{}{
 			groupid,
 			userid,
+			roleid,
 		},
 		true)
 	return err

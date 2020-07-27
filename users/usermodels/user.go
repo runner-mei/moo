@@ -175,11 +175,12 @@ type UserAndRole struct {
 }
 
 type UserQueryParams struct {
-	NameLike string
-	CanLogin sql.NullBool
-	Enabled  sql.NullBool
-	Source   sql.NullString
-	Roles    []int64
+	NameLike  string
+	CanLogin  sql.NullBool
+	Enabled   sql.NullBool
+	Source    sql.NullString
+	Roles     []int64
+	Rolenames []string
 
 	UsergroupIDs       []int64
 	UsergroupRecursive bool
@@ -225,19 +226,21 @@ type UserQueryer interface {
 	// @default SELECT * FROM <tablename type="User" /> WHERE lower(name) = lower(#{name}) OR lower(nickname) = lower(#{nickname})
 	GetUserByNameOrNickname(ctx context.Context, name, nickname string) func(*User) error
 
-	// @default SELECT COUNT(*) FROM <tablename type="User" as="users" /> <where>
-	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in(<foreach collection="params.Roles">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	// @default SELECT count(*) FROM <tablename type="User" as="users" /> <where>
+	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in (<foreach collection="params.Roles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.Rolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name in (<foreach collection="params.Rolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
-	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
+	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
-	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g
-	//       where u2g.user_id = users.id and u2g.group_id in (
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id and u2g.group_id in (
 	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
-	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>
+	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
 	//             UNION ALL
 	//           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
@@ -245,27 +248,28 @@ type UserQueryer interface {
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
 	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
-	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
-	//    <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>)
+	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
 	//  </if>
 	//  </where>
-	//  <pagination />
 	GetUserCount(ctx context.Context, params *UserQueryParams) (int64, error)
 
 	// @default SELECT * FROM <tablename type="User" as="users" /> <where>
-	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in(<foreach collection="params.Roles">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in (<foreach collection="params.Roles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.Rolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name in (<foreach collection="params.Rolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
-	//  <if test="params.CanLogin.Valid">users.can_login = #{params.CanLogin} AND </if>
+	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
-	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g
-	//       where u2g.user_id = users.id and u2g.group_id in (
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id and u2g.group_id in (
 	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
-	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>
+	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
 	//             UNION ALL
 	//           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
@@ -273,8 +277,8 @@ type UserQueryer interface {
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
 	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
-	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs">#{item}</foreach></if>
-	//    <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs">#{item}</foreach>)</if>)
+	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
 	//  </if>
 	//  </where>

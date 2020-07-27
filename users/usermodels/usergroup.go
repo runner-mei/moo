@@ -45,7 +45,7 @@ type UsergroupQueryer interface {
 	// @default SELECT * FROM <tablename type="Usergroup" /> where id in (
 	//   WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id = #{id} <foreach collection="list" open="AND id in (" close=")">#{item}</foreach>
+	//        FROM <tablename type="Usergroup" as="ug" /> WHERE id = #{id} <foreach collection="list" open="AND id in (" close=")" separator=",">#{item}</foreach>
 	//     UNION ALL
 	//     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
 	//        FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
