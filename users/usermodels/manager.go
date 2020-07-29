@@ -20,7 +20,6 @@ func init() {
 	})
 }
 
-
 func NewUsers(env *moo.Environment, dbFactory *gobatis.SessionFactory, ologger operation_logs.OperationLogger) *Users {
 	sessionRef := dbFactory.SessionReference()
 	return &Users{
@@ -92,7 +91,7 @@ func (c *Users) GetUserByName(ctx context.Context, name string) (*User, error) {
 }
 
 func (c *Users) GetRoles(ctx context.Context, name string, offset, limit int64) ([]Role, error) {
-	next, closer := c.UserDao.GetRoles(ctx, name, offset, limit)
+	next, closer := c.UserDao.GetRoles(ctx, name, sql.NullInt64{}, offset, limit)
 	defer util.CloseWith(closer)
 
 	var roles []Role

@@ -322,11 +322,13 @@ func init() {
 					reflect.TypeOf(&Role{}),
 					[]string{
 						"nameLike",
+						"type",
 						"offset",
 						"limit",
 					},
 					[]reflect.Type{
 						reflect.TypeOf(new(string)).Elem(),
+						reflect.TypeOf(&sql.NullInt64{}).Elem(),
 						reflect.TypeOf(new(int64)).Elem(),
 						reflect.TypeOf(new(int64)).Elem(),
 					},
@@ -623,7 +625,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" as u2g\r\n        where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -978,15 +980,17 @@ func (impl *UserQueryerImpl) GetRoleCount(ctx context.Context, nameLike string) 
 	return instance, nil
 }
 
-func (impl *UserQueryerImpl) GetRoles(ctx context.Context, nameLike string, offset int64, limit int64) (func(*Role) (bool, error), io.Closer) {
+func (impl *UserQueryerImpl) GetRoles(ctx context.Context, nameLike string, _type sql.NullInt64, offset int64, limit int64) (func(*Role) (bool, error), io.Closer) {
 	results := impl.session.Select(ctx, "UserQueryer.GetRoles",
 		[]string{
 			"nameLike",
+			"type",
 			"offset",
 			"limit",
 		},
 		[]interface{}{
 			nameLike,
+			_type,
 			offset,
 			limit,
 		})

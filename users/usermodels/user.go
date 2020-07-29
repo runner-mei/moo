@@ -145,7 +145,7 @@ type UserProfile struct {
 type Role struct {
 	TableName   struct{}  `json:"-" xorm:"moo_roles"`
 	ID          int64     `json:"id" xorm:"id pk autoincr"`
-	Type        int64     `json:"type" xorm:"type"`
+	Type        int64     `json:"type" xorm:"type null"`
 	Name        string    `json:"name" xorm:"name unique notnull"`
 	Description string    `json:"description,omitempty" xorm:"description null"`
 	IsDefault   bool      `json:"is_default,omitempty" xorm:"is_default null"`
@@ -203,7 +203,11 @@ type UserQueryer interface {
 	GetRoleCount(ctx context.Context, nameLike string) (int64, error)
 
 	// @record_type Role
-	GetRoles(ctx context.Context, nameLike string, offset, limit int64) (func(*Role) (bool, error), io.Closer)
+	GetRoles(ctx context.Context, nameLike string, _type sql.NullInt64, offset, limit int64) (func(*Role) (bool, error), io.Closer)
+
+	// @default SELECT * FROM <tablename name="Role" as="roles" /> WHERE roles.id in
+	//  (SELECT role_id from <tablename type="UserAndUsergroup" /> WHERE group_id = #{usergroupID} and user_id = #{userID})
+	// GetRoleByUsergroupIDAndUserID(ctx context.Context, usergroupID, userID int64) ([]Role, error)
 
 	// @record_type Role
 	GetRoleByID(ctx context.Context, id int64) func(*Role) error
@@ -265,7 +269,8 @@ type UserQueryer interface {
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
-	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id and u2g.group_id in (
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g 
+    //        where u2g.user_id = users.id and u2g.group_id in (
 	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
