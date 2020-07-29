@@ -11,11 +11,11 @@ import (
 )
 
 func ErrUsergroupnameNotFound(groupname string) error {
-	return errors.New("usergroup with id is '" + groupname + "' isnot found")
+	return errors.ErrNotFoundWithText("usergroup with id is '" + groupname + "' isnot found")
 }
 
 func ErrUsergroupIDNotFound(userid int64) error {
-	return errors.New("usergroup with id is '" + strconv.FormatInt(userid, 10) + "' isnot found")
+	return errors.ErrNotFoundWithText("usergroup with id is '" + strconv.FormatInt(userid, 10) + "' isnot found")
 }
 
 type errUsergroupDisabled struct {

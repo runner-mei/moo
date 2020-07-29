@@ -98,7 +98,7 @@ type UsergroupQueryer interface {
 	GetUsersAndGroups(ctx context.Context, groupID int64, recursive, userEnabled bool) ([]UserAndUsergroup, error)
 
 	// @default SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> <where>
-	//   <if test="groupEnabled"> EXISTS (SELECT * FROM <tablename type="Usergroup" as="g" /> WHERE ( disabled IS NULL or disabled = false ) AND uug.group_id = g.id) </if>
+	//   <if test="groupEnabled"> EXISTS (SELECT * FROM <tablename type="Usergroup" as="g" /> WHERE ( g.disabled IS NULL or g.disabled = false ) AND uug.group_id = g.id) </if>
 	//   <if test="userid.Valid"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE uug.user_id = #{userid}) </if>
 	//  </where>
 	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64, groupEnabled bool) (func(*UserAndUsergroup) (bool, error), io.Closer)
