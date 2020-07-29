@@ -170,6 +170,7 @@ func (role *Role) IsBuiltin() bool {
 
 type UserAndRole struct {
 	TableName struct{} `json:"-" xorm:"moo_users_and_roles"`
+	Reserve1  int64    `json:"id" xorm:"id <-"`
 	UserID    int64    `json:"user_id" xorm:"user_id unique(user_role)"`
 	RoleID    int64    `json:"role_id" xorm:"role_id unique(user_role) notnull"`
 }

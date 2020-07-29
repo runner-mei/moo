@@ -364,6 +364,36 @@ func init() {
 				ctx.Statements["UsergroupQueryer.GetUserAndGroupList"] = stmt
 			}
 		}
+		{ //// UsergroupQueryer.GetRoleByUsergroupIDAndUserID
+			if _, exists := ctx.Statements["UsergroupQueryer.GetRoleByUsergroupIDAndUserID"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("roles")
+				sb.WriteString(" WHERE roles.id in\r\n  (SELECT role_id from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" WHERE group_id = #{usergroupID} and user_id = #{userID})")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetRoleByUsergroupIDAndUserID",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UsergroupQueryer.GetRoleByUsergroupIDAndUserID"] = stmt
+			}
+		}
 		return nil
 	})
 }
@@ -551,6 +581,24 @@ func (impl *UsergroupQueryerImpl) GetUserAndGroupList(ctx context.Context, useri
 		}
 		return true, results.Scan(value)
 	}, results
+}
+
+func (impl *UsergroupQueryerImpl) GetRoleByUsergroupIDAndUserID(ctx context.Context, usergroupID int64, userID int64) ([]Role, error) {
+	var instances []Role
+	results := impl.session.Select(ctx, "UsergroupQueryer.GetRoleByUsergroupIDAndUserID",
+		[]string{
+			"usergroupID",
+			"userID",
+		},
+		[]interface{}{
+			usergroupID,
+			userID,
+		})
+	err := results.ScanSlice(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
 }
 
 func init() {

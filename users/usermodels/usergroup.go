@@ -13,6 +13,7 @@ import (
 
 type UserAndUsergroup struct {
 	TableName struct{} `json:"-" xorm:"moo_users_and_usergroups"`
+	Reserve1  int64    `json:"id" xorm:"id <-"`
 	UserID    int64    `json:"user_id" xorm:"user_id notnull"`
 	GroupID   int64    `json:"group_id" xorm:"group_id notnull"`
 	RoleID    int64    `json:"role_id" xorm:"role_id null"`
@@ -124,6 +125,10 @@ type UsergroupQueryer interface {
 	//   <if test="userid.Valid"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE uug.user_id = #{userid}) </if>
 	//  </where>
 	GetUserAndGroupList(ctx context.Context, userid sql.NullInt64, groupEnabled bool) (func(*UserAndUsergroup) (bool, error), io.Closer)
+
+	// @default SELECT * FROM <tablename name="Role" as="roles" /> WHERE roles.id in
+	//  (SELECT role_id from <tablename type="UserAndUsergroup" /> WHERE group_id = #{usergroupID} and user_id = #{userID})
+	GetRoleByUsergroupIDAndUserID(ctx context.Context, usergroupID, userID int64) ([]Role, error)
 }
 
 type UsergroupDao interface {
