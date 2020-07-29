@@ -289,7 +289,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("g")
-				sb.WriteString(" WHERE ( disabled IS NULL or disabled = false ) AND uug.group_id = g.id) </if>\r\n   <if test=\"userid.Valid\"> AND EXISTS (SELECT * FROM ")
+				sb.WriteString(" WHERE ( g.disabled IS NULL or g.disabled = false ) AND uug.group_id = g.id) </if>\r\n   <if test=\"userid.Valid\"> AND EXISTS (SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
 					return err
 				} else {
