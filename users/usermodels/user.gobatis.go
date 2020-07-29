@@ -571,7 +571,9 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n            <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>")
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString("\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n            <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserCount",
@@ -625,7 +627,9 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g\r\n        where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString("\r\n        where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -647,7 +651,9 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n            <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />\r\n  <order_by />")
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString("\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n            <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>\r\n  <pagination />\r\n  <order_by />")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsers",

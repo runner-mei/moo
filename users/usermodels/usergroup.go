@@ -62,7 +62,9 @@ type UsergroupQueryer interface {
 	// SELECT user_id FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id in (
 	// WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//   SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
-	//      FROM <tablename type="Usergroup" as="ug" /> WHERE id=#{groupID}
+	//      FROM <tablename type="Usergroup" as="ug" />
+	//      WHERE <if test="len(groupIDs) == 1"> ug.id = <foreach collection="groupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(groupIDs) &gt; 1"> ug.id in (<foreach collection="groupIDs" separator=",">#{item}</foreach>)</if>
 	//   UNION ALL
 	//   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
 	//      FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
@@ -78,7 +80,27 @@ type UsergroupQueryer interface {
 	//         )
 	//       </if>
 	// </if>
-	GetUserIDsByGroupID(ctx context.Context, groupID int64, recursive bool, userEnabled sql.NullBool) ([]int64, error)
+	GetUserIDsByGroupIDs(ctx context.Context, groupIDs []int64, recursive bool, userEnabled sql.NullBool) ([]int64, error)
+
+	// @default SELECT * FROM <tablename type="User" as="users" /> WHERE
+	//  <if test="userEnabled.Valid"> (<if test="!userEnabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
+	// <if test="recursive">
+	// EXISTS (select * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.user_id = users.id and uug.group_id in (
+	// WITH RECURSIVE ALLGROUPS (ID) AS (
+	//     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//      FROM <tablename type="Usergroup" as="ug" />
+	//      WHERE <if test="len(groupIDs) == 1"> ug.id = <foreach collection="groupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(groupIDs) &gt; 1"> ug.id in (<foreach collection="groupIDs" separator=",">#{item}</foreach>)</if>
+	//   UNION ALL
+	//     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//      FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//  SELECT ID FROM ALLGROUPS ORDER BY PATH))
+	// </if>
+	// <if test="!recursive">
+	//  EXISTS (select * from <tablename type="UserAndUsergroup" /> as uug
+	//     where uug.user_id = users.id and uug.group_id = #{groupID})
+	// </if>
+	GetUsersByGroupIDs(ctx context.Context, groupIDs []int64, recursive bool, userEnabled sql.NullBool) ([]User, error)
 
 	// @default <if test="recursive">
 	// SELECT * FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id in (

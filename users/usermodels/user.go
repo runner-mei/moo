@@ -251,7 +251,7 @@ type UserQueryer interface {
 	//         SELECT ID FROM ALLGROUPS))
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
-	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
 	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
@@ -269,8 +269,8 @@ type UserQueryer interface {
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
-	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g 
-    //        where u2g.user_id = users.id and u2g.group_id in (
+	//     exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//        where u2g.user_id = users.id and u2g.group_id in (
 	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
@@ -281,7 +281,7 @@ type UserQueryer interface {
 	//         SELECT ID FROM ALLGROUPS))
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
-	//      exists (select * from <tablename type="UserAndUsergroup" /> as u2g
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
 	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>

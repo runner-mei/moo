@@ -142,8 +142,8 @@ func init() {
 				ctx.Statements["UsergroupQueryer.GetUsergroups"] = stmt
 			}
 		}
-		{ //// UsergroupQueryer.GetUserIDsByGroupID
-			if _, exists := ctx.Statements["UsergroupQueryer.GetUserIDsByGroupID"]; !exists {
+		{ //// UsergroupQueryer.GetUserIDsByGroupIDs
+			if _, exists := ctx.Statements["UsergroupQueryer.GetUserIDsByGroupIDs"]; !exists {
 				var sb strings.Builder
 				sb.WriteString("<if test=\"recursive\">\r\n SELECT user_id FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
@@ -161,7 +161,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("ug")
-				sb.WriteString(" WHERE id=#{groupID}\r\n   UNION ALL\r\n   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n      FROM ")
+				sb.WriteString("\r\n      WHERE <if test=\"len(groupIDs) == 1\"> ug.id = <foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(groupIDs) &gt; 1\"> ug.id in (<foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n   UNION ALL\r\n   SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n      FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -196,14 +196,68 @@ func init() {
 				sb.WriteString("\r\n           WHERE uug.user_id = u.id AND <if test=\"!userEnabled.Bool\"> NOT </if> ( disabled IS NULL or disabled = false )\r\n         )\r\n       </if>\r\n </if>")
 				sqlStr := sb.String()
 
-				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUserIDsByGroupID",
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUserIDsByGroupIDs",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
 					sqlStr)
 				if err != nil {
 					return err
 				}
-				ctx.Statements["UsergroupQueryer.GetUserIDsByGroupID"] = stmt
+				ctx.Statements["UsergroupQueryer.GetUserIDsByGroupIDs"] = stmt
+			}
+		}
+		{ //// UsergroupQueryer.GetUsersByGroupIDs
+			if _, exists := ctx.Statements["UsergroupQueryer.GetUsersByGroupIDs"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("users")
+				sb.WriteString(" WHERE\r\n  <if test=\"userEnabled.Valid\"> (<if test=\"!userEnabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n <if test=\"recursive\">\r\n EXISTS (select * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("uug")
+				sb.WriteString(" where uug.user_id = users.id and uug.group_id in (\r\n WITH RECURSIVE ALLGROUPS (ID) AS (\r\n     SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n      FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("ug")
+				sb.WriteString("\r\n      WHERE <if test=\"len(groupIDs) == 1\"> ug.id = <foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(groupIDs) &gt; 1\"> ug.id in (<foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n   UNION ALL\r\n     SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n      FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("D")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n  SELECT ID FROM ALLGROUPS ORDER BY PATH))\r\n </if>\r\n <if test=\"!recursive\">\r\n  EXISTS (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" as uug\r\n     where uug.user_id = users.id and uug.group_id = #{groupID})\r\n </if>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUsersByGroupIDs",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UsergroupQueryer.GetUsersByGroupIDs"] = stmt
 			}
 		}
 		{ //// UsergroupQueryer.GetUsersAndGroups
@@ -418,16 +472,36 @@ func (impl *UsergroupQueryerImpl) GetUsergroups(ctx context.Context) (func(*User
 	}, results
 }
 
-func (impl *UsergroupQueryerImpl) GetUserIDsByGroupID(ctx context.Context, groupID int64, recursive bool, userEnabled sql.NullBool) ([]int64, error) {
+func (impl *UsergroupQueryerImpl) GetUserIDsByGroupIDs(ctx context.Context, groupIDs []int64, recursive bool, userEnabled sql.NullBool) ([]int64, error) {
 	var instances []int64
-	results := impl.session.Select(ctx, "UsergroupQueryer.GetUserIDsByGroupID",
+	results := impl.session.Select(ctx, "UsergroupQueryer.GetUserIDsByGroupIDs",
 		[]string{
-			"groupID",
+			"groupIDs",
 			"recursive",
 			"userEnabled",
 		},
 		[]interface{}{
-			groupID,
+			groupIDs,
+			recursive,
+			userEnabled,
+		})
+	err := results.ScanSlice(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (impl *UsergroupQueryerImpl) GetUsersByGroupIDs(ctx context.Context, groupIDs []int64, recursive bool, userEnabled sql.NullBool) ([]User, error) {
+	var instances []User
+	results := impl.session.Select(ctx, "UsergroupQueryer.GetUsersByGroupIDs",
+		[]string{
+			"groupIDs",
+			"recursive",
+			"userEnabled",
+		},
+		[]interface{}{
+			groupIDs,
 			recursive,
 			userEnabled,
 		})
