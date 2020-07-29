@@ -176,12 +176,14 @@ type UserAndRole struct {
 }
 
 type UserQueryParams struct {
-	NameLike  string
-	CanLogin  sql.NullBool
-	Enabled   sql.NullBool
-	Source    sql.NullString
-	Roles     []int64
-	Rolenames []string
+	NameLike         string
+	CanLogin         sql.NullBool
+	Enabled          sql.NullBool
+	Source           sql.NullString
+	Roles            []int64
+	ExcludeRoles     []int64
+	Rolenames        []string
+	ExcludeRolenames []string
 
 	UsergroupIDs       []int64
 	UsergroupRecursive bool
@@ -233,8 +235,12 @@ type UserQueryer interface {
 
 	// @default SELECT count(*) FROM <tablename type="User" as="users" /> <where>
 	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in (<foreach collection="params.Roles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.ExcludeRoles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id not in (<foreach collection="params.ExcludeRoles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
 	//  <if test="len(params.Rolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
 	//      WHERE r.name in (<foreach collection="params.Rolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
+	//  <if test="len(params.ExcludeRolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name not in (<foreach collection="params.ExcludeRolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
 	//  </if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
 	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>
@@ -262,8 +268,12 @@ type UserQueryer interface {
 
 	// @default SELECT * FROM <tablename type="User" as="users" /> <where>
 	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in (<foreach collection="params.Roles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.ExcludeRoles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id not in (<foreach collection="params.ExcludeRoles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
 	//  <if test="len(params.Rolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
 	//      WHERE r.name in (<foreach collection="params.Rolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
+	//  <if test="len(params.ExcludeRolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name not in (<foreach collection="params.ExcludeRolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
 	//  </if>
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
 	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>

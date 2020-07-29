@@ -527,7 +527,15 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("u2r")
-				sb.WriteString(" where u2r.role_id in (<foreach collection=\"params.Roles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.Rolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				sb.WriteString(" where u2r.role_id in (<foreach collection=\"params.Roles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.ExcludeRoles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id not in (<foreach collection=\"params.ExcludeRoles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.Rolenames) &gt; 0\">EXISTS(SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
 					return err
 				} else {
@@ -543,7 +551,23 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("r")
-				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name in (<foreach collection=\"params.Rolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name in (<foreach collection=\"params.Rolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"len(params.ExcludeRolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" JOIN ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("r")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
@@ -605,7 +629,15 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("u2r")
-				sb.WriteString(" where u2r.role_id in (<foreach collection=\"params.Roles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.Rolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				sb.WriteString(" where u2r.role_id in (<foreach collection=\"params.Roles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.ExcludeRoles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id not in (<foreach collection=\"params.ExcludeRoles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.Rolenames) &gt; 0\">EXISTS(SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
 					return err
 				} else {
@@ -621,7 +653,23 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("r")
-				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name in (<foreach collection=\"params.Rolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name in (<foreach collection=\"params.Rolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"len(params.ExcludeRolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" JOIN ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("r")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
