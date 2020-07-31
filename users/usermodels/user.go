@@ -302,6 +302,40 @@ type UserQueryer interface {
 	//  <order_by />
 	GetUsers(ctx context.Context, params *UserQueryParams, offset, limit int64, sort string) (func(*User) (bool, error), io.Closer)
 
+	// @default SELECT users.id FROM <tablename type="User" as="users" /> <where>
+	//  <if test="len(params.Roles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id in (<foreach collection="params.Roles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.ExcludeRoles) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> where u2r.role_id not in (<foreach collection="params.ExcludeRoles" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>
+	//  <if test="len(params.Rolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name in (<foreach collection="params.Rolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
+	//  <if test="len(params.ExcludeRolenames) &gt; 0">EXISTS(SELECT * FROM <tablename type="UserAndRole" as="u2r" /> JOIN <tablename type="Role" as="r" /> ON u2r.role_id = r.id
+	//      WHERE r.name not in (<foreach collection="params.ExcludeRolenames" separator=",">#{item}</foreach>) AND u2r.user_id = users.id) AND
+	//  </if>
+	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
+	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>
+	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
+	//  <if test="len(params.UsergroupIDs) &gt; 0">
+	//   <if test="params.UsergroupRecursive">
+	//     exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//        where u2g.user_id = users.id and u2g.group_id in (
+	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
+	//             UNION ALL
+	//           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH
+	//             FROM <tablename type="Usergroup" as="D" /> JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)
+	//         SELECT ID FROM ALLGROUPS))
+	//   </if>
+	//   <if test="!params.UsergroupRecursive">
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
+	//   </if>
+	//  </if>
+	//  </where>
+	GetUserIDs(ctx context.Context, params *UserQueryParams) ([]int64, error)
+
 	// @default SELECT * FROM <tablename type="Role" as="roles" /> WHERE
 	//  exists (select * from <tablename type="UserAndRole" /> as users_roles
 	//     where users_roles.role_id = roles.id and users_roles.user_id = #{userID})

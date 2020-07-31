@@ -714,6 +714,110 @@ func init() {
 				ctx.Statements["UserQueryer.GetUsers"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetUserIDs
+			if _, exists := ctx.Statements["UserQueryer.GetUserIDs"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT users.id FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("users")
+				sb.WriteString(" <where>\r\n  <if test=\"len(params.Roles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id in (<foreach collection=\"params.Roles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.ExcludeRoles) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" where u2r.role_id not in (<foreach collection=\"params.ExcludeRoles\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND</if>\r\n  <if test=\"len(params.Rolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" JOIN ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("r")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name in (<foreach collection=\"params.Rolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"len(params.ExcludeRolenames) &gt; 0\">EXISTS(SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndRole{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2r")
+				sb.WriteString(" JOIN ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Role{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("r")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString("\r\n        where u2g.user_id = users.id and u2g.group_id in (\r\n         WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("ug")
+				sb.WriteString(" WHERE <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n             UNION ALL\r\n           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n             FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("D")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n         SELECT ID FROM ALLGROUPS))\r\n   </if>\r\n   <if test=\"!params.UsergroupRecursive\">\r\n      exists (select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("u2g")
+				sb.WriteString("\r\n       where u2g.user_id = users.id and <if test=\"len(params.UsergroupIDs) == 1\"> u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n            <if test=\"len(params.UsergroupIDs) &gt; 1\"> u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  </where>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserIDs",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUserIDs"] = stmt
+			}
+		}
 		{ //// UserQueryer.GetRolesByUserID
 			if _, exists := ctx.Statements["UserQueryer.GetRolesByUserID"]; !exists {
 				var sb strings.Builder
@@ -1203,6 +1307,22 @@ func (impl *UserQueryerImpl) GetUsers(ctx context.Context, params *UserQueryPara
 		}
 		return true, results.Scan(value)
 	}, results
+}
+
+func (impl *UserQueryerImpl) GetUserIDs(ctx context.Context, params *UserQueryParams) ([]int64, error) {
+	var instances []int64
+	results := impl.session.Select(ctx, "UserQueryer.GetUserIDs",
+		[]string{
+			"params",
+		},
+		[]interface{}{
+			params,
+		})
+	err := results.ScanSlice(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
 }
 
 func (impl *UserQueryerImpl) GetRolesByUserID(ctx context.Context, userID int64) ([]Role, error) {
