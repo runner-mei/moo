@@ -457,6 +457,10 @@ func (u *fileUser) HasPermission(ctx context.Context, permissionID string) (bool
 	return true, nil
 }
 
+func (u *fileUser) HasPermissionAny(ctx context.Context, permissionIDs []string) (bool, error) {
+	return true, nil
+}
+
 var _ services.Authorizer = &fileUser{}
 
 func (u *fileUser) Auth(ctx *services.AuthContext) (bool, error) {
