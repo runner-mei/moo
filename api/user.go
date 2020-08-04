@@ -97,6 +97,9 @@ type User interface {
 	// 用户是否有指定的权限
 	HasPermission(ctx context.Context, permissionID string) (bool, error)
 
+	// 用户是否有指定的权限
+	HasPermissionAny(ctx context.Context, permissionIDs []string) (bool, error)
+
 	// 是不是有一个指定的角色
 	HasRole(string) bool
 
@@ -244,7 +247,11 @@ func (u *mockUser) Roles() []string {
 }
 
 func (u *mockUser) HasPermission(ctx context.Context, permissionID string) (bool, error) {
-	return false, nil
+	return true, nil
+}
+
+func (u *mockUser) HasPermissionAny(ctx context.Context, permissionIDs []string) (bool, error) {
+	return true, nil
 }
 
 func (u *mockUser) HasRole(string) bool {

@@ -216,6 +216,19 @@ func (u *user) HasPermission(ctx context.Context, permissionID string) (bool, er
 	return state.IsGranted(), nil
 }
 
+func (u *user) HasPermissionAny(ctx context.Context, permissionIDs []string) (bool, error) {
+	for _, permissionID := range permissionIDs {
+		state, err := u.um.authorizer.IsGranted(ctx, permissionID, u.getRoleIDs())
+		if err != nil {
+			return false, err
+		}
+		if state.IsGranted() {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (u *user) IsGranted(ctx context.Context, permissionID string) (authz.PermissionState, error) {
 	return u.um.authorizer.IsGranted(ctx, permissionID, u.getRoleIDs())
 }
