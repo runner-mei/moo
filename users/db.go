@@ -95,7 +95,7 @@ func (u *userInfo) Data(ctx context.Context, name string) interface{} {
 }
 
 func (u *userInfo) Roles() []string {
-	o := u.Data("roles")
+	o := u.Data(context.Background(), "roles")
 	if o == nil {
 		return nil
 	}
@@ -148,7 +148,7 @@ func (u *userInfo) IngressIPList() ([]netutil.IPChecker, error) {
 		return u.ingressIPList, nil
 	}
 
-	if o := u.Data(WhiteIPListFieldName); o != nil {
+	if o := u.Data(context.Background(), WhiteIPListFieldName); o != nil {
 		var err error
 		var ipList []string
 		switch v := o.(type) {

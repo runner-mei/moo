@@ -141,7 +141,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("uug")
-				sb.WriteString(" where uug.group_id = g.id and uug.user_id = ${userid})</if>")
+				sb.WriteString(" where uug.group_id = g.id and uug.user_id = ${userid.Int64})</if>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUsergroups",

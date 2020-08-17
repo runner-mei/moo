@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/goutils/util"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/users/usermodels"
 )
 
@@ -377,7 +377,7 @@ func (c *UsergroupCache) loadByID(ctx context.Context, id int64) (Usergroup, err
 }
 
 func (c *UsergroupCache) load(ctx context.Context, group *usergroup) (Usergroup, error) {
-	userids, err := c.queryer.GetUserIDsByGroupID(ctx, group.ug.ID, false, sql.NullBool{})
+	userids, err := c.queryer.GetUserIDsByGroupIDs(ctx, []int64{group.ug.ID}, false, sql.NullBool{})
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -400,7 +400,7 @@ func (c *UsergroupCache) usergroupByID(ctx context.Context, id int64, forceUpdat
 	}
 
 	var options = api.InternalApply(opts...)
-	if options.IncludeDisabled {
+	if options.GroupIncludeDisabled {
 		return u, nil
 	}
 

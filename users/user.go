@@ -97,6 +97,15 @@ func (u *user) HasRole(role string) bool {
 	return false
 }
 
+func (u *user) HasRoleID(role int64) bool {
+	for _, id := range u.getRoleIDs() {
+		if id == role {
+			return true
+		}
+	}
+	return false
+}
+
 // func (u *user) IsMemberOf(group int64) bool {
 // 	for _, id := range u.usergroups {
 // 		if id == group {

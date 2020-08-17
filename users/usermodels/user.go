@@ -5,7 +5,6 @@ package usermodels
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -156,16 +155,22 @@ func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64,
 				var uug UserAndUsergroup
 				ok, err := next(&uug)
 				if err != nil {
+					if err == sql.ErrNoRows {
+						break
+					}
 					log.For(ctx).Warn("查询用户组失败", log.Error(err))
 					return ""
 				}
-				if ok {
+				if !ok {
 					break
 				}
 
 				var g Usergroup
 				err = ugq.GetUsergroupByID(ctx, uug.GroupID)(&g)
 				if err != nil {
+					if err == sql.ErrNoRows {
+						break
+					}
 					log.For(ctx).Warn("查询用户组失败", log.Error(err))
 					return ""
 				}
@@ -182,17 +187,13 @@ func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64,
 }
 
 func (u *User) DisplayName(ctx context.Context, s ...string) string {
-	fmt.Println("========", u.ID, s)
-
 	if len(s) != 0 {
 		if s[0] == "" {
 			return u.Nickname
 		}
 
-		fmt.Println("========", u.ID, strings.Replace(s[0], "#{", "${", -1))
-		formatedName := os.Expand(strings.Replace(s[0], "#{", "${", -1), func(placeholderName string) string {
+		formatedName := os.Expand(strings.Replace(s[0], "\\$\\{", "${", -1), func(placeholderName string) string {
 			value := u.Data(ctx, placeholderName)
-			fmt.Println("##", placeholderName, value)
 			return as.StringWithDefault(value, "")
 		})
 		return formatedName

@@ -44,20 +44,43 @@ var (
 	ErrAlreadyClosed      = errors.New("server is closed")
 )
 
+type InternalOptions struct {
+	UserIncludeDisabled  bool
+	GroupIncludeDisabled bool
+}
+
 type userIncludeDisabled struct{}
 
-func (u userIncludeDisabled) IsIncludeDisabled() {}
+func (u userIncludeDisabled) apply(opts *InternalOptions) {
+	opts.UserIncludeDisabled = true
+}
 
-func (u userIncludeDisabled) apply() {}
+type groupIncludeDisabled struct{}
+
+func (u groupIncludeDisabled) apply(opts *InternalOptions) {
+	opts.GroupIncludeDisabled = true
+}
 
 // Option 用户选项
 type Option interface {
-	apply()
+	apply(opts *InternalOptions)
 }
 
 // UserIncludeDisabled 禁用的用户也返回
 func UserIncludeDisabled() Option {
 	return userIncludeDisabled{}
+}
+
+func UsergroupIncludeDisabled() Option {
+	return groupIncludeDisabled{}
+}
+
+func InternalApply(opts ...Option) InternalOptions {
+	var o InternalOptions
+	for _, opt := range opts {
+		opt.apply(&o)
+	}
+	return o
 }
 
 // UserManager 用户管理
@@ -84,6 +107,7 @@ type User interface {
 	// 呢称
 	Nickname() string
 
+	// 显示名称
 	DisplayName(ctx context.Context, fmt ...string) string
 
 	// Profile 是用于保存用户在界面上的一些个性化数据
@@ -109,6 +133,9 @@ type User interface {
 	// 是不是有一个指定的角色
 	HasRole(string) bool
 
+	// 是不是有一个指定的角色
+	HasRoleID(id int64) bool
+
 	// // 本用户是不是指定的用户组的成员
 	// IsMemberOf(int64) bool
 
@@ -130,7 +157,10 @@ type Usergroup interface {
 	Parent(ctx context.Context) Usergroup
 
 	// 组中是不是有这个用户
-	HasUser(ctx context.Context, userID int64) bool
+	HasUser(ctx context.Context, user User) bool
+
+	// 组中是不是有这个用户
+	HasUserID(ctx context.Context, userID int64) bool
 
 	// 用户成员
 	Users(ctx context.Context, opts ...Option) ([]User, error)
@@ -182,21 +212,6 @@ func ReadUserFromContext(ctx context.Context) (User, error) {
 	return nil, errors.NewError(http.StatusInternalServerError, fmt.Sprintf("user is unknown type - %T", o))
 }
 
-type InternalOptions struct {
-	IncludeDisabled bool
-}
-
-func InternalApply(opts ...Option) InternalOptions {
-	var o InternalOptions
-	for _, opt := range opts {
-		switch opt.(type) {
-		case userIncludeDisabled:
-			o.IncludeDisabled = true
-		}
-	}
-	return o
-}
-
 func MakeMockUser(id int64, name string) *mockUser {
 	return &mockUser{id: id, name: name}
 }
@@ -230,7 +245,7 @@ func (u *mockUser) Nickname() string {
 	return u.name
 }
 
-func (u *mockUser) DisplayName(context.Context, string) string {
+func (u *mockUser) DisplayName(context.Context, ...string) string {
 	return u.name
 }
 

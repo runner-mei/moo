@@ -371,7 +371,7 @@ func (c *UserCache) userByID(ctx context.Context, userID int64, forceUpdate bool
 	}
 
 	var options = api.InternalApply(opts...)
-	if options.IncludeDisabled {
+	if options.UserIncludeDisabled {
 		return u, nil
 	}
 

@@ -70,7 +70,17 @@ func (ug *usergroup) Users(ctx context.Context, opts ...Option) ([]User, error) 
 	return list, nil
 }
 
-func (ug *usergroup) HasUser(ctx context.Context, userID int64) bool {
+func (ug *usergroup) HasUserID(ctx context.Context, userID int64) bool {
+	for _, u := range ug.userids {
+		if u == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func (ug *usergroup) HasUser(ctx context.Context, user User) bool {
+	userID := user.ID()
 	for _, u := range ug.userids {
 		if u == userID {
 			return true
