@@ -5,11 +5,15 @@ package usermodels
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/runner-mei/goutils/as"
 	"github.com/runner-mei/goutils/netutil"
+	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/validation"
 )
@@ -88,7 +92,8 @@ type User struct {
 	UpdatedAt   time.Time              `json:"updated_at,omitempty" xorm:"updated_at updated"`
 
 	// Type        int                    `json:"type,omitempty" xorm:"type"`
-	Reserved1 map[string]string `json:"profiles" xorm:"profiles <- null"`
+	Reserved1 map[string]string                                      `json:"profiles" xorm:"profiles <- null"`
+	Mapping   func(ctx context.Context, id int64, key string) string `json:"-" xorm:"-"`
 }
 
 func (user *User) Default() *User {
@@ -133,6 +138,117 @@ func (user *User) IsBuiltin() bool {
 
 func (user *User) IsHidden() bool {
 	return user.Name == UserBgOperator // || user.Type == ItsmReporter
+}
+
+func (u *User) SetMapping(mapping func(ctx context.Context, id int64, key string) string) {
+	u.Mapping = mapping
+}
+
+func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64, key string) string {
+	return func(ctx context.Context, id int64, key string) string {
+
+		if key == "usergroups" {
+			next, closer := ugq.GetUserAndGroupList(ctx, sql.NullInt64{Valid: true, Int64: id}, true)
+			defer closer.Close()
+
+			var sb strings.Builder
+			for {
+				var uug UserAndUsergroup
+				ok, err := next(&uug)
+				if err != nil {
+					log.For(ctx).Warn("查询用户组失败", log.Error(err))
+					return ""
+				}
+				if ok {
+					break
+				}
+
+				var g Usergroup
+				err = ugq.GetUsergroupByID(ctx, uug.GroupID)(&g)
+				if err != nil {
+					log.For(ctx).Warn("查询用户组失败", log.Error(err))
+					return ""
+				}
+
+				if sb.Len() > 0 {
+					sb.WriteString(",")
+				}
+				sb.WriteString(g.Name)
+			}
+			return sb.String()
+		}
+		return ""
+	}
+}
+
+func (u *User) DisplayName(ctx context.Context, s ...string) string {
+	fmt.Println("========", u.ID, s)
+
+	if len(s) != 0 {
+		if s[0] == "" {
+			return u.Nickname
+		}
+
+		fmt.Println("========", u.ID, strings.Replace(s[0], "#{", "${", -1))
+		formatedName := os.Expand(strings.Replace(s[0], "#{", "${", -1), func(placeholderName string) string {
+			value := u.Data(ctx, placeholderName)
+			fmt.Println("##", placeholderName, value)
+			return as.StringWithDefault(value, "")
+		})
+		return formatedName
+	}
+	return u.Nickname
+}
+
+// 用户属性
+func (u *User) ForEach(cb func(string, interface{})) {
+	cb("id", u.ID)
+	cb("name", u.Name)
+	cb("nickname", u.Nickname)
+	cb("description", u.Description)
+	// cb("attributes", u.Attributes)
+	cb("source", u.Source)
+	cb("created_at", u.CreatedAt)
+	cb("updated_at", u.UpdatedAt)
+
+	if u.Attributes != nil {
+		for k, v := range u.Attributes {
+			cb(k, v)
+		}
+	}
+}
+
+func (u *User) Data(ctx context.Context, key string) interface{} {
+	switch key {
+	case "id":
+		return u.ID
+	case "name":
+		return u.Name
+	case "nickname":
+		return u.Nickname
+	case "description":
+		return u.Description
+	case "attributes":
+		return u.Attributes
+	case "source":
+		return u.Source
+	case "created_at":
+		return u.CreatedAt
+	case "updated_at":
+		return u.UpdatedAt
+	default:
+		if u.Attributes != nil {
+			value, ok := u.Attributes[key]
+			if ok {
+				return value
+			}
+		}
+	}
+
+	if u.Mapping != nil {
+		return u.Mapping(ctx, u.ID, key)
+	}
+	return nil
 }
 
 type UserProfile struct {

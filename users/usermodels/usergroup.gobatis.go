@@ -124,14 +124,26 @@ func init() {
 		}
 		{ //// UsergroupQueryer.GetUsergroups
 			if _, exists := ctx.Statements["UsergroupQueryer.GetUsergroups"]; !exists {
-				sqlStr, err := gobatis.GenerateSelectSQL(ctx.Dialect, ctx.Mapper,
-					reflect.TypeOf(&Usergroup{}),
-					[]string{},
-					[]reflect.Type{},
-					[]gobatis.Filter{})
-				if err != nil {
-					return gobatis.ErrForGenerateStmt(err, "generate UsergroupQueryer.GetUsergroups error")
+				var sb strings.Builder
+				sb.WriteString("SELECT * FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
 				}
+				sb.WriteString(" AS ")
+				sb.WriteString("g")
+				sb.WriteString(" <if test=\"userid.Valid\"> WHERE exists(select * from ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString(" AS ")
+				sb.WriteString("uug")
+				sb.WriteString(" where uug.group_id = g.id and uug.user_id = ${userid})</if>")
+				sqlStr := sb.String()
+
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupQueryer.GetUsergroups",
 					gobatis.StatementTypeSelect,
 					gobatis.ResultStruct,
@@ -487,10 +499,14 @@ func (impl *UsergroupQueryerImpl) GetUsergroupByName(ctx context.Context, name s
 	}
 }
 
-func (impl *UsergroupQueryerImpl) GetUsergroups(ctx context.Context) (func(*Usergroup) (bool, error), io.Closer) {
+func (impl *UsergroupQueryerImpl) GetUsergroups(ctx context.Context, userid sql.NullInt64) (func(*Usergroup) (bool, error), io.Closer) {
 	results := impl.session.Select(ctx, "UsergroupQueryer.GetUsergroups",
-		[]string{},
-		[]interface{}{})
+		[]string{
+			"userid",
+		},
+		[]interface{}{
+			userid,
+		})
 	return func(value *Usergroup) (bool, error) {
 		if !results.Next() {
 			if results.Err() == sql.ErrNoRows {

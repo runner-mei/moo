@@ -11,8 +11,8 @@ import (
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn"
-	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/authn/services"
+	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/fx"
 )
@@ -58,8 +58,8 @@ func (um *UserManager) Create(ctx context.Context, name, nickname, source, passw
 
 func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.User, error) {
 	var user = &userInfo{
-		um: 			    um,
-		user:              &usermodels.User{},
+		um:   um,
+		user: &usermodels.User{},
 	}
 	err := um.Users.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
 	if err != nil {
@@ -83,10 +83,10 @@ type userInfo struct {
 	um   *UserManager
 	user *usermodels.User
 
-	ingressIPList     []netutil.IPChecker
+	ingressIPList []netutil.IPChecker
 }
 
-func (u *userInfo) Data(name string) interface{} {
+func (u *userInfo) Data(ctx context.Context, name string) interface{} {
 	if u.user.Attributes == nil {
 		return nil
 	}

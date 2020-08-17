@@ -26,12 +26,13 @@ func ErrUserDisabled(username string) error {
 }
 
 type user struct {
-	um        *UserManager
-	u         usermodels.User
-	roles     []usermodels.Role
-	roleNames []string
-	roleIDs   []int64
-	profiles  map[string]string
+	um           *UserManager
+	u            usermodels.User
+	roles        []usermodels.Role
+	roleNames    []string
+	roleIDs      []int64
+	profiles     map[string]string
+	formatedName string
 }
 
 func (u *user) IsDisabled() bool {
@@ -47,6 +48,26 @@ func (u *user) Name() string {
 }
 
 func (u *user) Nickname() string {
+	return u.u.Nickname
+}
+
+func (u *user) DisplayName(ctx context.Context, s ...string) string {
+	if len(s) != 0 {
+		if s[0] == "" {
+			return u.u.Nickname
+		}
+		if s[0] == "$" {
+			if u.formatedName != "" {
+				return u.formatedName
+			}
+			return u.u.Nickname
+		}
+		formatedName := u.u.DisplayName(ctx, s...)
+		return formatedName
+	}
+	if u.formatedName != "" {
+		return u.formatedName
+	}
 	return u.u.Nickname
 }
 
@@ -166,46 +187,11 @@ func (u *user) getRoleIDs() []int64 {
 
 // 用户属性
 func (u *user) ForEach(cb func(string, interface{})) {
-	cb("id", u.u.ID)
-	cb("name", u.u.Name)
-	cb("nickname", u.u.Nickname)
-	cb("description", u.u.Description)
-	// cb("attributes", u.u.Attributes)
-	cb("source", u.u.Source)
-	cb("created_at", u.u.CreatedAt)
-	cb("updated_at", u.u.UpdatedAt)
-
-	if u.u.Attributes != nil {
-		for k, v := range u.u.Attributes {
-			cb(k, v)
-		}
-	}
+	u.u.ForEach(cb)
 }
 
-func (u *user) Data(key string) interface{} {
-	switch key {
-	case "id":
-		return u.u.ID
-	case "name":
-		return u.u.Name
-	case "nickname":
-		return u.u.Nickname
-	case "description":
-		return u.u.Description
-	case "attributes":
-		return u.u.Attributes
-	case "source":
-		return u.u.Source
-	case "created_at":
-		return u.u.CreatedAt
-	case "updated_at":
-		return u.u.UpdatedAt
-	default:
-		if u.u.Attributes != nil {
-			return u.u.Attributes[key]
-		}
-	}
-	return nil
+func (u *user) Data(ctx context.Context, key string) interface{} {
+	return u.u.Data(ctx, key)
 }
 
 func (u *user) HasPermission(ctx context.Context, permissionID string) (bool, error) {

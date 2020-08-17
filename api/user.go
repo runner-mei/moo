@@ -29,6 +29,10 @@ const (
 
 	// RoleGuest guest 角色名
 	RoleGuest = "guest"
+
+	CfgUserSigningSecretKey     = "users.signing.secret_key"
+	CfgUserLockedTimeExpiresKey = "users.locked_time_expires"
+	CfgUserDisplayFormatKey     = "users.display_format"
 )
 
 // 常用的错误
@@ -80,6 +84,8 @@ type User interface {
 	// 呢称
 	Nickname() string
 
+	DisplayName(ctx context.Context, fmt ...string) string
+
 	// Profile 是用于保存用户在界面上的一些个性化数据
 	// WriteProfile 保存 profiles
 	WriteProfile(key, value string) error
@@ -89,7 +95,7 @@ type User interface {
 	ReadProfile(key string) (string, error)
 
 	// 用户扩展属性
-	Data(key string) interface{}
+	Data(ctx context.Context, key string) interface{}
 
 	// 用户角色列表
 	Roles() []string
@@ -224,6 +230,10 @@ func (u *mockUser) Nickname() string {
 	return u.name
 }
 
+func (u *mockUser) DisplayName(context.Context, string) string {
+	return u.name
+}
+
 func (u *mockUser) WriteProfile(key, value string) error {
 	return nil
 }
@@ -232,7 +242,7 @@ func (u *mockUser) ReadProfile(key string) (string, error) {
 	return "", nil
 }
 
-func (u *mockUser) Data(key string) interface{} {
+func (u *mockUser) Data(ctx context.Context, key string) interface{} {
 	switch key {
 	case "id":
 		return u.id

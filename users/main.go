@@ -3,10 +3,13 @@ package users
 import (
 	"context"
 	"database/sql"
+	"os"
+	"strings"
 	"time"
 
 	// gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/as"
 	"github.com/runner-mei/goutils/syncx"
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/log"
@@ -34,8 +37,9 @@ func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Auth
 		Users:             users,
 		authorizer:        authorizer,
 		signingMethod:     authn.GetSigningMethod(signingMethod),
-		secretKey:         env.Config.StringWithDefault("users.signing.secret_key", ""),
-		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
+		secretKey:         env.Config.StringWithDefault(api.CfgUserSigningSecretKey, ""),
+		lockedTimeExpires: env.Config.DurationWithDefault(api.CfgUserLockedTimeExpiresKey, 0),
+		userFormat:        env.Config.StringWithDefault(api.CfgUserDisplayFormatKey, ""),
 	}
 	if um.signingMethod == nil {
 		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")
@@ -74,6 +78,7 @@ type UserManager struct {
 	signingMethod     authn.SigningMethod
 	secretKey         string
 	lockedTimeExpires time.Duration
+	userFormat        string
 
 	userCache UserCache
 	lastErr   syncx.ErrorValue
@@ -195,9 +200,43 @@ func (um *UserManager) loadUser(ctx context.Context, u *user) (err error) {
 	// um.ensureRoles(ctx)
 
 	u.um = um
+	u.u.Mapping = func(ctx context.Context, id int64, placeholderName string) string {
+		if placeholderName == "usergroups" {
+			usergroups, err := um.UsergroupsByUserID(ctx, id)
+			if err != nil {
+				log.For(ctx).Warn("查询用户组失败", log.Error(err))
+				return ""
+			}
+
+			if len(usergroups) == 0 {
+				return ""
+			}
+			if len(usergroups) == 1 {
+				return usergroups[0].Name
+			}
+
+			var sb strings.Builder
+			for idx := range usergroups {
+				if idx != 0 {
+					sb.WriteString(",")
+				}
+				sb.WriteString(usergroups[idx].Name)
+			}
+			return sb.String()
+		}
+		return ""
+	}
+
 	err = um.loadRolesForUser(ctx, u)
 	if err != nil {
 		return err
+	}
+
+	if um.userFormat != "" {
+		u.formatedName = os.Expand(um.userFormat, func(placeholderName string) string {
+			value := u.Data(ctx, placeholderName)
+			return as.StringWithDefault(value, "")
+		})
 	}
 
 	// switch u.Name() {
