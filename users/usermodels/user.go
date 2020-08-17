@@ -247,6 +247,9 @@ func (u *User) Data(ctx context.Context, key string) interface{} {
 	}
 
 	if u.Mapping != nil {
+		if ctx == nil {
+			ctx = context.Background()
+		}
 		return u.Mapping(ctx, u.ID, key)
 	}
 	return nil
