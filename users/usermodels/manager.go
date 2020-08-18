@@ -49,8 +49,12 @@ func (c *Users) NicknameExists(ctx context.Context, name string) (bool, error) {
 	return c.UserDao.NicknameExists(ctx, name)
 }
 
-func (c *Users) GetUsers(ctx context.Context, query *UserQuery, offset, limit int64) ([]User, error) {
-	next, closer := c.UserDao.GetUsers(ctx, &query.UserQueryParams, offset, limit, "")
+func (c *Users) GetUsers(ctx context.Context, query *UserQueryParams, offset, limit int64) ([]User, error) {
+	return GetUsers(ctx, c.UserDao, query, offset, limit, "")
+}
+
+func GetUsers(ctx context.Context, userDao   UserQueryer, query *UserQueryParams, offset, limit int64, sort string) ([]User, error) {
+	next, closer := userDao.GetUsers(ctx, query, offset, limit, sort)
 	defer util.CloseWith(closer)
 
 	var userList []User
