@@ -305,8 +305,9 @@ type UserQueryParams struct {
 	Rolenames        []string
 	ExcludeRolenames []string
 
-	UsergroupIDs       []int64
 	UsergroupRecursive bool
+	UsergroupIDs       []int64
+	JobPositions       []int64
 }
 
 type UserQueryer interface {
@@ -367,8 +368,10 @@ type UserQueryer interface {
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
-	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id and u2g.group_id in (
-	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//         AND u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
@@ -379,9 +382,18 @@ type UserQueryer interface {
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
 	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
-	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
-	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) == 1"> and u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> and u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
+	//  </if>
+	//  <if test="len(params.UsergroupIDs) == 0">
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>)
 	//  </if>
 	//  </where>
 	GetUserCount(ctx context.Context, params *UserQueryParams) (int64, error)
@@ -401,8 +413,10 @@ type UserQueryer interface {
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
 	//     exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
-	//        where u2g.user_id = users.id and u2g.group_id in (
-	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//        where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//         and u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
@@ -413,9 +427,18 @@ type UserQueryer interface {
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
 	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
-	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
-	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) == 1"> and u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> and u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
+	//  </if>
+	//  <if test="len(params.UsergroupIDs) == 0">
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>)
 	//  </if>
 	//  </where>
 	//  <pagination />
@@ -437,8 +460,10 @@ type UserQueryer interface {
 	//  <if test="len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
 	//     exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
-	//        where u2g.user_id = users.id and u2g.group_id in (
-	//         WITH RECURSIVE ALLGROUPS (ID)  AS (
+	//        where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//         and u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (
 	//           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH
 	//             FROM <tablename type="Usergroup" as="ug" /> WHERE <if test="len(params.UsergroupIDs) == 1"> ug.id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//             <if test="len(params.UsergroupIDs) &gt; 1"> ug.id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>
@@ -449,9 +474,18 @@ type UserQueryer interface {
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
 	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
-	//       where u2g.user_id = users.id and <if test="len(params.UsergroupIDs) == 1"> u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
-	//            <if test="len(params.UsergroupIDs) &gt; 1"> u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) == 1"> and u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
+	//            <if test="len(params.UsergroupIDs) &gt; 1"> and u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
 	//   </if>
+	//  </if>
+	//  <if test="len(params.UsergroupIDs) == 0">
+	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
+	//       where u2g.user_id = users.id
+	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
+	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>)
 	//  </if>
 	//  </where>
 	GetUserIDs(ctx context.Context, params *UserQueryParams) ([]int64, error)
