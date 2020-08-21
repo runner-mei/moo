@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
@@ -400,6 +401,21 @@ func (u *fileUser) Nickname() string {
 	return u.name
 }
 
+func (u *fileUser) DisplayName(ctx context.Context, s ...string) string {
+	if len(s) != 0 {
+		if s[0] == "" {
+			return u.name
+		}
+
+		formatedName := os.Expand(strings.Replace(s[0], "\\$\\{", "${", -1), func(placeholderName string) string {
+			value := u.Data(ctx, placeholderName)
+			return as.StringWithDefault(value, "")
+		})
+		return formatedName
+	}
+	return u.name
+}
+
 func (u *fileUser) HasRole(role string) bool {
 	for _, name := range u.roles {
 		if role == name {
@@ -421,7 +437,7 @@ func (u *fileUser) IsGuest() bool {
 	return u.HasRole(api.RoleGuest)
 }
 
-func (u *fileUser) Data(name string) interface{} {
+func (u *fileUser) Data(ctx context.Context, name string) interface{} {
 	if u.data == nil {
 		return nil
 	}
@@ -479,7 +495,7 @@ func (u *fileUser) Roles() []string {
 		return u.roles
 	}
 
-	o := u.Data("roles")
+	o := u.Data(nil, "roles")
 	if o == nil {
 		u.roles = []string{}
 		return nil
@@ -505,7 +521,7 @@ func (u *fileUser) IsLocked() bool {
 }
 
 func (u *fileUser) Source() string {
-	return as.StringWithDefault(u.Data("source"), "")
+	return as.StringWithDefault(u.Data(nil, "source"), "")
 }
 
 const WhiteIPListFieldName = "white_address_list"
@@ -515,7 +531,7 @@ func (u *fileUser) IngressIPList() ([]netutil.IPChecker, error) {
 		return u.ingressIPList, nil
 	}
 
-	if o := u.Data(WhiteIPListFieldName); o != nil {
+	if o := u.Data(nil, WhiteIPListFieldName); o != nil {
 		s, ok := o.(string)
 		if !ok {
 			return nil, fmt.Errorf("value of '"+WhiteIPListFieldName+"' isn't string - %T: %s", o, o)
