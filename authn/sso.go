@@ -87,7 +87,7 @@ func init() {
 			sessionMux.DELETE("/", logoutFunc)
 			sessionMux.DELETE("", logoutFunc)
 
-			signature:= loong.WrapContextHandler(loong.ContextHandlerFunc(sessions.Signature))
+			signature := loong.WrapContextHandler(loong.ContextHandlerFunc(sessions.Signature))
 			sessionMux.GET("/signature", signature)
 
 			return nil
@@ -100,22 +100,55 @@ func init() {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, logger log.Logger) error {
 			ssoEcho := httpSrv.Engine().Group("sso")
 			mode := env.Config.StringWithDefault("users.login_url", "sessions")
-			redirectPrefix := urlutil.Join(env.DaemonUrlPath, mode)
-			ssoEcho.GET("", loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, urlutil.Join(redirectPrefix, "login?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
-			}))
-			ssoEcho.GET( "/login", loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, urlutil.Join(redirectPrefix, "login?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
-			}))
-			ssoEcho.POST( "/login", loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, urlutil.Join(redirectPrefix, "login?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
-			}))
-			ssoEcho.POST( "/logout", loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, urlutil.Join(redirectPrefix, "logout?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
-			}))
-			ssoEcho.GET( "/logout", loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, urlutil.Join(redirectPrefix, "logout?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
-			}))
+
+			if mode == "ca" {
+				redirectPrefix := urlutil.Join(env.DaemonUrlPath, "sessions")
+
+				redirectURL := env.Config.StringWithDefault("users.redirect_to",
+					urlutil.Join(redirectPrefix, "login"))
+				if redirectURL != "" {
+					redirectURL = strings.Replace(redirectURL, "\\$\\{appRoot}", env.DaemonUrlPath, -1)
+					redirectURL = strings.Replace(redirectURL, "${appRoot}", env.DaemonUrlPath, -1)
+				}
+
+				cb := loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+					if r.URL.RawQuery != "" {
+						http.Redirect(w, r, redirectURL+"?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+						return
+					}
+					http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+				})
+				ssoEcho.GET("", cb)
+				ssoEcho.GET("/login", cb)
+				ssoEcho.POST("/login", cb)
+				ssoEcho.POST("/logout", cb)
+				ssoEcho.GET("/logout", cb)
+			} else {
+				redirectPrefix := urlutil.Join(env.DaemonUrlPath, mode)
+
+				cb := loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+					if r.URL.RawQuery == "" {
+						http.Redirect(w, r, urlutil.Join(redirectPrefix, "login"), http.StatusTemporaryRedirect)
+						return
+					}
+
+					http.Redirect(w, r, urlutil.Join(redirectPrefix, "login?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
+				})
+				ssoEcho.GET("", cb)
+				ssoEcho.GET("/login", cb)
+				ssoEcho.POST("/login", cb)
+
+				logoutCb := loong.WrapContextHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+					if r.URL.RawQuery == "" {
+						http.Redirect(w, r, urlutil.Join(redirectPrefix, "logout"), http.StatusTemporaryRedirect)
+						return
+					}
+
+					http.Redirect(w, r, urlutil.Join(redirectPrefix, "logout?"+r.URL.RawQuery), http.StatusTemporaryRedirect)
+				})
+				ssoEcho.POST("/logout", logoutCb)
+				ssoEcho.GET("/logout", logoutCb)
+			}
 			return nil
 		})
 	})

@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/runner-mei/errors"
@@ -15,12 +17,13 @@ import (
 )
 
 type UuidLogin struct {
-	logger   log.Logger
-	renderer *authn.Renderer
-	users    *usermodels.Users
-	sessions authn.Sessions
-	mu       sync.Mutex
-	keys     map[string]string
+	logger      log.Logger
+	renderer    *authn.Renderer
+	users       *usermodels.Users
+	sessions    authn.Sessions
+	mu          sync.Mutex
+	keys        map[string]string
+	redirectURL string
 }
 
 // NewUuidLogin creates a Client with the provided Options.
@@ -28,13 +31,18 @@ func NewUuidLogin(env *moo.Environment,
 	renderer *authn.Renderer,
 	sessions authn.Sessions,
 	users *usermodels.Users) *UuidLogin {
-
+	redirectURL := env.Config.StringWithDefault("users.redirect_to", "")
+	if redirectURL != "" {
+		redirectURL = strings.Replace(redirectURL, "\\$\\{appRoot}", env.DaemonUrlPath, -1)
+		redirectURL = strings.Replace(redirectURL, "${appRoot}", env.DaemonUrlPath, -1)
+	}
 	return &UuidLogin{
-		logger:   env.Logger.Named("uuidlogin"),
-		renderer: renderer,
-		users:    users,
-		sessions: sessions,
-		keys:     map[string]string{},
+		logger:      env.Logger.Named("uuidlogin"),
+		renderer:    renderer,
+		users:       users,
+		sessions:    sessions,
+		keys:        map[string]string{},
+		redirectURL: redirectURL,
 	}
 }
 
@@ -57,9 +65,14 @@ func (c *UuidLogin) Login(ctx context.Context, w http.ResponseWriter, r *http.Re
 	c.mu.Unlock()
 
 	renderError := func(statusCode int, err string) {
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		io.WriteString(w, err)
+		if c.redirectURL == "" {
+			w.WriteHeader(http.StatusOK)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			io.WriteString(w, err)
+			return
+		}
+
+		http.Redirect(w, r, c.redirectURL+"?message="+url.QueryEscape(err), http.StatusTemporaryRedirect)
 	}
 
 	if !ok {
