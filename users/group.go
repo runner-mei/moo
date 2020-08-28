@@ -80,17 +80,11 @@ func (ug *usergroup) HasUserID(ctx context.Context, userID int64) bool {
 }
 
 func (ug *usergroup) HasUser(ctx context.Context, user User) bool {
-	userID := user.ID()
-	for _, u := range ug.userids {
-		if u == userID {
-			return true
-		}
-	}
-	return false
+	return ug.HasUserID(ctx, user.ID())
 }
 
 func (ug *usergroup) Exists(ctx context.Context, user User) bool {
-	return ug.HasUser(ctx, user.ID())
+	return ug.HasUser(ctx, user)
 }
 
 // 父用户组

@@ -150,6 +150,7 @@ func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64,
 			next, closer := ugq.GetUserAndGroupList(ctx, sql.NullInt64{Valid: true, Int64: id}, true)
 			defer closer.Close()
 
+			exists := map[int64]struct{}{}
 			var sb strings.Builder
 			for {
 				var uug UserAndUsergroup
@@ -165,6 +166,10 @@ func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64,
 					break
 				}
 
+				if _, ok := exists[uug.GroupID]; ok {
+					continue
+				}
+
 				var g Usergroup
 				err = ugq.GetUsergroupByID(ctx, uug.GroupID)(&g)
 				if err != nil {
@@ -174,11 +179,11 @@ func UsergroupMappping(ugq UsergroupQueryer) func(ctx context.Context, id int64,
 					log.For(ctx).Warn("查询用户组失败", log.Error(err))
 					return ""
 				}
-
 				if sb.Len() > 0 {
 					sb.WriteString(",")
 				}
 				sb.WriteString(g.Name)
+				exists[uug.GroupID] = struct{}{}
 			}
 			return sb.String()
 		}

@@ -199,32 +199,7 @@ func (um *UserManager) loadUser(ctx context.Context, u *user) (err error) {
 	// um.ensureRoles(ctx)
 
 	u.um = um
-	// u.u.Mapping = func(ctx context.Context, id int64, placeholderName string) string {
-	// 	if placeholderName == "usergroups" {
-	// 		usergroups, err := um.UsergroupsByUserID(ctx, id)
-	// 		if err != nil {
-	// 			log.For(ctx).Warn("查询用户组失败", log.Error(err))
-	// 			return ""
-	// 		}
-
-	// 		if len(usergroups) == 0 {
-	// 			return ""
-	// 		}
-	// 		if len(usergroups) == 1 {
-	// 			return usergroups[0].Name
-	// 		}
-
-	// 		var sb strings.Builder
-	// 		for idx := range usergroups {
-	// 			if idx != 0 {
-	// 				sb.WriteString(",")
-	// 			}
-	// 			sb.WriteString(usergroups[idx].Name)
-	// 		}
-	// 		return sb.String()
-	// 	}
-	// 	return ""
-	// }
+	// u.u.Mapping = users.UsergroupMappping()
 
 	err = um.loadRolesForUser(ctx, u)
 	if err != nil {
