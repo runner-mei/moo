@@ -155,8 +155,8 @@ type UsergroupDao interface {
 
 	// @type select
 	// @default SELECT count(*) > 0 FROM <tablename type="UserAndUsergroup" />
-	//           WHERE group_id = #{groupid} and user_id = #{userid}  <if test="roleid &gt; 0"> and role_id = #{roleid} </if>
-	HasUserForGroup(ctx context.Context, userid, roleid int64) (bool, error)
+	//           WHERE group_id = #{groupid} and user_id = #{userid}  <if test="roleid &gt; 0"> and role_id = #{roleid} </if> limit 1
+	HasUserForGroup(ctx context.Context, groupid, userid, roleid int64) (bool, error)
 
 	// @default INSERT INTO <tablename type="UserAndUsergroup"/>(group_id, user_id, role_id)
 	//       VALUES(#{groupid}, #{userid}<if test="roleid &gt; 0">, #{roleid}</if><if test="roleid &lt;= 0">, NULL</if>)

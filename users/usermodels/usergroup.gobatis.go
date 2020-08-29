@@ -718,7 +718,7 @@ func init() {
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString("\r\n           WHERE group_id = #{groupid} and user_id = #{userid}  <if test=\"roleid &gt; 0\"> and role_id = #{roleid} </if>")
+				sb.WriteString("\r\n           WHERE group_id = #{groupid} and user_id = #{userid}  <if test=\"roleid &gt; 0\"> and role_id = #{roleid} </if> limit 1")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UsergroupDao.HasUserForGroup",
@@ -857,17 +857,19 @@ func (impl *UsergroupDaoImpl) DeleteUsergroup(ctx context.Context, id int64, rec
 		})
 }
 
-func (impl *UsergroupDaoImpl) HasUserForGroup(ctx context.Context, userid int64, roleid int64) (bool, error) {
+func (impl *UsergroupDaoImpl) HasUserForGroup(ctx context.Context, groupid int64, userid int64, roleid int64) (bool, error) {
 	var instance bool
 	var nullable gobatis.Nullable
 	nullable.Value = &instance
 
 	err := impl.session.SelectOne(ctx, "UsergroupDao.HasUserForGroup",
 		[]string{
+			"groupid",
 			"userid",
 			"roleid",
 		},
 		[]interface{}{
+			groupid,
 			userid,
 			roleid,
 		}).Scan(&nullable)
