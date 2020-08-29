@@ -232,6 +232,12 @@ func (u *User) Data(ctx context.Context, key string) interface{} {
 		return u.Name
 	case "nickname":
 		return u.Nickname
+	case "trimnickname":
+		idx := strings.Index(u.Nickname, "-")
+		if idx > 0 {
+			return u.Nickname[:idx]
+		}
+		return u.Nickname
 	case "description":
 		return u.Description
 	case "attributes":
