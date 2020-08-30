@@ -377,7 +377,7 @@ type UserQueryer interface {
 	//  <if test="isNotEmpty(params.NameLike)"> (users.name like <like value="params.NameLike" /> OR users.nickname like <like value="params.NameLike" />) AND</if>
 	//  <if test="params.CanLogin.Valid"> users.can_login = #{params.CanLogin} AND </if>
 	//  <if test="params.Enabled.Valid"> (<if test="!params.Enabled.Bool"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>
-	//  <if test="len(params.UsergroupIDs) &gt; 0">
+	//  <if test="len(params.JobPositions) &gt 0 || len(params.UsergroupIDs) &gt; 0">
 	//   <if test="params.UsergroupRecursive">
 	//     exists (select * from <tablename type="UserAndUsergroup" /> as u2g where u2g.user_id = users.id
 	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator="," close=")">#{item}</foreach></if>
@@ -392,12 +392,14 @@ type UserQueryer interface {
 	//         SELECT ID FROM ALLGROUPS))
 	//   </if>
 	//   <if test="!params.UsergroupRecursive">
+	//      <if test="len(params.JobPositions) &gt 0 || len(params.UsergroupIDs) &gt 0">
 	//      exists (select * from <tablename type="UserAndUsergroup" as="u2g" />
 	//       where u2g.user_id = users.id
 	//         <if test="len(params.JobPositions) == 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id = " separator=",">#{item}</foreach></if>
 	//         <if test="len(params.JobPositions) &gt; 1"><foreach collection="params.JobPositions" open=" AND u2g.role_id in (" separator="," close=")">#{item}</foreach></if>
 	//         <if test="len(params.UsergroupIDs) == 1"> and u2g.group_id = <foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach></if>
 	//         <if test="len(params.UsergroupIDs) &gt; 1"> and u2g.group_id in (<foreach collection="params.UsergroupIDs" separator=",">#{item}</foreach>)</if>)
+	//      </if>
 	//   </if>
 	//  </if>
 	//  <if test="len(params.UsergroupIDs) == 0">
