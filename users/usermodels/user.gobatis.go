@@ -567,13 +567,13 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("r")
-				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.JobPositions) &gt 0 || len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0 || len(params.JobPositions) &gt; 0\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         AND u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" as u2g where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n           <if test=\"params.UsergroupRecursive\">\r\n             AND u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n                SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n                FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -581,7 +581,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("ug")
-				sb.WriteString(" WHERE <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n             UNION ALL\r\n           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" WHERE\r\n                   <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n                   <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n                   UNION ALL\r\n                SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n                   FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -589,23 +589,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("D")
-				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n         SELECT ID FROM ALLGROUPS))\r\n   </if>\r\n   <if test=\"!params.UsergroupRecursive\">\r\n      <if test=\"len(params.JobPositions) &gt 0 || len(params.UsergroupIDs) &gt 0\">\r\n      exists (select * from ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString("\r\n       where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) == 1\"> and u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) &gt; 1\"> and u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n      </if>\r\n   </if>\r\n  </if>\r\n  <if test=\"len(params.UsergroupIDs) == 0\">\r\n      exists (select * from ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString("\r\n       where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>)\r\n  </if>\r\n  </where>")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n                SELECT ID FROM ALLGROUPS))\r\n           </if>\r\n           <if test=\"!params.UsergroupRecursive\">\r\n                  <if test=\"len(params.UsergroupIDs) == 1\"> and u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n                  <if test=\"len(params.UsergroupIDs) &gt; 1\"> and u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n           </if>\r\n         </if>\r\n  </if>\r\n  </where>")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUserCount",
@@ -677,13 +661,13 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("r")
-				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n   <if test=\"params.UsergroupRecursive\">\r\n     exists (select * from ")
+				sb.WriteString(" ON u2r.role_id = r.id\r\n      WHERE r.name not in (<foreach collection=\"params.ExcludeRolenames\" separator=\",\">#{item}</foreach>) AND u2r.user_id = users.id) AND\r\n  </if>\r\n  <if test=\"isNotEmpty(params.NameLike)\"> (users.name like <like value=\"params.NameLike\" /> OR users.nickname like <like value=\"params.NameLike\" />) AND</if>\r\n  <if test=\"params.CanLogin.Valid\"> users.can_login = #{params.CanLogin} AND </if>\r\n  <if test=\"params.Enabled.Valid\"> (<if test=\"!params.Enabled.Bool\"> NOT </if> ( users.disabled IS NULL OR users.disabled = false )) AND </if>\r\n  <if test=\"len(params.UsergroupIDs) &gt; 0 || len(params.JobPositions) &gt; 0\">\r\n     exists (select * from ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
 					return err
 				} else {
 					sb.WriteString(tablename)
 				}
-				sb.WriteString(" as u2g where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         AND u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n           SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" as u2g where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) &gt; 0\">\r\n           <if test=\"params.UsergroupRecursive\">\r\n             AND u2g.group_id in (WITH RECURSIVE ALLGROUPS (ID)  AS (\r\n                SELECT ID, name, PARENT_ID, ARRAY[ID] AS PATH, 1 AS DEPTH\r\n                FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -691,7 +675,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("ug")
-				sb.WriteString(" WHERE <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n             UNION ALL\r\n           SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n             FROM ")
+				sb.WriteString(" WHERE\r\n                   <if test=\"len(params.UsergroupIDs) == 1\"> ug.id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n                   <if test=\"len(params.UsergroupIDs) &gt; 1\"> ug.id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n                   UNION ALL\r\n                SELECT  D.ID, D.NAME, D.PARENT_ID, ALLGROUPS.PATH || D.ID, ALLGROUPS.DEPTH + 1 AS DEPTH\r\n                   FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&Usergroup{})); err != nil {
 					return err
 				} else {
@@ -699,23 +683,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("D")
-				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n         SELECT ID FROM ALLGROUPS))\r\n   </if>\r\n   <if test=\"!params.UsergroupRecursive\">\r\n      exists (select * from ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString("\r\n       where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) == 1\"> and u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.UsergroupIDs) &gt; 1\"> and u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n   </if>\r\n  </if>\r\n  <if test=\"len(params.UsergroupIDs) == 0\">\r\n      exists (select * from ")
-				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&UserAndUsergroup{})); err != nil {
-					return err
-				} else {
-					sb.WriteString(tablename)
-				}
-				sb.WriteString(" AS ")
-				sb.WriteString("u2g")
-				sb.WriteString("\r\n       where u2g.user_id = users.id\r\n         <if test=\"len(params.JobPositions) == 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id = \" separator=\",\">#{item}</foreach></if>\r\n         <if test=\"len(params.JobPositions) &gt; 1\"><foreach collection=\"params.JobPositions\" open=\" AND u2g.role_id in (\" separator=\",\" close=\")\">#{item}</foreach></if>)\r\n  </if>\r\n  </where>\r\n  <pagination />\r\n  <order_by />")
+				sb.WriteString(" JOIN ALLGROUPS ON D.PARENT_ID = ALLGROUPS.ID)\r\n                SELECT ID FROM ALLGROUPS))\r\n           </if>\r\n           <if test=\"!params.UsergroupRecursive\">\r\n                  <if test=\"len(params.UsergroupIDs) == 1\"> and u2g.group_id = <foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach></if>\r\n                  <if test=\"len(params.UsergroupIDs) &gt; 1\"> and u2g.group_id in (<foreach collection=\"params.UsergroupIDs\" separator=\",\">#{item}</foreach>)</if>)\r\n           </if>\r\n         </if>\r\n  </if>\r\n  </where>\r\n  <pagination />\r\n  <order_by />")
 				sqlStr := sb.String()
 
 				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsers",
