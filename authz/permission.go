@@ -5,6 +5,8 @@ import (
 	"errors"
 )
 
+const P3 = "p3"
+
 // define a set of errors
 var (
 	ErrFieldIncomplete = errors.New("incomplete fields")
