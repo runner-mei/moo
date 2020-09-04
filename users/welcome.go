@@ -1,24 +1,21 @@
 package users
 
 import (
-	"bytes"
-	"database/sql"
-	"encoding/json"
-	"errors"
 	"context"
-	"html/template"
-	"io/ioutil"
+	"database/sql"
+	"errors"
 	"net/url"
-	"strings"
 	"reflect"
+	"strings"
 
 	gobatis "github.com/runner-mei/GoBatis"
-	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn"
 	moodb "github.com/runner-mei/moo/db"
 	"github.com/runner-mei/moo/users/usermodels"
+	"github.com/runner-mei/moo/users/welcome"
 )
 
 func init() {
@@ -29,11 +26,9 @@ func init() {
 	})
 }
 
-const WelcomeFieldName = "welcome_url"
-
 type welcomeLocator struct {
 	logger                  log.Logger
-	welcomeConfigs          []WelcomConfig
+	welcomeConfigs          []welcome.Config
 	conn                    gobatis.DBRunner
 	welcomeByUserID         string
 	welcomeByUsername       string
@@ -119,49 +114,6 @@ func (srv *welcomeLocator) Locate(ctx context.Context, userID interface{}, usern
 	return srv.withTodolistURL(ctx, userID, username, defaultURL)
 }
 
-type WelcomConfig struct {
-	Name        string `json:"name"`
-	ListURL     string `json:"list_url"`
-	RedirectURL string `json:"redirect_url"`
-}
-
-func ReadWelcomeConfigs(env *moo.Environment) ([]WelcomConfig, error) {
-	filename := env.Fs.FromConfig("home.json")
-	args := map[string]interface{}{
-		"urlRoot": env.DaemonUrlPath,
-	}
-
-	bs, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, errors.New("ReadHTTPConfigFromFile: " + err.Error())
-	}
-
-	t, err := template.New("default").Funcs(template.FuncMap{
-		"join": urlutil.Join,
-	}).Parse(string(bs))
-	if err != nil {
-		return nil, errors.New("parse url template in '" + filename + "' fail: " + err.Error())
-	}
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, args); err != nil {
-		return nil, errors.New("generate url template in '" + filename + "' fail: " + err.Error())
-	}
-	if buf.Len() == 0 {
-		return nil, errors.New("template result in '" + filename + "' is empty.")
-	}
-
-	var config struct {
-		Applications []WelcomConfig `json:"applications,omitempty"`
-	}
-
-	bs = buf.Bytes()
-	err = json.NewDecoder(&buf).Decode(&config)
-	if err != nil {
-		return nil, errors.New("read '" + filename + "' fail: " + err.Error() + "\r\n" + string(bs))
-	}
-	return config.Applications, nil
-}
-
 func NewWelcomeLocator(env *moo.Environment, logger log.Logger, factory *gobatis.SessionFactory) (authn.WelcomeLocator, error) {
 	logger = logger.Named("welcome")
 
@@ -169,9 +121,9 @@ func NewWelcomeLocator(env *moo.Environment, logger log.Logger, factory *gobatis
 	if err != nil {
 		return nil, errors.New("读用户的表名失败")
 	}
-	todoListTable := env.Config.StringWithDefault("users.todolist.tablename", "moo_todolists")
+	todoListTable := env.Config.StringWithDefault(api.CfgUserTodoListTableName, "moo_todolists")
 
-	apps, err := ReadWelcomeConfigs(env)
+	apps, err := welcome.ReadConfigs(env)
 	if err != nil {
 		logger.Warn("NewWelcomeLocator:", log.Error(err))
 	}
@@ -179,17 +131,17 @@ func NewWelcomeLocator(env *moo.Environment, logger log.Logger, factory *gobatis
 		logger:         logger,
 		welcomeConfigs: apps,
 		conn:           factory.DB(),
-		welcomeByUserID: env.Config.StringWithDefault("users.welcome.by_userid",
-			"select attributes->>'"+WelcomeFieldName+"' from "+tablename+" where id = $1"),
-		welcomeByUsername: env.Config.StringWithDefault("users.welcome.by_username",
-			"select attributes->>'"+WelcomeFieldName+"' from "+tablename+" where name = $1"),
-		todolistDisabled: env.Config.BoolWithDefault("users.todolist.disabled", true),
-		todolistCountByUserID: env.Config.StringWithDefault("users.welcome.todolist_by_userid",
+		welcomeByUserID: env.Config.StringWithDefault(api.CfgUserWelcomeByUserID,
+			"select attributes->>'"+welcome.FieldName+"' from "+tablename+" where id = $1"),
+		welcomeByUsername: env.Config.StringWithDefault(api.CfgUserWelcomeByUsername,
+			"select attributes->>'"+welcome.FieldName+"' from "+tablename+" where name = $1"),
+		todolistDisabled: env.Config.BoolWithDefault(api.CfgUserTodoListDisabled, true),
+		todolistCountByUserID: env.Config.StringWithDefault(api.CfgUserTodoListByUserID,
 			"select count(*) from "+todoListTable+" where user_id = $1)"),
-		todolistCountByUsername: env.Config.StringWithDefault("users.welcome.todolist_by_username",
+		todolistCountByUsername: env.Config.StringWithDefault(api.CfgUserTodoListByUsername,
 			"select count(*) from "+todoListTable+" as todolists where "+
 				"exists(SELECT * FROM "+tablename+" WHERE "+tablename+".id = todolists.user_id AND "+tablename+".name = $1)"),
-		todolistURL: env.Config.StringWithDefault("users.welcome.todolist_url", ""),
+		todolistURL: env.Config.StringWithDefault(api.CfgUserTodoListURL, ""),
 	}
 	if !locator.todolistDisabled {
 		if locator.todolistURL == "" {

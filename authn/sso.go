@@ -9,6 +9,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn/services"
 )
@@ -16,8 +17,7 @@ import (
 func init() {
 	moo.On(func() moo.Option {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
-
-			casUserPrefix := env.Config.StringWithDefault("users.cas.user_prefix", "")
+			casUserPrefix := env.Config.StringWithDefault(api.CfgUserCasUserPrefix, "")
 			sessionPrefix := urlutil.Join(env.DaemonUrlPath, "/sessions")
 
 			sessionuiMux := httpSrv.Engine().Group("/sessions")
@@ -99,12 +99,12 @@ func init() {
 	moo.On(func() moo.Option {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, logger log.Logger) error {
 			ssoEcho := httpSrv.Engine().Group("sso")
-			mode := env.Config.StringWithDefault("users.login_url", "sessions")
+			mode := env.Config.StringWithDefault(api.CfgUserLoginURL, "sessions")
 
 			if mode == "ca" {
 				redirectPrefix := urlutil.Join(env.DaemonUrlPath, "sessions")
 
-				redirectURL := env.Config.StringWithDefault("users.redirect_to",
+				redirectURL := env.Config.StringWithDefault(api.CfgUserRedirectTo,
 					urlutil.Join(redirectPrefix, "login"))
 				if redirectURL != "" {
 					redirectURL = strings.Replace(redirectURL, "\\$\\{appRoot}", env.DaemonUrlPath, -1)

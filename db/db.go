@@ -10,6 +10,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/goutils/cfg"
+	"github.com/runner-mei/moo/api"
 	"go.uber.org/fx"
 )
 
@@ -63,7 +64,7 @@ type DbDataResult struct {
 func init() {
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger) (DbModelResult, error) {
-			dbPrefix := env.Config.StringWithDefault(env.Namespace + ".db_prefix", env.Namespace + ".")
+			dbPrefix := env.Config.StringWithDefault(env.Namespace + api.CfgDbPrefix, env.Namespace + ".")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
 			drvModels, urlModels := dbConfig.Url()
@@ -117,7 +118,7 @@ func init() {
 
 	moo.On(func() moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants InConstants) (DbDataResult, error) {
-			dbPrefix := env.Config.StringWithDefault(env.Namespace + ".db_data_prefix", env.Namespace + ".data.")
+			dbPrefix := env.Config.StringWithDefault(env.Namespace + api.CfgDbDataPrefix, env.Namespace + ".data.")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
 			drvData, urlData := dbConfig.Url()

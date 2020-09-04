@@ -31,7 +31,7 @@ func NewUuidLogin(env *moo.Environment,
 	renderer *authn.Renderer,
 	sessions authn.Sessions,
 	users *usermodels.Users) *UuidLogin {
-	redirectURL := env.Config.StringWithDefault("users.redirect_to", "")
+	redirectURL := env.Config.StringWithDefault(api.CfgUserRedirectTo, "")
 	if redirectURL != "" {
 		redirectURL = strings.Replace(redirectURL, "\\$\\{appRoot}", env.DaemonUrlPath, -1)
 		redirectURL = strings.Replace(redirectURL, "${appRoot}", env.DaemonUrlPath, -1)

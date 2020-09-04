@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
 	nhttputil "net/http/httputil"
+	_ "net/http/pprof"
 	"net/url"
 	"strconv"
 	"strings"
@@ -38,21 +38,19 @@ type Middlewares struct {
 	Funcs []loong.MiddlewareFunc `group:"middlewares"`
 }
 
-
 type InAddress struct {
 	In
 
-	HttpFunc func() (string, string, error) `name:"http-address" optional:"true"`
+	HttpFunc  func() (string, string, error) `name:"http-address" optional:"true"`
 	HttpsFunc func() (string, string, error) `name:"https-address" optional:"true"`
 }
 
 type OutAddress struct {
 	Out
 
-	HttpFunc func() (string, string, error) `name:"http-address"`
+	HttpFunc  func() (string, string, error) `name:"http-address"`
 	HttpsFunc func() (string, string, error) `name:"https-address"`
 }
-
 
 func init() {
 	loong.ContextWithUserHook = func(ctx context.Context, u interface{}) context.Context {
@@ -69,9 +67,9 @@ func init() {
 		return Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
-				noPrefix:   env.DaemonUrlPath == "" || env.DaemonUrlPath == "/", 
-				homePrefix: strings.TrimSuffix( env.DaemonUrlPath, "/") + "/",
-				trimPrefix: strings.TrimSuffix( env.DaemonUrlPath, "/"),
+				noPrefix:   env.DaemonUrlPath == "" || env.DaemonUrlPath == "/",
+				homePrefix: strings.TrimSuffix(env.DaemonUrlPath, "/") + "/",
+				trimPrefix: strings.TrimSuffix(env.DaemonUrlPath, "/"),
 				engine:     loong.New(),
 				fastRoutes: map[string]FastHandlerFunc{},
 				homePage:   urlutil.JoinURLPath(env.DaemonUrlPath, "home/"),
@@ -98,30 +96,29 @@ func init() {
 		})
 	})
 
-
 	On(func() Option {
 		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, inAddress InAddress, httpLifecycle HTTPLifecycleIn) error {
 			var noListen = true
 
 			if inAddress.HttpFunc == nil {
 				inAddress.HttpFunc = func() (string, string, error) {
-				return env.Config.StringWithDefault("http-network", "tcp"),
-				 	env.Config.StringWithDefault("http-address", ""),
-					nil
+					return env.Config.StringWithDefault(api.CfgHTTPNetwork, "tcp"),
+						env.Config.StringWithDefault(api.CfgHTTPAddress, ""),
+						nil
 				}
 			}
 			if inAddress.HttpsFunc == nil {
 				inAddress.HttpsFunc = func() (string, string, error) {
-				return env.Config.StringWithDefault("https-network", "tcp"),
-				 	env.Config.StringWithDefault("https-address", ""),
-					nil
+					return env.Config.StringWithDefault(api.CfgHTTPSNetwork, "tcp"),
+						env.Config.StringWithDefault(api.CfgHTTPSAddress, ""),
+						nil
 				}
 			}
 
 			httpNetwork, httpListenAt, err := inAddress.HttpFunc()
 			if err != nil {
 				return err
-			} 
+			}
 			if httpListenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
@@ -168,13 +165,13 @@ func init() {
 						return err
 					},
 				})
-				noListen = false 
+				noListen = false
 			}
 
 			httpsNetwork, httpsListenAt, err := inAddress.HttpsFunc()
 			if err != nil {
 				return err
-			} 
+			}
 			if httpsListenAt != "" {
 				var hsrv *http.Server
 				var listener net.Listener
@@ -257,7 +254,7 @@ func init() {
 }
 
 type FastHandler interface {
-	Serve(w http.ResponseWriter, r *http.Request, pa string) 
+	Serve(w http.ResponseWriter, r *http.Request, pa string)
 }
 
 type FastHandlerFunc func(w http.ResponseWriter, r *http.Request, pa string)
@@ -290,14 +287,14 @@ func (srv *HTTPServer) Engine() *loong.Engine {
 }
 
 func (srv *HTTPServer) AddFastHandler(name string, handler FastHandlerFunc) {
-	srv.fastRoutes[name]=handler
+	srv.fastRoutes[name] = handler
 }
 
 func (srv *HTTPServer) FastRoute(stripPrefix bool, name string, handler http.Handler) {
 	name = strings.TrimSuffix(name, "/")
 	name = strings.TrimPrefix(name, "/")
 	if strings.ContainsRune(name, '/') {
-		panic(errors.New("'"+ name + "' is invalid fast urlpath, it must not contains '/'"))
+		panic(errors.New("'" + name + "' is invalid fast urlpath, it must not contains '/'"))
 	}
 
 	if stripPrefix {

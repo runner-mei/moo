@@ -25,15 +25,16 @@ type Authorizer interface {
 	authz.Authorizer
 }
 
-func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
+func Create(env *moo.Environment, users *usermodels.Users, userSvc *Service, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
 	if authorizer == nil {
 		return nil, errors.New("authorizer is nil")
 	}
 
-	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
+	signingMethod := env.Config.StringWithDefault(api.CfgUserSigningMethod, "default")
 	um := &UserManager{
 		logger:            logger,
 		Users:             users,
+		Service:           userSvc,
 		authorizer:        authorizer,
 		signingMethod:     authn.GetSigningMethod(signingMethod),
 		secretKey:         env.Config.StringWithDefault(api.CfgUserSigningSecretKey, ""),
@@ -70,6 +71,7 @@ type UserManager struct {
 	InnerUsers []string
 
 	logger          log.Logger
+	Service         *Service
 	Users           *usermodels.Users
 	authorizer      authz.Authorizer
 	authorizeTicker syncx.Tickable

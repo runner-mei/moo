@@ -13,6 +13,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/db"
@@ -40,7 +41,7 @@ func init() {
 
 	moo.On(func() moo.Option {
 		return fx.Invoke(func(env *moo.Environment, params Params, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
-			casURL := strings.TrimSpace(env.Config.StringWithDefault("users.cas.server", ""))
+			casURL := strings.TrimSpace(env.Config.StringWithDefault(api.CfgUserCasServer, ""))
 			if casURL == "" {
 				logger.Info("cas skipped")
 				return nil
@@ -53,15 +54,15 @@ func init() {
 			casPrefix := urlutil.Join(env.DaemonUrlPath, "cas")
 
 			fields := map[string]string{}
-			env.Config.ForEachWithPrefix("users.cas.fields.", func(key string, value interface{}) {
-				key = strings.TrimPrefix(key, "users.cas.fields.")
+			env.Config.ForEachWithPrefix(api.CfgUserCasFieldPrefix, func(key string, value interface{}) {
+				key = strings.TrimPrefix(key, api.CfgUserCasFieldPrefix)
 				fields[key] = fmt.Sprint(value)
 			})
-			roles := env.Config.StringsWithDefault("users.cas.roles", nil)
+			roles := env.Config.StringsWithDefault(api.CfgUserCasRoles, nil)
 			authOpts := &CASOptions{
 				Env:           env,
 				Logger:        logger.Named("cas"),
-				UserPrefix:    env.Config.StringWithDefault("users.cas.user_prefix", ""),
+				UserPrefix:    env.Config.StringWithDefault(api.CfgUserCasUserPrefix, ""),
 				URL:           u,
 				Client:        httputil.InsecureHttpClent,
 				Sessions:      params.Sessions,

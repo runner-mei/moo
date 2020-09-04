@@ -6,6 +6,7 @@ import (
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/tunnel"
 	"github.com/runner-mei/errors"
 	"go.uber.org/fx"
@@ -24,10 +25,10 @@ func init() {
 				acceptURL = acceptURL + "/tunnel"
 			}
 			tunnelListener, err := tunnel.Listen(logger,
-				env.Config.IntWithDefault("tunnel.max_threads", 10),
-				env.Config.StringWithDefault("tunnel.remote.network", "tcp"),
-				env.Config.StringWithDefault("tunnel.remote.address", ""),
-				env.Config.StringWithDefault("tunnel.remote.listen_at_url", acceptURL))
+				env.Config.IntWithDefault(api.CfgTunnelMaxThreads, 10),
+				env.Config.StringWithDefault(api.CfgTunnelRemoteNetwork, "tcp"),
+				env.Config.StringWithDefault(api.CfgTunnelRemoteAddress, ""),
+				env.Config.StringWithDefault(api.CfgTunnelRemoteListenAtURL, acceptURL))
 			if err != nil {
 				return nil, errors.Wrap( err, "tunel listen")
 			}

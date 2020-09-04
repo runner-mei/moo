@@ -549,13 +549,13 @@ func (u *fileUser) IngressIPList() ([]netutil.IPChecker, error) {
 }
 
 func NewFileUserManager(env *moo.Environment, logger log.Logger) (authn.UserManager, error) {
-	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
+	signingMethod := env.Config.StringWithDefault(api.CfgUserSigningMethod, "default")
 	fum := &FileUserManager{
 		env:           env,
-		filename:      env.Config.StringWithDefault("users.filename", "moo_users.json"),
+		filename:      env.Config.StringWithDefault(api.CfgUserFilename, "moo_users.json"),
 		logger:        logger,
 		SigningMethod: authn.GetSigningMethod(signingMethod),
-		SecretKey:     env.Config.StringWithDefault("users.signing.secret_key", ""),
+		SecretKey:     env.Config.StringWithDefault(api.CfgUserSigningSecretKey, ""),
 	}
 	if fum.SigningMethod == nil {
 		return nil, errors.New("users.signing.method '" + signingMethod + "' is missing")

@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	ldap "gopkg.in/ldap.v3"
 )
 
@@ -27,15 +28,15 @@ func isConnectError(err error) bool {
 
 func LdapUserCheck(env *moo.Environment, logger log.Logger) AuthOption {
 	return AuthOptionFunc(func(auth *AuthService) error {
-		ldapServer := env.Config.StringWithDefault("users.ldap_address", "")
+		ldapServer := env.Config.StringWithDefault(api.CfgUserLdapAddress, "")
 		if ldapServer == "" {
 			logger.Warn("ldap 没有配置，跳过它")
 			return nil
 		}
-		ldapTLS := env.Config.BoolWithDefault("users.ldap_tls", false)
-		ldapDN := env.Config.StringWithDefault("users.ldap_base_dn", "")
-		ldapFilter := env.Config.StringWithDefault("users.ldap_filter", "(&(objectClass=organizationalPerson)(sAMAccountName=%s))")
-		ldapUserFormat := env.Config.StringWithDefault("users.ldap_user_format", "")
+		ldapTLS := env.Config.BoolWithDefault(api.CfgUserLdapTLS, false)
+		ldapDN := env.Config.StringWithDefault(api.CfgUserLdapBaseDN, "")
+		ldapFilter := env.Config.StringWithDefault(api.CfgUserLdapFilter, "(&(objectClass=organizationalPerson)(sAMAccountName=%s))")
+		ldapUserFormat := env.Config.StringWithDefault(api.CfgUserLdapUserFormat, "")
 		if ldapUserFormat == "" {
 			if ldapDN != "" {
 				ldapUserFormat = "cn=%s," + ldapDN
@@ -43,8 +44,8 @@ func LdapUserCheck(env *moo.Environment, logger log.Logger) AuthOption {
 				ldapUserFormat = "%s"
 			}
 		}
-		ldapRoles := env.Config.StringWithDefault("users.ldap_roles", "memberOf")
-		exceptedRole := env.Config.StringWithDefault("users.ldap_login_role", "")
+		ldapRoles := env.Config.StringWithDefault(api.CfgUserLdapRoles, "memberOf")
+		exceptedRole := env.Config.StringWithDefault(api.CfgUserLdapLoginRole, "")
 
 		logFields := []log.Field{
 			log.String("ldapServer", ldapServer),

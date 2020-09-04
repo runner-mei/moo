@@ -26,7 +26,7 @@ require (
 	github.com/revel/config v0.21.0 // indirect
 	github.com/revel/log15 v2.11.20+incompatible // indirect
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
-	github.com/revel/revel v0.21.0 // indirect
+	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.12
 	github.com/runner-mei/errors v0.0.0-20200716101041-2183b6629e03
 	github.com/runner-mei/goutils v0.0.0-20200728081338-5c40ecc69c7c

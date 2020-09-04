@@ -13,20 +13,20 @@ import (
 func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	args := GetTableNames()
 	for k := range args {
-		newName := env.Config.StringWithDefault("moo.tablename."+k, "")
+		newName := env.Config.StringWithDefault(api.CfgTablenamePrefix+k, "")
 		if newName == "" {
 			continue
 		}
 		args[k] = newName
 	}
 
-	if env.Config.BoolWithDefault("test.clean_database", false) {
+	if env.Config.BoolWithDefault(api.CfgTestCleanDatabase, false) {
 		_, err := db.Exec(ReplaceTableName(CleanSQL, args))
 		if err != nil {
 			return errors.New("清理用户相关的表失败: " + err.Error())
 		}
 		logger.Info("清理用户相关的表成功")
-	} else if env.Config.BoolWithDefault("test.clean_data", false) {
+	} else if env.Config.BoolWithDefault(api.CfgTestCleanData, false) {
 		_, err := db.Exec(ReplaceTableName(CleanDataSQL, args))
 		if err != nil {
 			return errors.New("清理用户相关的数据失败: " + err.Error())
@@ -34,7 +34,7 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 		logger.Info("清理用户相关的数据成功")
 	}
 
-	if env.Config.BoolWithDefault("users.init_database", false) {
+	if env.Config.BoolWithDefault(api.CfgUserInitDatabase, false) {
 		_, err := db.Exec(ReplaceTableName(InitSQL, args))
 		if err != nil {
 			return errors.New("初始化用户相关的表失败: " + err.Error())

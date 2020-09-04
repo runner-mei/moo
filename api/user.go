@@ -30,9 +30,63 @@ const (
 	// RoleGuest guest 角色名
 	RoleGuest = "guest"
 
+	CfgUserSigningMethod        = "users.signing.method"
 	CfgUserSigningSecretKey     = "users.signing.secret_key"
 	CfgUserLockedTimeExpiresKey = "users.locked_time_expires"
 	CfgUserDisplayFormatKey     = "users.display_format"
+	CfgUserOnlineExpired        = "users.online_expired"
+	CfgUserTodoListTableName    = "users.todolist.tablename"
+	CfgUserTodoListDisabled     = "users.todolist.disabled"
+	CfgUserTodoListByUserID     = "users.todolist.by_userid"
+	CfgUserTodoListByUsername   = "users.todolist.by_username"
+	CfgUserTodoListURL          = "users.todolist.url"
+	CfgUserWelcomeByUserID      = "users.welcome.by_userid"
+	CfgUserWelcomeByUsername    = "users.welcome.by_username"
+	CfgUserCasUserPrefix        = "users.cas.user_prefix"
+	CfgUserCasServer            = "users.cas.server"
+	CfgUserCasRoles             = "users.cas.roles"
+	CfgUserCasFieldPrefix       = "users.cas.fields."
+
+	CfgUserLoginURL               = "users.login_url"
+	CfgUserRedirectMode           = "users.redirect_mode"
+	CfgUserRedirectTo             = "users.redirect_to"
+	CfgUserLoginConflict          = "users.login_conflict"
+	CfgUserMaxLoginFailCount      = "users.max_login_fail_count"
+	CfgUserCaptchaDisabled        = "users.captcha.disabled"
+	CfgUserUsbKeyListenAddress    = "users.usbkey.listen_address"
+	CfgUserFilename               = "users.filename"
+	CfgUserSyncDbFind             = "users.sync.db.find"
+	CfgUserJumpToWelcomeIfNewUser = "users.jump_to_welcome_if_new_user"
+	CfgSSOContextPath             = "sso.context_path"
+	CfgUserAppSecret              = "app.secret"
+
+	CfgUserLdapAddress    = "users.ldap_address"
+	CfgUserLdapTLS        = "users.ldap_tls"
+	CfgUserLdapBaseDN     = "users.ldap_base_dn"
+	CfgUserLdapFilter     = "users.ldap_filter"
+	CfgUserLdapUserFormat = "users.ldap_user_format"
+	CfgUserLdapRoles      = "users.ldap_roles"
+	CfgUserLdapLoginRole  = "users.ldap_login_role"
+
+	CfgRootEndpoint = "moo_root_endpoint"
+	CfgHomeURL      = "home_url"
+
+	CfgTunnelMaxThreads        = "tunnel.max_threads"
+	CfgTunnelRemoteNetwork     = "tunnel.remote.network"
+	CfgTunnelRemoteAddress     = "tunnel.remote.address"
+	CfgTunnelRemoteListenAtURL = "tunnel.remote.listen_at_url"
+
+	CfgHTTPNetwork  = "http-network"
+	CfgHTTPAddress  = "http-address"
+	CfgHTTPSNetwork = "https-network"
+	CfgHTTPSAddress = "https-address"
+
+	CfgTablenamePrefix   = "moo.tablename."
+	CfgTestCleanDatabase = "test.clean_database"
+	CfgTestCleanData     = "test.clean_data"
+	CfgUserInitDatabase  = "users.init_database"
+	CfgDbPrefix  =	".db_prefix"
+	CfgDbDataPrefix  = ".db_data_prefix"
 )
 
 // 常用的错误

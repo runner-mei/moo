@@ -7,6 +7,7 @@ import (
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 )
 
 type UserSyncer interface {
@@ -14,7 +15,7 @@ type UserSyncer interface {
 }
 
 func CreateUserSyncer(env *moo.Environment, conn *sql.DB) (UserSyncer, error) {
-	find := env.Config.StringWithDefault("users.sync.db.find", "")
+	find := env.Config.StringWithDefault(api.CfgUserSyncDbFind, "")
 	return &userSyncer{conn: conn, find: find}, nil
 }
 

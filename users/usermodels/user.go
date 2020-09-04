@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/runner-mei/goutils/as"
+	"github.com/runner-mei/goutils/get"
 	"github.com/runner-mei/goutils/netutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/api"
@@ -89,10 +90,54 @@ type User struct {
 	LockedAt    *time.Time             `json:"locked_at,omitempty" xorm:"locked_at null"`
 	CreatedAt   time.Time              `json:"created_at,omitempty" xorm:"created_at created"`
 	UpdatedAt   time.Time              `json:"updated_at,omitempty" xorm:"updated_at updated"`
+	Extensions  map[string]interface{} `json:"extensions,omitempty" xorm:"-"`
 
 	// Type        int                    `json:"type,omitempty" xorm:"type"`
 	Reserved1 map[string]string                                      `json:"profiles" xorm:"profiles <- null"`
 	Mapping   func(ctx context.Context, id int64, key string) string `json:"-" xorm:"-"`
+}
+
+func (user *User) IsOnlineFromExtensions() bool {
+	return get.BoolWithDefault(user.Extensions, "is_online", false)
+}
+
+func (user *User) SetOnlineToExtensions(value bool) {
+	if user.Extensions == nil {
+		user.Extensions = map[string]interface{}{}
+	}
+	user.Extensions["is_online"] = value
+}
+
+func (user *User) RolesFromExtensions() []Role {
+	if user.Extensions == nil {
+		return nil
+	}
+	o := user.Extensions["roles"]
+	roles, _ := o.([]Role)
+	return roles
+}
+
+func (user *User) SetRolesToExtensions(roles []Role) {
+	if user.Extensions == nil {
+		user.Extensions = map[string]interface{}{}
+	}
+	user.Extensions["roles"] = roles
+}
+
+func (user *User) UsergroupsFromExtensions() []Usergroup {
+	if user.Extensions == nil {
+		return nil
+	}
+	o := user.Extensions["usergroups"]
+	usergroups, _ := o.([]Usergroup)
+	return usergroups
+}
+
+func (user *User) SetUsergroupsToExtensions(usergroups []Usergroup) {
+	if user.Extensions == nil {
+		user.Extensions = map[string]interface{}{}
+	}
+	user.Extensions["usergroups"] = usergroups
 }
 
 func (user *User) Default() *User {

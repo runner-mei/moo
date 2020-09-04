@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
 	"github.com/runner-mei/goutils/netutil"
 	"github.com/runner-mei/log"
@@ -22,16 +23,16 @@ import (
 // 		authorizer = authz.EmptyAuthorizer{}
 // 	}
 
-// 	signingMethod := env.Config.StringWithDefault("users.signing.method", "default")
+// 	signingMethod := env.Config.StringWithDefault(api.CfgUserSigningMethod, "default")
 // 	um := &UserManager{
 // 		logger:            logger,
 // 		signingMethod:     authn.GetSigningMethod(signingMethod),
-// 		secretKey:     	   env.Config.StringWithDefault("users.signing.secret_key", ""),
+// 		secretKey:     	   env.Config.StringWithDefault(api.CfgUserSigningSecretKey, ""),
 // 		users:             users,
 // 		authorizer: 	   authorizer,
 // 		userByName:        cache.New(5*time.Minute, 10*time.Minute),
 // 		userByID:          cache.New(5*time.Minute, 10*time.Minute),
-// 		lockedTimeExpires: env.Config.DurationWithDefault("users.locked_time_expires", 0),
+// 		lockedTimeExpires: env.Config.DurationWithDefault(api.CfgUserLockedTimeExpiresKey, 0),
 // 	}
 // 	if um.signingMethod == nil {
 // 		return nil, errors.New("users.signing.method '"+signingMethod+"' is missing")
@@ -49,7 +50,17 @@ func (um *UserManager) Create(ctx context.Context, name, nickname, source, passw
 		Source:     source,
 		Attributes: fields,
 	}
-	id, err := um.Users.CreateUserWithRoleNames(ctx, user, roles)
+
+	currentUser, err := api.ReadUserFromContext(ctx)
+	if err != nil {
+		if !errors.IsUnauthorizedError(err) {
+			return nil, err
+		}
+		return nil, errors.Wrap(err, "创建用户必须提供一个当前用户")
+	}
+
+	reqCtx := um.Service.NewContext(ctx, currentUser, "")
+	id, err := um.Service.CreateUserWithRoleNames(reqCtx, user, roles)
 	if err != nil {
 		return nil, err
 	}
@@ -178,10 +189,22 @@ func (u *userInfo) IngressIPList() ([]netutil.IPChecker, error) {
 	return u.ingressIPList, nil
 }
 
+type InAuthorizer struct {
+	fx.In
+
+	Authorizer authz.Authorizer `optional:"true"`
+}
+
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, logger log.Logger) (authn.UserManager, api.UserManager, error) {
-			um, err := Create(env, users, authz.EmptyAuthorizer{}, logger)
+		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, userSvc *Service, optAuthorizer InAuthorizer, logger log.Logger) (authn.UserManager, api.UserManager, error) {
+			authorizer := optAuthorizer.Authorizer
+			if authorizer == nil {
+				authorizer = authz.EmptyAuthorizer{}
+				logger.Warn("授权检测没有找到实例，使用 Empty 实现")
+			}
+
+			um, err := Create(env, users, userSvc, authorizer, logger)
 			return um, um, err
 		})
 	})

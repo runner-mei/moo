@@ -584,14 +584,14 @@ func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessi
 	counter := services.CreateFailCounter()
 	opts := []services.AuthOption{
 		services.Whitelist(),
-		services.ErrorCountCheck(userManager, counter, env.Config.IntWithDefault("users.max_login_fail_count", 3)),
+		services.ErrorCountCheck(userManager, counter, env.Config.IntWithDefault(api.CfgUserMaxLoginFailCount, 3)),
 		services.LockCheck(),
-		services.OnlineCheck(online, env.Config.StringWithDefault("users.login_conflict", "")),
+		services.OnlineCheck(online, env.Config.StringWithDefault(api.CfgUserLoginConflict, "")),
 		//services.TptInternalUserCheck(env),
 		services.DefaultUserCheck(),
 		services.LdapUserCheck(env, logger),
 	}
-	if !env.Config.BoolWithDefault("users.captcha.disabled", false) {
+	if !env.Config.BoolWithDefault(api.CfgUserCaptchaDisabled, false) {
 		opts = append(opts, services.CaptchaCheck(nil, counter))
 	}
 

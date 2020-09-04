@@ -15,6 +15,7 @@ import (
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn/services"
 )
@@ -53,7 +54,7 @@ type Config struct {
 }
 
 func readWelcomeURL(env *moo.Environment) string {
-	urlStr := env.Config.StringWithDefault("home_url", "")
+	urlStr := env.Config.StringWithDefault(api.CfgHomeURL, "")
 	if urlStr == "" {
 		return urlStr
 	}
@@ -109,14 +110,14 @@ func readConfig(env *moo.Environment) *Config {
 		},
 		Theme:           "hw",
 		URLPrefix:       env.DaemonUrlPath,
-		ContextPath:     env.Config.StringWithDefault("sso.context_path", ""),
+		ContextPath:     env.Config.StringWithDefault(api.CfgSSOContextPath, ""),
 		PlayPath:        "/web",
 		HeaderTitleText: env.LoginHeaderTitleText,
 		FooterTitleText: env.LoginFooterTitleText,
 
 		TampletePaths:    []string{env.Fs.FromLib("web/sso"), env.Fs.FromData("resources")},
-		RedirectMode:     env.Config.StringWithDefault("users.redirect_mode", "html"),
-		ShowForce:        strings.ToLower(strings.TrimSpace(env.Config.StringWithDefault("users.login_conflict", ""))) != "disableforce",
+		RedirectMode:     env.Config.StringWithDefault(api.CfgUserRedirectMode, "html"),
+		ShowForce:        strings.ToLower(strings.TrimSpace(env.Config.StringWithDefault(api.CfgUserLoginConflict, ""))) != "disableforce",
 		SessionKey:       authclient.DefaultSessionKey,
 		SessionPath:      readSessonPath(env),
 		SessionDomain:    "",
@@ -125,10 +126,10 @@ func readConfig(env *moo.Environment) *Config {
 		SessionHashFunc:  "sha1",
 		SessionSecretKey: nil,
 
-		JumpToWelcomeIfNewUser: env.Config.BoolWithDefault("users.jump_to_welcome_if_new_user", true),
+		JumpToWelcomeIfNewUser: env.Config.BoolWithDefault(api.CfgUserJumpToWelcomeIfNewUser, true),
 	}
 
-	if secretStr := env.Config.StringWithDefault("app.secret", ""); secretStr != "" {
+	if secretStr := env.Config.StringWithDefault(api.CfgUserAppSecret, ""); secretStr != "" {
 		config.SessionSecretKey = []byte(secretStr)
 	}
 
