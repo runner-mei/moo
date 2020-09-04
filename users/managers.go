@@ -606,6 +606,10 @@ func (svc *Service) UpdateUserPassword(ctx *RequestContext, userID int64, newPas
 	})
 }
 
+func (svc *Service) UpdateUserRolesNoLog(ctx context.Context, userDao usermodels.UserDao, userID int64, newRoles []int64) ([]string, []string, error) {
+	return svc.updateUserRoles(ctx, userDao, userID, newRoles)
+}
+
 func (svc *Service) updateUserRoles(ctx context.Context, userDao usermodels.UserDao, userID int64, newRoles []int64) ([]string, []string, error) {
 	var created, deleted []string
 	oldRoles, err := userDao.GetRolesByUserID(ctx, userID)
