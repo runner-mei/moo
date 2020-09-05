@@ -46,6 +46,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumC
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/digitalcrab/browscap_go v0.0.0-20160912072603-465055751e36 h1:7kL0gN6kKBxWU4OQlqbexfWQHmOLTbF4AsfYL+FonjU=
 github.com/digitalcrab/browscap_go v0.0.0-20160912072603-465055751e36/go.mod h1:eZPO3+5iaQK+uDrXpl9VXqml8HWlXg/HtpW9Ca/unDY=
+github.com/dlclark/regexp2 v1.2.0/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
+github.com/dop251/goja v0.0.0-20200811154920-cd0eddb06559/go.mod h1:Mw6PkjjMXWbTj+nnj4s3QPXq1jaT0s5pC0iFD4+BOAA=
 github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/elazarl/go-bindata-assetfs v1.0.0/go.mod h1:v+YaWX3bdea5J/mo8dSETolEo7R71Vk1u8bnjau5yw4=
 github.com/getsentry/raven-go v0.2.0 h1:no+xWJRb5ZI7eE8TWgIq1jLulQiIoLG0IfYxv5JYMGs=
@@ -64,6 +66,7 @@ github.com/go-playground/validator/v10 v10.2.0/go.mod h1:uOYAAleCW8F/7oMFd6aG0GO
 github.com/go-playground/validator/v10 v10.3.0 h1:nZU+7q+yJoFmwvNgv/LnPUkwPal62+b2xXj0AU1Es7o=
 github.com/go-playground/validator/v10 v10.3.0/go.mod h1:uOYAAleCW8F/7oMFd6aG0GOhaH6EGOAJShg8Id5JGkI=
 github.com/go-redis/redis v6.14.2+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
+github.com/go-sourcemap/sourcemap v2.1.3+incompatible/go.mod h1:F8jJfvm2KbVjc5NqelyYJmf/v5J0dwNLS2mL4sNA1Jg=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
@@ -178,6 +181,7 @@ github.com/runner-mei/GoBatis v1.1.10 h1:+iyntlqXSsUpR0+iUYCDeYuTmPr9gozYY45PSN3
 github.com/runner-mei/GoBatis v1.1.10/go.mod h1:V6YE0l+mPOWsGjbV/fqfK3RkX+3UbzWRwIQ2MRMzEKQ=
 github.com/runner-mei/GoBatis v1.1.12 h1:NQpx85pkVAs/iXK3eqkAVxf29cu73T49e0QoBMoXiSs=
 github.com/runner-mei/GoBatis v1.1.12/go.mod h1:V6YE0l+mPOWsGjbV/fqfK3RkX+3UbzWRwIQ2MRMzEKQ=
+github.com/runner-mei/check v0.0.0-20200624083308-d6cac10bd55d/go.mod h1:JotwTLciDKnIWZNoCXF94vqfLQaLDHOE1L5a9LZzhbc=
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66 h1:RdPUaLzJE68Q0S1Sx1X87XajtK4ZPzTb9w6WOdEDYUw=
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/errors v0.0.0-20200110030217-ce67aa3512c3 h1:anco31Aa7gvq901OuvW/9XP5/0fbFUWakeIUuDEQdAw=
@@ -191,6 +195,8 @@ github.com/runner-mei/errors v0.0.0-20200618124538-b19100e7b20f h1:ZopZ1HGk4o9Gt
 github.com/runner-mei/errors v0.0.0-20200618124538-b19100e7b20f/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/errors v0.0.0-20200716101041-2183b6629e03 h1:sN3VuviaxzrcdFQfiJQKF0E7fCFb2c552V5yukm5/js=
 github.com/runner-mei/errors v0.0.0-20200716101041-2183b6629e03/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
+github.com/runner-mei/errors v0.0.0-20200904125601-fcb86f2cb824 h1:OOtcUfyFU2l/OMp7DoKjnfUAzFPKo9bDb/pZa+q6R44=
+github.com/runner-mei/errors v0.0.0-20200904125601-fcb86f2cb824/go.mod h1:A9g5ObsQyz8QUKR+IbHEmUlfkbrRMYLWPrtGJHzAWKs=
 github.com/runner-mei/goutils v0.0.0-20200120093800-c5f3ee590a17 h1:Zh+vD8ZMvKmNguLqDBqXQR0AuyTkJYVCFnXil+WwMfI=
 github.com/runner-mei/goutils v0.0.0-20200121065808-339b9fbc97d0 h1:MztWWtGDKOcSjPeoMYdQ8oW5kINtyrZ21f+NofygG8Q=
 github.com/runner-mei/goutils v0.0.0-20200121065808-339b9fbc97d0/go.mod h1:uHKAg5y2XurLk1ctSNQ0LNDAsvHS7/sNVTxbZeoopDk=
@@ -216,6 +222,8 @@ github.com/runner-mei/goutils v0.0.0-20200624084507-c61f96de9ab7 h1:X3tytK9ZY1Lj
 github.com/runner-mei/goutils v0.0.0-20200624084507-c61f96de9ab7/go.mod h1:Hw1Ps1W6s8wUaK3YhOiroPxPP50QApPZOfkkCwENPB8=
 github.com/runner-mei/goutils v0.0.0-20200728081338-5c40ecc69c7c h1:OuEIaLA05EXBzhwmHEW4whNSqLc69vdn0sDBlL2Ov4E=
 github.com/runner-mei/goutils v0.0.0-20200728081338-5c40ecc69c7c/go.mod h1:Hw1Ps1W6s8wUaK3YhOiroPxPP50QApPZOfkkCwENPB8=
+github.com/runner-mei/goutils v0.0.0-20200905135414-1907af732565 h1:xbQkH0og52mJa1mCGBuzHSE2ctlIlmFvjNQY+oipiME=
+github.com/runner-mei/goutils v0.0.0-20200905135414-1907af732565/go.mod h1:GVwGZggEt2qjkPYMSxcmVKkOwe2hgITU/KYZISnqhR0=
 github.com/runner-mei/log v1.0.0/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
 github.com/runner-mei/log v1.0.2 h1:x20idqqHdH+52Vrd4h35mJhTmVeUbIwB64X9pMpaYP8=
 github.com/runner-mei/log v1.0.2/go.mod h1:0MveRoRDnCixGyy6HUWm7+aAA+AjcLV0JU3EHg0sEJM=
@@ -230,6 +238,8 @@ github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6 h1:O5CpvXXSZnQzSE
 github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6/go.mod h1:EtdW2DD7fG5IeQrnBo+iOqvcjQ04Su1Wq4Zrj9KAQ/c=
 github.com/runner-mei/resty v0.0.0-20200719040900-72a24d7bd800 h1:IaJuF2btsYJFo4sR2G2c659oV5a8UCGgrthjWXZz1N0=
 github.com/runner-mei/resty v0.0.0-20200719040900-72a24d7bd800/go.mod h1:EtdW2DD7fG5IeQrnBo+iOqvcjQ04Su1Wq4Zrj9KAQ/c=
+github.com/runner-mei/resty v0.0.0-20200814091018-9ded4cf5cc97 h1:sB1S7Y1RzhnOUauG7wIFhuQQA4EW/cTg4RYaAC0Ts7c=
+github.com/runner-mei/resty v0.0.0-20200814091018-9ded4cf5cc97/go.mod h1:EtdW2DD7fG5IeQrnBo+iOqvcjQ04Su1Wq4Zrj9KAQ/c=
 github.com/runner-mei/validation v0.0.0-20200502031035-5bdf89f9a1d9 h1:HEPqr/uwF16T14fgBiwU+Mr7jwcvz7LgzqDtG0cz9V0=
 github.com/runner-mei/validation v0.0.0-20200502031035-5bdf89f9a1d9/go.mod h1:1VwHklpOKf4AdeAR8yM/9eCIL3jp36+1lTvlbhyvBZU=
 github.com/runner-mei/validation v0.0.0-20200629071329-1203452abf78 h1:nsapH4L2+MV4NZmqfZeREomRX7LrTfH9FkDuPgwkyZ4=
@@ -248,6 +258,7 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/syndtr/goleveldb v0.0.0-20181127023241-353a9fca669c/go.mod h1:Z4AUp2Km+PwemOoO/VB5AOx9XSsIItzFjoJlOSiYmn0=
+github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/twinj/uuid v1.0.0 h1:fzz7COZnDrXGTAOHGuUGYd6sG+JMq+AoE7+Jlu0przk=
 github.com/twinj/uuid v1.0.0/go.mod h1:mMgcE1RHFUFqe5AfiwlINXisXfDGro23fWdPUfOMjRY=
 github.com/uber/jaeger-client-go v2.19.0+incompatible h1:pbwbYfHUoaase0oPQOdZ1GcaUjImYGimUXSQ/+8+Z8Q=

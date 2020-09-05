@@ -17,6 +17,7 @@ import (
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/authz"
 	"github.com/runner-mei/moo/users/usermodels"
+	userservices "github.com/runner-mei/moo/users/services"
 )
 
 type Authorizer interface {
@@ -25,7 +26,7 @@ type Authorizer interface {
 	authz.Authorizer
 }
 
-func Create(env *moo.Environment, users *usermodels.Users, userSvc *Service, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
+func Create(env *moo.Environment, users *usermodels.Users, userSvc *userservices.Service, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
 	if authorizer == nil {
 		return nil, errors.New("authorizer is nil")
 	}
@@ -71,7 +72,7 @@ type UserManager struct {
 	InnerUsers []string
 
 	logger          log.Logger
-	Service         *Service
+	Service         *userservices.Service
 	Users           *usermodels.Users
 	authorizer      authz.Authorizer
 	authorizeTicker syncx.Tickable
