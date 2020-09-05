@@ -585,10 +585,23 @@ func (svc *Service) UpdateUserPassword(ctx *RequestContext, userID int64, newPas
 		}
 		return errors.Wrap(err, "查询用户失败")
 	}
+	return svc.updateUserPassword(ctx, oldUser, newPassword)
+}
 
+func (svc *Service) UpdateUserPasswordByName(ctx *RequestContext, name string, newPassword string) error {
+	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.updateUserPassword(ctx, oldUser, newPassword)
+}
+
+func (svc *Service) updateUserPassword(ctx *RequestContext, user *usermodels.User, newPassword string) error {
 	return ctx.InTransaction(func(ctx *RequestContext) error {
-
-		err = ctx.Users.UpdateUserPassword(ctx.Ctx, userID, newPassword)
+		err := ctx.Users.UpdateUserPassword(ctx.Ctx, user.ID, newPassword)
 		if err != nil {
 			return errors.Wrap(err, "更改用户密码失败")
 		}
@@ -598,7 +611,92 @@ func (svc *Service) UpdateUserPassword(ctx *RequestContext, userID int64, newPas
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "change_user_password",
 			Successful: true,
-			Content:    "修改用户 '" + oldUser.Name + "' 的密码",
+			Content:    "修改用户 '" + user.Name + "' 的密码",
+		}); err != nil {
+			return errors.Wrap(err, "添加操作日志失败")
+		}
+		return nil
+	})
+}
+
+
+func (svc *Service) EnableUser(ctx *RequestContext, userID int64) error {
+	oldUser, err := ctx.Users.GetUserByID(ctx.Ctx, userID)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.enableUser(ctx, oldUser)
+}
+
+func (svc *Service) EnableUserByName(ctx *RequestContext, name string) error {
+	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.enableUser(ctx, oldUser)
+}
+
+func (svc *Service) enableUser(ctx *RequestContext, user *usermodels.User) error {
+	return ctx.InTransaction(func(ctx *RequestContext) error {
+		err := ctx.Users.UserDao.EnableUser(ctx.Ctx, user.ID, nullString(user.Name), nullString(user.Nickname))
+		if err != nil {
+			return errors.Wrap(err, "启用用户 '" + user.Name + "' 失败")
+		}
+
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+			UserID:     ctx.CurrentUser.ID(),
+			Username:   ctx.CurrentUser.Name(),
+			Type:       "enable_user",
+			Successful: true,
+			Content:    "启用用户 '" + user.Name + "'",
+		}); err != nil {
+			return errors.Wrap(err, "添加操作日志失败")
+		}
+		return nil
+	})
+}
+
+func (svc *Service) DisableUser(ctx *RequestContext, userID int64) error {
+	oldUser, err := ctx.Users.GetUserByID(ctx.Ctx, userID)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.disableUser(ctx, oldUser)
+}
+
+func (svc *Service) DisableUserByName(ctx *RequestContext, name string) error {
+	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.disableUser(ctx, oldUser)
+}
+
+func (svc *Service) disableUser(ctx *RequestContext, user *usermodels.User) error {
+	return ctx.InTransaction(func(ctx *RequestContext) error {
+		err := ctx.Users.UserDao.DisableUser(ctx.Ctx, user.ID, nullString(user.Name), nullString(user.Nickname))
+		if err != nil {
+			return errors.Wrap(err, "启用用户 '" + user.Name + "' 失败")
+		}
+
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+			UserID:     ctx.CurrentUser.ID(),
+			Username:   ctx.CurrentUser.Name(),
+			Type:       "enable_user",
+			Successful: true,
+			Content:    "启用用户 '" + user.Name + "'",
 		}); err != nil {
 			return errors.Wrap(err, "添加操作日志失败")
 		}
@@ -675,25 +773,42 @@ func (svc *Service) DeleteUser(ctx *RequestContext, userID int64, notDelete bool
 		}
 		return errors.Wrap(err, "查询用户失败")
 	}
+	return svc.deleteUser(ctx, oldUser, notDelete)
+}
 
+
+// DeleteUserByName 删除用户
+func (svc *Service) DeleteUserByName(ctx *RequestContext, name string, notDelete bool) error {
+	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.deleteUser(ctx, oldUser, notDelete)
+}
+
+func (svc *Service) deleteUser(ctx *RequestContext, user *usermodels.User, notDelete bool) error {
 	return ctx.InTransaction(func(ctx *RequestContext) error {
-
-		username := oldUser.Name
+		var err error
+		username := user.Name
 		if notDelete {
 			suffix := deleteTag + " " + time.Now().Format(time.RFC3339) + ")"
-			if !strings.Contains(oldUser.Name, deleteTag) {
-				oldUser.Name = oldUser.Name + suffix
+			if !strings.Contains(user.Name, deleteTag) {
+				user.Name = user.Name + suffix
 			}
-			if !strings.Contains(oldUser.Nickname, deleteTag) {
-				oldUser.Nickname = oldUser.Nickname + suffix
+			if !strings.Contains(user.Nickname, deleteTag) {
+				user.Nickname = user.Nickname + suffix
 			}
 
-			err = ctx.Users.UserDao.DisableUser(ctx.Ctx, userID, nullString(oldUser.Name), nullString(oldUser.Nickname))
+			err = ctx.Users.UserDao.DisableUser(ctx.Ctx, user.ID, 
+				nullString(user.Name), nullString(user.Nickname))
 			if err == nil {
-				err = ctx.Usergroups.RemoveUserFromAllGroups(ctx.Ctx, userID)
+				err = ctx.Usergroups.RemoveUserFromAllGroups(ctx.Ctx, user.ID)
 			}
 		} else {
-			_, err = ctx.Users.UserDao.DeleteUser(ctx.Ctx, userID)
+			_, err = ctx.Users.UserDao.DeleteUser(ctx.Ctx, user.ID)
 		}
 		if err != nil {
 			return errors.Wrap(err, "删除用户失败")
@@ -721,26 +836,42 @@ func (svc *Service) RecoveryUser(ctx *RequestContext, userID int64) error {
 		}
 		return errors.Wrap(err, "查询用户失败")
 	}
+	return svc.recoveryUser(ctx, oldUser)
+}
+// Recovery 按 id 删除记录
+func (svc *Service) RecoveryUserByName(ctx *RequestContext, name string) error {
+	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return errors.ErrNotFoundWithText("该用户不存在!")
+		}
+		return errors.Wrap(err, "查询用户失败")
+	}
+	return svc.recoveryUser(ctx, oldUser)
+}
 
-	if idx := strings.Index(oldUser.Name, deleteTag); idx >= 0 {
-		newName := oldUser.Name[:idx]
+// Recovery 按 id 删除记录
+func (svc *Service) recoveryUser(ctx *RequestContext, user *usermodels.User) error {
+	if idx := strings.Index(user.Name, deleteTag); idx >= 0 {
+		newName := user.Name[:idx]
 		if exists, err := ctx.Users.UserDao.UsernameExists(ctx.Ctx, newName); err != nil {
 			return errors.Wrap(err, "查询用户名是否同名失败")
 		} else if !exists {
-			oldUser.Name = newName
+			user.Name = newName
 		}
 	}
-	if idx := strings.Index(oldUser.Nickname, deleteTag); idx >= 0 {
-		newName := oldUser.Nickname[:idx]
+	if idx := strings.Index(user.Nickname, deleteTag); idx >= 0 {
+		newName := user.Nickname[:idx]
 		if exists, err := ctx.Users.UserDao.NicknameExists(ctx.Ctx, newName); err != nil {
 			return errors.Wrap(err, "查询用户呢称是否同名失败")
 		} else if !exists {
-			oldUser.Nickname = newName
+			user.Nickname = newName
 		}
 	}
 
 	return ctx.InTransaction(func(ctx *RequestContext) error {
-		err = ctx.Users.UserDao.EnableUser(ctx.Ctx, userID, nullString(oldUser.Name), nullString(oldUser.Nickname))
+		err := ctx.Users.UserDao.EnableUser(ctx.Ctx, user.ID, 
+			nullString(user.Name), nullString(user.Nickname))
 		if nil != err {
 			return errors.Wrap(err, "恢复用户失败")
 		}
@@ -750,7 +881,7 @@ func (svc *Service) RecoveryUser(ctx *RequestContext, userID int64) error {
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "recovery_user",
 			Successful: true,
-			Content:    "恢复用户: " + oldUser.Name,
+			Content:    "恢复用户: " + user.Name,
 		}); err != nil {
 			return errors.Wrap(err, "添加操作日志失败")
 		}
