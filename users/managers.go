@@ -619,7 +619,6 @@ func (svc *Service) updateUserPassword(ctx *RequestContext, user *usermodels.Use
 	})
 }
 
-
 func (svc *Service) EnableUser(ctx *RequestContext, userID int64) error {
 	oldUser, err := ctx.Users.GetUserByID(ctx.Ctx, userID)
 	if err != nil {
@@ -646,7 +645,7 @@ func (svc *Service) enableUser(ctx *RequestContext, user *usermodels.User) error
 	return ctx.InTransaction(func(ctx *RequestContext) error {
 		err := ctx.Users.UserDao.EnableUser(ctx.Ctx, user.ID, nullString(user.Name), nullString(user.Nickname))
 		if err != nil {
-			return errors.Wrap(err, "启用用户 '" + user.Name + "' 失败")
+			return errors.Wrap(err, "启用用户 '"+user.Name+"' 失败")
 		}
 
 		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
@@ -688,7 +687,7 @@ func (svc *Service) disableUser(ctx *RequestContext, user *usermodels.User) erro
 	return ctx.InTransaction(func(ctx *RequestContext) error {
 		err := ctx.Users.UserDao.DisableUser(ctx.Ctx, user.ID, nullString(user.Name), nullString(user.Nickname))
 		if err != nil {
-			return errors.Wrap(err, "启用用户 '" + user.Name + "' 失败")
+			return errors.Wrap(err, "启用用户 '"+user.Name+"' 失败")
 		}
 
 		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
@@ -776,7 +775,6 @@ func (svc *Service) DeleteUser(ctx *RequestContext, userID int64, notDelete bool
 	return svc.deleteUser(ctx, oldUser, notDelete)
 }
 
-
 // DeleteUserByName 删除用户
 func (svc *Service) DeleteUserByName(ctx *RequestContext, name string, notDelete bool) error {
 	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
@@ -802,7 +800,7 @@ func (svc *Service) deleteUser(ctx *RequestContext, user *usermodels.User, notDe
 				user.Nickname = user.Nickname + suffix
 			}
 
-			err = ctx.Users.UserDao.DisableUser(ctx.Ctx, user.ID, 
+			err = ctx.Users.UserDao.DisableUser(ctx.Ctx, user.ID,
 				nullString(user.Name), nullString(user.Nickname))
 			if err == nil {
 				err = ctx.Usergroups.RemoveUserFromAllGroups(ctx.Ctx, user.ID)
@@ -838,6 +836,7 @@ func (svc *Service) RecoveryUser(ctx *RequestContext, userID int64) error {
 	}
 	return svc.recoveryUser(ctx, oldUser)
 }
+
 // Recovery 按 id 删除记录
 func (svc *Service) RecoveryUserByName(ctx *RequestContext, name string) error {
 	oldUser, err := ctx.Users.GetUserByName(ctx.Ctx, name)
@@ -870,7 +869,7 @@ func (svc *Service) recoveryUser(ctx *RequestContext, user *usermodels.User) err
 	}
 
 	return ctx.InTransaction(func(ctx *RequestContext) error {
-		err := ctx.Users.UserDao.EnableUser(ctx.Ctx, user.ID, 
+		err := ctx.Users.UserDao.EnableUser(ctx.Ctx, user.ID,
 			nullString(user.Name), nullString(user.Nickname))
 		if nil != err {
 			return errors.Wrap(err, "恢复用户失败")
@@ -895,7 +894,7 @@ func NewService(env *moo.Environment,
 	opLogger api.OperationLogger,
 	validator *validation.Validation) (*Service, error) {
 
-	welcomeRootURL := env.Config.StringWithDefault(api.CfgRootEndpoint, "")
+	welcomeRootURL := env.Config.StringWithDefault(api.CfgRootEndpoint, env.DaemonUrlPath)
 	if welcomeRootURL == "" {
 		return nil, errors.New("初始用户服务失败： 缺少参数 '" + api.CfgRootEndpoint + "'")
 	}

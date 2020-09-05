@@ -24,6 +24,12 @@ type SigningMethod interface {
 	Sign(context.Context, string) (string, error)
 }
 
+type SigningMethodFunc func(context.Context, string) (string, error)
+
+func (f SigningMethodFunc) Sign(ctx context.Context, s string) (string, error) {
+	return f(ctx, s)
+}
+
 func NewUsers(env *moo.Environment, sessionRef gobatis.SqlSession, signingMethod SigningMethod) *Users {
 	return &Users{
 		SigningMethod: signingMethod,
