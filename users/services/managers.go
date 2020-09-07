@@ -1,4 +1,4 @@
-package users
+package services
 
 import (
 	"cn/com/hengwei/commons/crypto"
@@ -27,7 +27,7 @@ type RequestContext struct {
 	Ctx         context.Context
 	Factory     *gobatis.SessionFactory
 	Tx          *gobatis.Tx
-	CurrentUser User
+	CurrentUser api.User
 	Locale      string
 	OpLogger    api.OperationLogger
 	OnlineUsers usermodels.OnlineUsers
@@ -101,7 +101,7 @@ type Service struct {
 	Validator      *validation.Validation
 }
 
-func (svc *Service) NewContext(ctx context.Context, currentUser User, locale string) *RequestContext {
+func (svc *Service) NewContext(ctx context.Context, currentUser api.User, locale string) *RequestContext {
 	return &RequestContext{
 		Ctx:     ctx,
 		Factory: svc.Factory,
@@ -116,7 +116,7 @@ func (svc *Service) NewContext(ctx context.Context, currentUser User, locale str
 	}
 }
 
-func (svc *Service) NewContextWithTx(ctx context.Context, nativeTx gobatis.DBRunner, currentUser User, locale string) (*RequestContext, error) {
+func (svc *Service) NewContextWithTx(ctx context.Context, nativeTx gobatis.DBRunner, currentUser api.User, locale string) (*RequestContext, error) {
 	req := &RequestContext{
 		Ctx:     ctx,
 		Factory: svc.Factory,
@@ -213,7 +213,8 @@ func (svc *Service) GetUserByID(ctx *RequestContext, id int64, opts *UserQueryOp
 	u, err := ctx.Users.GetUserByID(ctx.Ctx, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserIDNotFound(id)
+			return nil, errors.ErrNotFoundWithText("该用户不存在!")
+			// return nil, ErrUserIDNotFound(id)
 		}
 		return nil, err
 	}

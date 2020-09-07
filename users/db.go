@@ -14,6 +14,7 @@ import (
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/authn/services"
 	"github.com/runner-mei/moo/authz"
+	userservices "github.com/runner-mei/moo/users/services"
 	"github.com/runner-mei/moo/users/usermodels"
 	"go.uber.org/fx"
 )
@@ -197,7 +198,7 @@ type InAuthorizer struct {
 
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, userSvc *Service, optAuthorizer InAuthorizer, logger log.Logger) (authn.UserManager, api.UserManager, error) {
+		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, userSvc *userservices.Service, optAuthorizer InAuthorizer, logger log.Logger) (authn.UserManager, api.UserManager, error) {
 			authorizer := optAuthorizer.Authorizer
 			if authorizer == nil {
 				authorizer = authz.EmptyAuthorizer{}
