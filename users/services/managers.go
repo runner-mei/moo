@@ -1,8 +1,6 @@
 package services
 
 import (
-	"cn/com/hengwei/commons/crypto"
-	"cn/com/hengwei/pkg/ds_client"
 	"context"
 	"database/sql"
 	"log"
@@ -339,7 +337,7 @@ func (svc *Service) CreateUser(ctx *RequestContext, user *usermodels.User, selec
 		return 0, err
 	}
 
-	if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+	if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 		UserID:     ctx.CurrentUser.ID(),
 		Username:   ctx.CurrentUser.Name(),
 		Type:       "add_user",
@@ -376,7 +374,7 @@ func (svc *Service) UpdateUserFields(ctx *RequestContext, userID int64, values m
 
 		content := "更新用户: " + oldUser.Name
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "update_user",
@@ -482,7 +480,7 @@ func (svc *Service) UpdateUser(ctx *RequestContext, userID int64, user *usermode
 	}
 
 	if hasPassword {
-		user.Password = crypto.CopyToBlock(user.Password)
+		user.Password = user.Password
 	} else {
 		user.Password = oldUser.Password
 	}
@@ -530,7 +528,7 @@ func (svc *Service) UpdateUser(ctx *RequestContext, userID int64, user *usermode
 			return errors.Wrap(err, "不支持的角色更新模式 '"+strconv.FormatInt(int64(updateRole), 10)+"'")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "update_user",
@@ -565,7 +563,7 @@ func (svc *Service) UpdateUserRoles(ctx *RequestContext, userID int64, newRoles 
 		if len(deleted) > 0 {
 			content = content + ", 删除角色 '" + strings.Join(deleted, ",") + "'"
 		}
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "change_user_roles",
@@ -607,7 +605,7 @@ func (svc *Service) updateUserPassword(ctx *RequestContext, user *usermodels.Use
 			return errors.Wrap(err, "更改用户密码失败")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "change_user_password",
@@ -649,7 +647,7 @@ func (svc *Service) enableUser(ctx *RequestContext, user *usermodels.User) error
 			return errors.Wrap(err, "启用用户 '"+user.Name+"' 失败")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "enable_user",
@@ -691,7 +689,7 @@ func (svc *Service) disableUser(ctx *RequestContext, user *usermodels.User) erro
 			return errors.Wrap(err, "启用用户 '"+user.Name+"' 失败")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "enable_user",
@@ -813,7 +811,7 @@ func (svc *Service) deleteUser(ctx *RequestContext, user *usermodels.User, notDe
 			return errors.Wrap(err, "删除用户失败")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "delete_user",
@@ -876,7 +874,7 @@ func (svc *Service) recoveryUser(ctx *RequestContext, user *usermodels.User) err
 			return errors.Wrap(err, "恢复用户失败")
 		}
 
-		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &ds_client.OperationLog{
+		if err := ctx.OpLogger.Tx(ctx.Tx).LogRecord(ctx.Ctx, &api.OperationLog{
 			UserID:     ctx.CurrentUser.ID(),
 			Username:   ctx.CurrentUser.Name(),
 			Type:       "recovery_user",
