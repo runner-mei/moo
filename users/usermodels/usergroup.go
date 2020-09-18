@@ -171,3 +171,23 @@ type UsergroupDao interface {
 	//           WHERE user_id = #{userid}
 	RemoveUserFromAllGroups(ctx context.Context, userid int64) error
 }
+
+func GetUsergroups(ctx context.Context, next func(*Usergroup) (bool, error)) ([]Usergroup, error) {
+	var usergroupList []Usergroup
+	for {
+		var u Usergroup
+		ok, err := next(&u)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, err
+		}
+		if !ok {
+			break
+		}
+		usergroupList = append(usergroupList, u)
+	}
+
+	return usergroupList, nil
+}
