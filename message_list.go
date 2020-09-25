@@ -1,11 +1,12 @@
 package moo
 
 import (
+	"encoding/json"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/runner-mei/errors"
-	"go.uber.org/fx"
 )
 
 type MessageLevel string
@@ -61,9 +62,20 @@ func (ph *placeholder) toMessage() Message {
 	return ph.err
 }
 
+type MessageProvider interface {
+	Get() []Message
+}
+
+type MessageProvideFunc func() []Message
+
+func (cb MessageProvideFunc) Get() []Message {
+	return cb()
+}
+
 type MessageList struct {
 	mu           sync.Mutex
 	list         []Message
+	providers    []MessageProvider
 	placeholders []placeholder
 }
 
@@ -88,6 +100,12 @@ func (list *MessageList) Placeholder(id, source string) MessagePlaceholder {
 		},
 	})
 	return &list.placeholders[len(list.placeholders)-1]
+}
+
+func (list *MessageList) SetupProvider(provider MessageProvider) {
+	list.mu.Lock()
+	defer list.mu.Unlock()
+	list.providers = append(list.providers, provider)
 }
 
 func (list *MessageList) Add(err *Message) {
@@ -131,13 +149,50 @@ func (list *MessageList) All() []Message {
 			results = append(results, list.placeholders[idx].toMessage())
 		}
 	}
+	for idx := range list.providers {
+		messages := list.providers[idx].Get()
+		if len(messages) > 0 {
+			results = append(results, messages...)
+		}
+	}
 	return results
 }
 
 func init() {
 	On(func() Option {
-		return fx.Provide(func() *MessageList {
+		return Provide(func() *MessageList {
 			return &MessageList{}
 		})
 	})
+
+	On(func() Option {
+		return Invoke(func(lifecycle *Lifecycle, httpSrv *HTTPServer, msgList *MessageList) error {
+			httpSrv.FastRoute(false, "messages", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(msgList.All())
+			}))
+			return nil
+		})
+	})
 }
+
+// func OnSystemComponentStatusEvent(ctx context.Context, topicName string, value interface{}) {
+
+// }
+
+// func init() {
+// 			bus.RegisterTopics(api.BusSystemComponentStatus)
+// 			lifecycle.Append(Hook{
+// 				OnStart: func(context.Context) error {
+// 					bus.Register("message_list_listener", &BusHandler{
+// 						Matcher: BusSystemComponentStatus,
+// 						Handle:  OnSystemComponentStatusEvent,
+// 					})
+// 					return nil
+// 				},
+// 				OnStop: func(context.Context) error {
+// 					bus.Unregister("message_list_listener")
+// 					return nil
+// 				},
+// 			})
+// 		}

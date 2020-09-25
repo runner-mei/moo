@@ -4,6 +4,8 @@ require (
 	emperror.dev/emperror v0.32.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/ThreeDotsLabs/watermill v1.1.1
+	github.com/ThreeDotsLabs/watermill-http v1.1.2
 	github.com/astaxie/beego v1.12.1
 	github.com/certifi/gocertifi v0.0.0-20200104152315-a6d78f326758 // indirect
 	github.com/cockroachdb/errors v1.2.4 // indirect
