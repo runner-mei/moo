@@ -56,7 +56,7 @@ type UsergroupQueryer interface {
 	// @record_type Usergroup
 	GetUsergroupByName(ctx context.Context, name string) func(*Usergroup) error
 
-	// @default SELECT * FROM <tablename type="Usergroup" as="g" /> <if test="userid.Valid"> WHERE exists(select * from <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id = g.id and uug.user_id = ${userid.Int64})</if>
+	// @default SELECT * FROM <tablename type="Usergroup" as="g" /> <if test="userid.Valid"> WHERE exists(select * from <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id = g.id and uug.user_id = #{userid.Int64})</if>
 	GetUsergroups(ctx context.Context, userid sql.NullInt64) (func(*Usergroup) (bool, error), io.Closer)
 
 	// @default <if test="recursive">
