@@ -1,8 +1,8 @@
 package pubsub
 
 import (
+	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -11,6 +11,8 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/urlutil"
+	"github.com/runner-mei/log"
+	"github.com/runner-mei/moo"
 )
 
 type Message = message.Message
@@ -60,3 +62,24 @@ func NewHTTPSubscriber(urlstr string, logger log.Logger) (http.Handler, Subscrib
 // 	}
 // 	return http.HandlerFunc(router.), nil
 // }
+
+func DrainToBus(ctx context.Context, logger log.Logger, topicName string, bus *moo.Bus, ch <-chan *Message, convert func(context.Context, *Message) (interface{}, error)) {
+	for msg := range ch {
+		evt, err := convert(ctx, msg)
+		if err != nil {
+			msg.Nack()
+			logger.Warn("解析消息失败", log.Error(err))
+			continue
+		}
+
+		err = bus.Emit(ctx, topicName, evt)
+		if err != nil {
+			msg.Nack()
+			logger.Warn("解析消息失败", log.Error(err))
+			continue
+		}
+
+		msg.Ack()
+		logger.Warn("转发消息到 bus 成功", log.Error(err))
+	}
+}

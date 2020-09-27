@@ -151,17 +151,19 @@ func (hs *HealthComponents) OnEvent(ctx context.Context, topicName string, value
 	}
 }
 
-func DrainToBus(logger log.Logger, bus *moo.Bus, ch <-chan *pubsub.Message) {
-	for msg := range ch {
+func DrainToBus(ctx context.Context, logger log.Logger, topicName string, bus *moo.Bus, ch <-chan *pubsub.Message) {
+	pubsub.DrainToBus(ctx, logger, topicName, bus, ch, func(ctx context.Context, msg *pubsub.Message) (interface{}, error) {
 		var evt api.SysKeepaliveEvent
 		err := json.Unmarshal(msg.Payload, &evt)
-		if err != nil {
-			msg.Nack()
-			logger.Warn("解析消息失败", log.Error(err))
-			continue
-		}
-		msg.Ack()
-		logger.Warn("转发消息到 bus 成功", log.Error(err))
+		return &evt, err
+	})
+}
+
+func NewHealthComponents(env *moo.Environment, logger log.Logger) *HealthComponents {
+	return &HealthComponents{
+		logger:  logger,
+		source:  "health.keeplived.commponents",
+		timeout: env.Config.Int64WithDefault(api.CfgHealthKeepliveTimeout, 60*5),
 	}
 }
 
@@ -177,11 +179,12 @@ func init() {
 				timeout: env.Config.Int64WithDefault(api.CfgHealthKeepliveTimeout, 60*5),
 			}
 
-			ch, err := subscriber.Subscribe(context.Background(), "keeplive")
+			ctx := context.Background()
+			ch, err := subscriber.Subscribe(ctx, "keeplive")
 			if err != nil {
 				return err
 			}
-			go DrainToBus(logger, bus, ch)
+			go DrainToBus(ctx, logger, api.BusSysKeepaliveStatus, bus, ch)
 
 			lifecycle.Append(moo.Hook{
 				OnStart: func(context.Context) error {
