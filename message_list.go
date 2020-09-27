@@ -12,10 +12,10 @@ import (
 type MessageLevel string
 
 const (
-	ErrInfo  MessageLevel = "info"
-	ErrWarn  MessageLevel = "warn"
-	ErrError MessageLevel = "error"
-	ErrFatal MessageLevel = "fatal"
+	MsgInfo  MessageLevel = "info"
+	MsgWarn  MessageLevel = "warn"
+	MsgError MessageLevel = "error"
+	MsgFatal MessageLevel = "fatal"
 )
 
 type Message struct {

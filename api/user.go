@@ -85,8 +85,10 @@ const (
 	CfgTestCleanDatabase = "test.clean_database"
 	CfgTestCleanData     = "test.clean_data"
 	CfgUserInitDatabase  = "users.init_database"
-	CfgDbPrefix  =	".db_prefix"
-	CfgDbDataPrefix  = ".db_data_prefix"
+	CfgDbPrefix          = ".db_prefix"
+	CfgDbDataPrefix      = ".db_data_prefix"
+
+	CfgHealthKeepliveTimeout = "health.keeplive.timeout_sec"
 )
 
 // 常用的错误
