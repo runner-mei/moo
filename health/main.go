@@ -22,13 +22,14 @@ type HealthComponents struct {
 }
 
 type component struct {
-	title  string
-	lastAt int64
+	title   string
+	firstAt int64
+	lastAt  int64
 }
 
 func (com *component) toMessage(source, id string, timeout int64) (bool, moo.Message) {
 	sec := atomic.LoadInt64(&com.lastAt)
-	if (sec + timeout) < time.Now().Unix() {
+	if (sec + timeout) > time.Now().Unix() {
 		return false, moo.Message{}
 	}
 	t := time.Unix(sec, 0)
@@ -68,6 +69,7 @@ func (hs *HealthComponents) addComponent(id, title string) *component {
 			title = id
 		}
 		value := &component{title: title, lastAt: time.Now().Unix()}
+		value.firstAt = value.lastAt
 		hs.components.Store(map[string]*component{
 			id: value,
 		})
@@ -78,7 +80,6 @@ func (hs *HealthComponents) addComponent(id, title string) *component {
 		if title != "" {
 			value.title = title
 		}
-		atomic.StoreInt64(&value.lastAt, time.Now().Unix())
 		return value
 	}
 	newCopyed := map[string]*component{}
@@ -89,6 +90,7 @@ func (hs *HealthComponents) addComponent(id, title string) *component {
 		title = id
 	}
 	value := &component{title: title, lastAt: time.Now().Unix()}
+	value.firstAt = value.lastAt
 	newCopyed[id] = value
 	hs.components.Store(newCopyed)
 	return value
@@ -155,6 +157,9 @@ func DrainToBus(ctx context.Context, logger log.Logger, topicName string, bus *m
 	pubsub.DrainToBus(ctx, logger, topicName, bus, ch, func(ctx context.Context, msg *pubsub.Message) (interface{}, error) {
 		var evt api.SysKeepaliveEvent
 		err := json.Unmarshal(msg.Payload, &evt)
+		if evt.ID == "" {
+			evt.ID = msg.UUID
+		}
 		return &evt, err
 	})
 }
@@ -165,6 +170,57 @@ func NewHealthComponents(env *moo.Environment, logger log.Logger) *HealthCompone
 		source:  "health.keeplived.commponents",
 		timeout: env.Config.Int64WithDefault(api.CfgHealthKeepliveTimeout, 60*5),
 	}
+}
+
+const keepliveTopic = "keeplive"
+
+func Register(publisher pubsub.Publisher, appid, title string) error {
+	message := pubsub.NewMessage(appid, &api.SysKeepaliveEvent{
+		App:    appid,
+		Title:  title,
+		Action: api.SysKeepaliveEventAdd,
+	})
+	return publisher.Publish(keepliveTopic, message)
+}
+
+func Active(publisher pubsub.Publisher, appid, title string) error {
+	message := pubsub.NewMessage(appid, &api.SysKeepaliveEvent{
+		App:    appid,
+		Title:  title,
+		Action: api.SysKeepaliveEventActive,
+	})
+	return publisher.Publish(keepliveTopic, message)
+}
+
+func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title string, interval time.Duration) {
+	if interval == 0 {
+		interval = 2 * time.Minute
+	}
+
+	publisher, err := pubsub.NewHTTPPublisher(pubsubURL, logger)
+	if err != nil {
+		logger.Fatal("start publisher fail", log.Error(err))
+		return
+	}
+
+	var activeTimeout func()
+
+	activeTimeout = func() {
+		defer time.AfterFunc(interval, activeTimeout)
+
+		err := Active(publisher, appid, title)
+		if err != nil {
+			logger.Error("active health fail", log.Error(err))
+			return
+		}
+	}
+
+	err = Register(publisher, appid, title)
+	if err != nil {
+		logger.Error("register health fail", log.Error(err))
+	}
+
+	time.AfterFunc(interval, activeTimeout)
 }
 
 func init() {
@@ -180,7 +236,7 @@ func init() {
 			}
 
 			ctx := context.Background()
-			ch, err := subscriber.Subscribe(ctx, "keeplive")
+			ch, err := subscriber.Subscribe(ctx, keepliveTopic)
 			if err != nil {
 				return err
 			}

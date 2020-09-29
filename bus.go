@@ -46,20 +46,30 @@ func (b *Bus) setContainer(c *container) {
 }
 
 func (b *Bus) getContainer() *container {
-	return b.data.Load().(*container)
+	o := b.data.Load()
+	if o == nil {
+		return nil
+	}
+	c, ok := o.(*container)
+	if ok {
+		return c
+	}
+	return nil
 }
 
 func (b *Bus) copyContainer() *container {
-	c := b.data.Load().(*container)
 	copyed := &container{
 		topics:   make(map[string]*topic),
 		handlers: make(map[string]*BusHandler),
 	}
-	for key, t := range c.topics {
-		copyed.topics[key] = t
-	}
-	for key, h := range c.handlers {
-		copyed.handlers[key] = h
+	c := b.getContainer()
+	if c != nil {
+		for key, t := range c.topics {
+			copyed.topics[key] = t
+		}
+		for key, h := range c.handlers {
+			copyed.handlers[key] = h
+		}
 	}
 	return copyed
 }
@@ -67,6 +77,9 @@ func (b *Bus) copyContainer() *container {
 // Emit inits a new event and delivers to the interested in handlers
 func (b *Bus) Emit(ctx context.Context, topicName string, data interface{}) error {
 	c := b.getContainer()
+	if c == nil {
+		return fmt.Errorf("bus: topic(%s) not found", topicName)
+	}
 
 	t, ok := c.topics[topicName]
 	if !ok {
@@ -82,6 +95,9 @@ func (b *Bus) Emit(ctx context.Context, topicName string, data interface{}) erro
 // Topics lists the all registered topics
 func (b *Bus) Topics() []string {
 	c := b.getContainer()
+	if c == nil {
+		return nil
+	}
 
 	topics, index := make([]string, len(c.topics)), 0
 	for topicName := range c.topics {
@@ -118,12 +134,18 @@ func (b *Bus) DeregisterTopics(topicNames ...string) {
 // TopicHandlers returns all handlers for the topic
 func (b *Bus) TopicHandlers(topicName string) []*BusHandler {
 	c := b.getContainer()
+	if c == nil {
+		return nil
+	}
 	return c.topics[topicName].handlers
 }
 
 // HandlerKeys returns list of registered handler keys
 func (b *Bus) HandlerKeys() []string {
 	c := b.getContainer()
+	if c == nil {
+		return nil
+	}
 
 	keys, index := make([]string, len(c.handlers)), 0
 
@@ -137,6 +159,9 @@ func (b *Bus) HandlerKeys() []string {
 // HandlerTopicSubscriptions returns all topic subscriptions of the handler
 func (b *Bus) HandlerTopicSubscriptions(handlerKey string) []string {
 	c := b.getContainer()
+	if c == nil {
+		return nil
+	}
 	return b.handlerTopicSubscriptions(c, handlerKey)
 }
 
