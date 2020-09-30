@@ -18,29 +18,6 @@ import (
 	"github.com/runner-mei/validation"
 )
 
-const (
-	// UserAdmin admin 用户名
-	UserAdmin = api.UserAdmin
-
-	// UserGuest guest 用户名
-	UserGuest = api.UserGuest
-
-	// UserBgOperator background operator 用户名
-	UserBgOperator = api.UserBgOperator
-
-	// RoleSuper super 角色名
-	RoleSuper = api.RoleSuper
-
-	// RoleAdministrator administrator 角色名
-	RoleAdministrator = api.RoleAdministrator
-
-	// RoleVisitor visitor 角色名
-	RoleVisitor = api.RoleVisitor
-
-	// RoleGuest guest 角色名
-	RoleGuest = api.RoleGuest
-)
-
 type OnlineUser struct {
 	TableName struct{}  `json:"-" xorm:"moo_online_users"`
 	UserID    int64     `json:"user_id" xorm:"user_id pk(user_address)"`
@@ -175,13 +152,13 @@ func (user *User) IsBuiltin() bool {
 		return true
 	}
 
-	return user.Name == UserAdmin ||
-		user.Name == UserGuest ||
-		user.Name == UserBgOperator
+	return user.Name == api.UserAdmin ||
+		user.Name == api.UserGuest ||
+		user.Name == api.UserBgOperator
 }
 
 func (user *User) IsHidden() bool {
-	return user.Name == UserBgOperator // || user.Type == ItsmReporter
+	return user.Name == api.UserBgOperator // || user.Type == ItsmReporter
 }
 
 func (u *User) SetMapping(mapping func(ctx context.Context, id int64, key string) string) {
@@ -338,10 +315,10 @@ func (role *Role) IsBuiltin() bool {
 	if role.IsDefault {
 		return true
 	}
-	return role.Name == RoleSuper ||
-		role.Name == RoleAdministrator ||
-		role.Name == RoleVisitor ||
-		role.Name == RoleGuest
+	return role.Name == api.RoleSuper ||
+		role.Name == api.RoleAdministrator ||
+		role.Name == api.RoleVisitor ||
+		role.Name == api.RoleGuest
 }
 
 type UserAndRole struct {

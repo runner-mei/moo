@@ -15,9 +15,6 @@ const (
 	// UserGuest guest 用户名
 	UserGuest = "guest"
 
-	// UserBgOperator background operator 用户名
-	UserBgOperator = "background_operator"
-
 	// RoleSuper super 角色名
 	RoleSuper = "super"
 
@@ -93,6 +90,9 @@ const (
 
 // 常用的错误
 var (
+	// UserBgOperator background operator 用户名
+	UserBgOperator = "background_operator"
+
 	ErrUnauthorized       = errors.ErrUnauthorized
 	ErrCacheInvalid       = errors.New("permission cache is invald")
 	ErrTagNotFound        = errors.New("permission tag is not found")
