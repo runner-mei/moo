@@ -296,6 +296,10 @@ github.com/runner-mei/validation v0.0.0-20200502031035-5bdf89f9a1d9 h1:HEPqr/uwF
 github.com/runner-mei/validation v0.0.0-20200502031035-5bdf89f9a1d9/go.mod h1:1VwHklpOKf4AdeAR8yM/9eCIL3jp36+1lTvlbhyvBZU=
 github.com/runner-mei/validation v0.0.0-20200629071329-1203452abf78 h1:nsapH4L2+MV4NZmqfZeREomRX7LrTfH9FkDuPgwkyZ4=
 github.com/runner-mei/validation v0.0.0-20200629071329-1203452abf78/go.mod h1:1VwHklpOKf4AdeAR8yM/9eCIL3jp36+1lTvlbhyvBZU=
+github.com/runner-mei/watermill-http v1.1.2 h1:pj7IUERzPk41tQYPUMMxG+Li8aleBrCmxfNYsQidIoo=
+github.com/runner-mei/watermill-http v1.1.2/go.mod h1:mkQ9CC0pxTZerNwr281rBoOy355vYt/lePkmYSX/BRg=
+github.com/runner-mei/watermill-http v1.1.3-0.20200928103208-f1b3bd8e5246 h1:EKPsMFYwSL8GJ+9PfvFI4OI5B4j5w+4LmgksnNQOAPA=
+github.com/runner-mei/watermill-http v1.1.3-0.20200928103208-f1b3bd8e5246/go.mod h1:ZEMxZRC1BmqT4eKSGPE9CcJSYgdMr2vzvEn8OKDanV8=
 github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726/go.mod h1:3yhqj7WBBfRhbBlzyOC3gUxftwsU0u8gqevxwIHQpMw=
 github.com/siddontang/ledisdb v0.0.0-20181029004158-becf5f38d373/go.mod h1:mF1DpOSOUiJRMR+FDqaqu3EBqrybQtrDDszLUZ6oxPg=
 github.com/siddontang/rdb v0.0.0-20150307021120-fc89ed2e418d/go.mod h1:AMEsy7v5z92TR1JKMkLLoaOQk++LVnOKL3ScbJ8GNGA=

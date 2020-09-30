@@ -60,3 +60,5 @@ require (
 exclude github.com/labstack/echo v3.3.10+incompatible
 
 go 1.13
+
+replace github.com/ThreeDotsLabs/watermill-http v1.1.2 => github.com/runner-mei/watermill-http v1.1.3-0.20200928103208-f1b3bd8e5246
