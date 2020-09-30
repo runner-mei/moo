@@ -166,7 +166,7 @@ func init() {
 	})
 
 	On(func() Option {
-		return Invoke(func(lifecycle *Lifecycle, httpSrv *HTTPServer, msgList *MessageList) error {
+		return Invoke(func(lifecycle Lifecycle, httpSrv *HTTPServer, msgList *MessageList) error {
 			httpSrv.FastRoute(false, "messages", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(msgList.All())
