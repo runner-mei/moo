@@ -911,9 +911,19 @@ func NewService(env *moo.Environment,
 	}, nil
 }
 
+type OptValidation struct {
+	moo.In
+
+	Validator *validation.Validation `optional:"true"`
+}
+
 func init() {
 	moo.On(func() moo.Option {
-		return moo.Provide(func(env *moo.Environment, model db.InModelFactory, users *usermodels.Users, opLogger api.OperationLogger, validator *validation.Validation) (*Service, error) {
+		return moo.Provide(func(env *moo.Environment, model db.InModelFactory, users *usermodels.Users, opLogger api.OperationLogger, optValidator OptValidation) (*Service, error) {
+			validator := optValidator.Validator
+			if validator == nil {
+				validator = validation.Default
+			}
 			return NewService(env, model.Factory, users, opLogger, validator)
 		})
 	})
