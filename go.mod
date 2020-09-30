@@ -13,7 +13,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/digitalcrab/browscap_go v0.0.0-20160912072603-465055751e36
 	github.com/getsentry/raven-go v0.2.0 // indirect
-	github.com/go-playground/validator/v10 v10.3.0 // indirect
+	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
 	github.com/jaypipes/ghw v0.5.0 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/runner-mei/log v1.0.3
 	github.com/runner-mei/loong v1.0.8
 	github.com/runner-mei/resty v0.0.0-20200814091018-9ded4cf5cc97
-	github.com/runner-mei/validation v0.0.0-20200629071329-1203452abf78
+	github.com/runner-mei/validation v0.0.0-20200908120153-bc4aa6175f56
 	github.com/stretchr/testify v1.4.0
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.0 // indirect
@@ -43,10 +43,10 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/fx v1.13.0
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642 // indirect
+	golang.org/x/sys v0.0.0-20200929083018-4d22bbb62b3c // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d // indirect
 	gopkg.in/cas.v2 v2.2.0
