@@ -1,7 +1,7 @@
 module github.com/runner-mei/moo
 
 require (
-	emperror.dev/emperror v0.32.0 // indirect
+	emperror.dev/emperror v0.33.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ThreeDotsLabs/watermill v1.1.1
@@ -30,8 +30,8 @@ require (
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.12
-	github.com/runner-mei/errors v0.0.0-20200904125601-fcb86f2cb824
-	github.com/runner-mei/goutils v0.0.0-20200905135414-1907af732565
+	github.com/runner-mei/errors v0.0.0-20200925124023-a98df9958a8b
+	github.com/runner-mei/goutils v0.0.0-20200929112137-25338fee19bf
 	github.com/runner-mei/log v1.0.3
 	github.com/runner-mei/loong v1.0.8
 	github.com/runner-mei/resty v0.0.0-20200814091018-9ded4cf5cc97
@@ -40,9 +40,8 @@ require (
 	github.com/twinj/uuid v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.0 // indirect
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
-	go.uber.org/atomic v1.6.0
+	go.uber.org/atomic v1.7.0
 	go.uber.org/fx v1.13.0
-	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
