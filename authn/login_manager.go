@@ -40,15 +40,16 @@ type AuthOut struct {
 }
 
 type InAuthFunc struct {
-	fx.In
+	moo.In
 
 	Funcs []loong.AuthValidateFunc `group:"authValidate"`
 }
 
+
 func init() {
 	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, userManager UserManager, online Sessions, locator ArgWelcomeLocator) (AuthOut, error) {
-			loginManager, err := NewLoginManager(env, userManager, online, locator.Locator)
+		return moo.Provide(func(env *moo.Environment, userManager UserManager, online Sessions, locator ArgWelcomeLocator, authopts services.InAuthOpts) (AuthOut, error) {
+			loginManager, err := NewLoginManager(env, userManager, online, locator.Locator, authopts.Opts)
 			if err != nil {
 				return AuthOut{}, err
 			}
@@ -578,7 +579,7 @@ func (mgr *LoginManager) AuthValidates() []loong.AuthValidateFunc {
 	}
 }
 
-func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessions, locator WelcomeLocator) (*LoginManager, error) {
+func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessions, locator WelcomeLocator, authOpts []services.AuthOption) (*LoginManager, error) {
 	logger := env.Logger.Named("sessions")
 
 	counter := services.CreateFailCounter()
@@ -590,6 +591,9 @@ func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessi
 		//services.TptInternalUserCheck(env),
 		services.DefaultUserCheck(),
 		services.LdapUserCheck(env, logger),
+	}
+	if len(authOpts) > 0 {
+		opts = append(opts, authOpts...)
 	}
 	if !env.Config.BoolWithDefault(api.CfgUserCaptchaDisabled, false) {
 		opts = append(opts, services.CaptchaCheck(nil, counter))

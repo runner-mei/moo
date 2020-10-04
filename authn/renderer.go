@@ -23,6 +23,7 @@ import (
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/log"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn/services"
 )
@@ -60,15 +61,7 @@ func RedirectFuncFromContext(c context.Context) func(context.Context, http.Respo
 	return f
 }
 
-type WelcomeLocator interface {
-	Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
-}
-
-type WelcomeFunc func(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
-
-func (f WelcomeFunc) Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
-	return f(ctx, userID, username, defaultURL)
-}
+type WelcomeLocator = api.WelcomeLocator
 
 // Renderer SSO 服务器
 type Renderer struct {

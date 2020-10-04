@@ -24,7 +24,8 @@ type Arguments struct {
 	Customs     []string
 	CommandArgs []string
 
-	PreRun func(*Environment) error
+	PreRun  func(*Environment) error
+	Options []Option
 }
 
 type Option = fx.Option
@@ -122,6 +123,10 @@ func Run(args *Arguments) error {
 		fx.Supply(env),
 		fx.Provide(NewBus),
 	}
+	if len(args.Options) > 0 {
+		opts = append(opts, args.Options...)
+	}
+
 	for _, cb := range initFuncs {
 		opts = append(opts, cb())
 	}

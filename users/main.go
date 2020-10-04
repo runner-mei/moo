@@ -31,7 +31,7 @@ func Create(env *moo.Environment, users *usermodels.Users, userSvc *userservices
 		return nil, errors.New("authorizer is nil")
 	}
 
-	signingMethod := env.Config.StringWithDefault(api.CfgUserSigningMethod, "default")
+	signingMethod := env.Config.StringWithDefault(api.CfgUserSigningMethod, api.CfgUserSigningMethodDefault)
 	um := &UserManager{
 		logger:            logger,
 		Users:             users,

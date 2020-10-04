@@ -52,29 +52,3 @@ func readJWTAuth(env *moo.Environment) (*loong.JWTAuth, error) {
 	}
 	return nil, errors.New("SigningMethod is unsupported")
 }
-
-func readUsers(env *moo.Environment) map[string]string {
-	defaultUsers := map[string]string{}
-
-	env.Config.ForEach(func(k string, v interface{}) {
-		if v == nil {
-			return
-		}
-		password, ok := v.(string)
-		if !ok {
-			return
-		}
-
-		password = strings.TrimSpace(password)
-		if "" == password {
-			return
-		}
-		if !strings.HasPrefix(k, "auth.password.") {
-			return
-		}
-		username := strings.TrimPrefix(k, "auth.password.")
-		defaultUsers[username] = password
-	})
-
-	return defaultUsers
-}

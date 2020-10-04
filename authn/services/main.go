@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/runner-mei/log"
+	"github.com/runner-mei/moo"
 )
 
 type User interface {
@@ -130,6 +131,7 @@ func (as *AuthService) Auth(ctx *AuthContext) error {
 
 	ctx.Step = Loading
 
+
 	// isLoaded := false
 	for _, a := range as.loadFuncs {
 		id, authentication, err := a(ctx)
@@ -219,4 +221,14 @@ type AuthOptionFunc func(auth *AuthService) error
 
 func (cb AuthOptionFunc) apply(auth *AuthService) error {
 	return cb(auth)
+}
+
+type InAuthOpts struct {
+	moo.In
+	Opts []AuthOption `group:"authOptions"`
+}
+
+type OutAuthOption struct {
+	moo.Out
+	Opt AuthOption `group:"authOptions"`
 }

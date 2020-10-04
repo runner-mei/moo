@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"database/sql"
 
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
@@ -75,7 +76,10 @@ func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.Us
 	}
 	err := um.Users.UserDao.GetUserByName(ctx.Ctx, ctx.Request.Username)(user.user)
 	if err != nil {
-		return nil, nil, err
+		if err != sql.ErrNoRows {
+			return nil, nil, err
+		}
+		return nil, nil, nil
 	}
 	return user.user.ID, user, err
 }
@@ -89,7 +93,7 @@ func (um *UserManager) Lock(ctx *services.AuthContext) error {
 }
 
 var _ services.User = &userInfo{}
-var _ services.Authorizer = &userInfo{}
+var _ services.Authenticator = &userInfo{}
 
 type userInfo struct {
 	um   *UserManager

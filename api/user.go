@@ -72,6 +72,7 @@ const (
 	CfgTunnelRemoteNetwork     = "tunnel.remote.network"
 	CfgTunnelRemoteAddress     = "tunnel.remote.address"
 	CfgTunnelRemoteListenAtURL = "tunnel.remote.listen_at_url"
+	CfgTunnelEngineName        = "tunnel.remote.node_name"
 
 	CfgHTTPNetwork  = "http-network"
 	CfgHTTPAddress  = "http-address"
@@ -91,7 +92,8 @@ const (
 // 常用的错误
 var (
 	// UserBgOperator background operator 用户名
-	UserBgOperator = "background_operator"
+	UserBgOperator              = "background_operator"
+	CfgUserSigningMethodDefault = "default"
 
 	ErrUnauthorized       = errors.ErrUnauthorized
 	ErrCacheInvalid       = errors.New("permission cache is invald")
@@ -137,6 +139,16 @@ func InternalApply(opts ...Option) InternalOptions {
 		opt.apply(&o)
 	}
 	return o
+}
+
+type WelcomeLocator interface {
+	Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
+}
+
+type WelcomeLocatorFunc func(ctx context.Context, userID interface{}, username, defaultURL string) (string, error)
+
+func (f WelcomeLocatorFunc) Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
+	return f(ctx, userID, username, defaultURL)
 }
 
 // UserManager 用户管理

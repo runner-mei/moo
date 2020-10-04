@@ -24,6 +24,11 @@ func init() {
 			} else {
 				acceptURL = acceptURL + "/tunnel"
 			}
+
+			engineName := env.Config.StringWithDefault(api.CfgTunnelEngineName, "")
+			acceptURL = acceptURL + "/"+ engineName +"?engine_name="+engineName
+
+
 			tunnelListener, err := tunnel.Listen(logger,
 				env.Config.IntWithDefault(api.CfgTunnelMaxThreads, 10),
 				env.Config.StringWithDefault(api.CfgTunnelRemoteNetwork, "tcp"),
