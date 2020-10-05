@@ -40,6 +40,7 @@ type Shutdowner = fx.Shutdowner
 var Provide = fx.Provide
 var Invoke = fx.Invoke
 var Supply = fx.Supply
+var Populate = fx.Populate
 
 var initFuncs []func() Option
 

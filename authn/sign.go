@@ -48,8 +48,7 @@ func (m *signingMethodDefault) Verify(signingString, signature string, key inter
 	if len(signature) > 3 {
 		if signature[0] == '[' {
 			if signature[2] == ']' {
-				c := signature[1] - '0'
-				if c >= 0 && c <= 9 {
+				if c := signature[1] - '0'; c >= 0 && c <= 9 {
 					if bcrypto.Hashers[c].Comparer != nil {
 						return bcrypto.Hashers[c].Comparer(signingString, signature[3:], key)
 					}
