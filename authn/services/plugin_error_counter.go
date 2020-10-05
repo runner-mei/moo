@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/runner-mei/log"
@@ -61,6 +62,8 @@ func ErrorCountCheck(um UserManager, counter FailCounter, maxLoginFailCount int)
 		auth.OnBeforeLoad(AuthFunc(func(ctx *AuthContext) error {
 			errCount := counter.Count(ctx.Request.Username)
 			ctx.ErrorCount = errCount
+
+			fmt.Println("=====", ctx.Request.Username, errCount, maxLoginFailCount)
 			if errCount >= maxLoginFailCount {
 
 				if err := um.Lock(ctx); err != nil {
@@ -75,6 +78,7 @@ func ErrorCountCheck(um UserManager, counter FailCounter, maxLoginFailCount int)
 		}))
 
 		auth.OnAfterAuth(func(ctx *AuthContext) error {
+			fmt.Println("-----", ctx.Request.Username, ctx.Response.IsOK)
 			if ctx.Response.IsOK {
 				counter.Zero(ctx.Request.Username)
 			} else {

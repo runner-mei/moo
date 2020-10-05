@@ -251,7 +251,11 @@ var UserKey = &userKey{}
 
 type ReadCurrentUserFunc func(context.Context) (User, error)
 
-func ContextWithUser(ctx context.Context, u ReadCurrentUserFunc) context.Context {
+func ContextWithUser(ctx context.Context, u User) context.Context {
+	return context.WithValue(ctx, UserKey, u)
+}
+
+func ContextWithReadCurrentUser(ctx context.Context, u ReadCurrentUserFunc) context.Context {
 	return context.WithValue(ctx, UserKey, u)
 }
 
@@ -362,4 +366,14 @@ func (u *mockUser) ForEach(cb func(string, interface{})) {
 	cb("id", u.id)
 	cb("name", u.name)
 	cb("nickname", u.name)
+}
+
+type UserPasswordHasher interface {
+	Hash(context.Context, string) (string, error)
+}
+
+type UserPasswordHasherFunc func(context.Context, string) (string, error)
+
+func (f UserPasswordHasherFunc) Hash(ctx context.Context, s string) (string, error) {
+	return f(ctx, s)
 }

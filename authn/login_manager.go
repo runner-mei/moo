@@ -571,7 +571,7 @@ func (mgr *LoginManager) AuthValidates() []loong.AuthValidateFunc {
 				return ctx, nil
 			}
 
-			return api.ContextWithUser(ctx, api.ReadCurrentUserFunc(func(ctx context.Context) (api.User, error) {
+			return api.ContextWithReadCurrentUser(ctx, api.ReadCurrentUserFunc(func(ctx context.Context) (api.User, error) {
 				username := values.Get(authclient.SESSION_USER_KEY)
 				return mgr.userManager.UserByName(ctx, username)
 			})), nil

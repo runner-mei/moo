@@ -25,7 +25,7 @@ func (l *httpLifecycle) OnHTTPs(addr string) {
 }
 
 type AppTest struct {
-	oldInitFuncs []func() moo.Option
+	// oldInitFuncs []func() moo.Option
 	closers      []io.Closer
 	shutdowner   fx.Shutdowner
 
@@ -54,7 +54,7 @@ func (a *AppTest) Close() error {
 	close(a.HttpOK)
 	a.HttpOK = nil
 
-	moo.Reset(a.oldInitFuncs)
+	// moo.Reset(a.oldInitFuncs)
 	return nil
 }
 
@@ -81,19 +81,15 @@ func (a *AppTest) Start(t testing.TB) {
 		a.HttpOK = make(chan error, 3)
 	}
 
-	moo.On(func() moo.Option {
-		return fx.Populate(&a.shutdowner)
-	})
-	moo.On(func() moo.Option {
-		return fx.Populate(&a.Env)
-	})
-	moo.On(func() moo.Option {
-		return fx.Provide(func() moo.HTTPLifecycle {
+	a.Args.Options = append(a.Args.Options, fx.Populate(&a.shutdowner))
+	a.Args.Options = append(a.Args.Options, fx.Populate(&a.Env))
+
+	a.Args.Options = append(a.Args.Options, 
+		fx.Provide(func() moo.HTTPLifecycle {
 			return &httpLifecycle{
 				AppTest: a,
 			}
-		})
-	})
+		}))
 
 	go func() {
 		err := moo.Run(&a.Args)
@@ -124,12 +120,12 @@ func (a *AppTest) Start(t testing.TB) {
 }
 
 func NewAppTest(t testing.TB) *AppTest {
-	oldInitFuncs := moo.Reset(nil)
-	moo.Reset(oldInitFuncs)
-	defer moo.Reset(oldInitFuncs)
+	// oldInitFuncs := moo.Reset(nil)
+	// moo.Reset(oldInitFuncs)
+	// defer moo.Reset(oldInitFuncs)
 
 	return &AppTest{
-		oldInitFuncs: oldInitFuncs,
+		// oldInitFuncs: oldInitFuncs,
 		HttpOK:       make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{

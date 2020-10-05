@@ -7,32 +7,32 @@ import (
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/util"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/db"
+	"github.com/runner-mei/moo/bcrypto"
 )
 
+type InUserPasswordHasher struct {
+	moo.In
+
+	Hasher api.UserPasswordHasher `optional:"true"`
+}
 func init() {
 	moo.On(func() moo.Option {
-		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, signingMethod SigningMethod) *Users {
+		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, hasher InUserPasswordHasher) *Users {
 			sessionRef := db.Factory.SessionReference()
-			return NewUsers(env, sessionRef, signingMethod)
+			if hasher.Hasher == nil {
+				hasher.Hasher = bcrypto.DefaultHasher
+			}
+			return NewUsers(env, sessionRef, hasher.Hasher)
 		})
 	})
 }
 
-type SigningMethod interface {
-	Sign(context.Context, string) (string, error)
-}
-
-type SigningMethodFunc func(context.Context, string) (string, error)
-
-func (f SigningMethodFunc) Sign(ctx context.Context, s string) (string, error) {
-	return f(ctx, s)
-}
-
-func NewUsers(env *moo.Environment, sessionRef gobatis.SqlSession, signingMethod SigningMethod) *Users {
+func NewUsers(env *moo.Environment, sessionRef gobatis.SqlSession, hasher api.UserPasswordHasher) *Users {
 	return &Users{
-		SigningMethod: signingMethod,
+		hasher: hasher,
 		// env:       env,
 		// dbFactory: dbFactory,
 		UserDao: NewUserDao(sessionRef, NewUserQueryer(sessionRef)),
@@ -41,7 +41,7 @@ func NewUsers(env *moo.Environment, sessionRef gobatis.SqlSession, signingMethod
 }
 
 type Users struct {
-	SigningMethod SigningMethod
+	hasher api.UserPasswordHasher
 	// env       *moo.Environment
 	// dbFactory *gobatis.SessionFactory
 	UserDao UserDao
@@ -49,7 +49,7 @@ type Users struct {
 }
 
 func (c *Users) Tx(sessionRef gobatis.SqlSession) *Users {
-	return NewUsers(nil, sessionRef, c.SigningMethod)
+	return NewUsers(nil, sessionRef, c.hasher)
 }
 
 func (c *Users) UsernameExists(ctx context.Context, name string) (bool, error) {
@@ -182,7 +182,7 @@ func (c *Users) CreateUser(ctx context.Context, user *User, roles []int64) (int6
 
 	if user.Password != "" {
 		var err error
-		user.Password, err = c.SigningMethod.Sign(ctx, user.Password)
+		user.Password, err = c.hasher.Hash(ctx, user.Password)
 		if err != nil {
 			return 0, errors.WithTitle(err, "用户密码加密失败")
 		}
@@ -216,7 +216,7 @@ func (c *Users) CreateUser(ctx context.Context, user *User, roles []int64) (int6
 
 func (c *Users) UpdateUserPassword(ctx context.Context, userID int64, password string) error {
 	if password != "" {
-		newPassword, err := c.SigningMethod.Sign(ctx, password)
+		newPassword, err := c.hasher.Hash(ctx, password)
 		if err != nil {
 			return errors.WithTitle(err, "用户密码加密失败")
 		}
@@ -239,7 +239,7 @@ func (c *Users) UpdateUserPassword(ctx context.Context, userID int64, password s
 func (c *Users) UpdateUser(ctx context.Context, userID int64, user *User) error {
 	if user.Password != "" {
 		var err error
-		user.Password, err = c.SigningMethod.Sign(ctx, user.Password)
+		user.Password, err = c.hasher.Hash(ctx, user.Password)
 		if err != nil {
 			return errors.WithTitle(err, "用户密码加密失败")
 		}

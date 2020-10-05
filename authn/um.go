@@ -54,7 +54,7 @@ func tokenToUser(um api.UserManager, cb loong.TokenCheckFunc) loong.TokenCheckFu
 			return ctx, err
 		}
 
-		return api.ContextWithUser(ctx, api.ReadCurrentUserFunc(func(ctx context.Context) (api.User, error) {
+		return api.ContextWithReadCurrentUser(ctx, api.ReadCurrentUserFunc(func(ctx context.Context) (api.User, error) {
 			o := loong.TokenFromContext(ctx)
 			if o == nil {
 				return nil, loong.ErrTokenNotFound

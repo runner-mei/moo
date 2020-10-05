@@ -247,7 +247,7 @@ func (um *UserManager) loadRolesForUser(ctx context.Context, u *user) (err error
 	if len(u.roles) == 0 {
 		u.roles, err = um.Users.UserDao.GetRolesByUserID(ctx, u.ID())
 		if err != nil {
-			return errors.Wrap(err, "query permissions and roles with user is "+u.Name()+" fail")
+			return errors.Wrap(err, "载入用户 "+u.Name()+" 的角色列表失败")
 		}
 	}
 

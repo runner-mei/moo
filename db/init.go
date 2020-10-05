@@ -21,13 +21,13 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	}
 
 	if env.Config.BoolWithDefault(api.CfgTestCleanDatabase, false) {
-		_, err := db.Exec(ReplaceTableName(CleanSQL, args))
+		_, err := db.Exec(ReplaceTableName(CleanSQL(), args))
 		if err != nil {
 			return errors.New("清理用户相关的表失败: " + err.Error())
 		}
 		logger.Info("清理用户相关的表成功")
 	} else if env.Config.BoolWithDefault(api.CfgTestCleanData, false) {
-		_, err := db.Exec(ReplaceTableName(CleanDataSQL, args))
+		_, err := db.Exec(ReplaceTableName(CleanDataSQL(), args))
 		if err != nil {
 			return errors.New("清理用户相关的数据失败: " + err.Error())
 		}
@@ -35,7 +35,7 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	}
 
 	if env.Config.BoolWithDefault(api.CfgUserInitDatabase, false) {
-		_, err := db.Exec(ReplaceTableName(InitSQL, args))
+		_, err := db.Exec(ReplaceTableName(InitSQL(), args))
 		if err != nil {
 			return errors.New("初始化用户相关的表失败: " + err.Error())
 		}
@@ -80,27 +80,38 @@ func init() {
 	})
 }
 
-var CleanDataSQL = `
+var CleanDataSQL = func() string {
+return `
 -- users v1
 
 DELETE FROM moo_operation_logs;
 DELETE FROM moo_online_users;
 DELETE FROM moo_users_and_roles;
+DELETE FROM moo_users_and_usergroups;
+DELETE FROM moo_user_profiles;
 DELETE FROM moo_users;
 DELETE FROM moo_roles;
+DELETE FROM moo_usergroups;
 `
+}
 
-var CleanSQL = `
+var CleanSQL = func() string {
+return `
 -- users v1
 
 DROP TABLE IF EXISTS moo_operation_logs CASCADE;
 DROP TABLE IF EXISTS moo_online_users CASCADE;
 DROP TABLE IF EXISTS moo_users_and_roles CASCADE;
+DROP TABLE IF EXISTS moo_users_and_usergroups CASCADE;
+DROP TABLE IF EXISTS moo_user_profiles CASCADE;
 DROP TABLE IF EXISTS moo_users CASCADE;
 DROP TABLE IF EXISTS moo_roles CASCADE;
+DROP TABLE IF EXISTS moo_usergroups CASCADE;
 `
+}
 
-var InitSQL = `
+var InitSQL = func() string {
+return `
 -- users v1
 
 CREATE TABLE IF NOT EXISTS moo_users (
@@ -179,7 +190,10 @@ CREATE TABLE IF NOT EXISTS moo_users_and_usergroups
     group_id integer REFERENCES moo_usergroups (id) MATCH SIMPLE
 							        ON UPDATE NO ACTION
 							        ON DELETE CASCADE,
-    UNIQUE (user_id, group_id)
+    role_id integer REFERENCES moo_roles (id) MATCH SIMPLE
+							        ON UPDATE NO ACTION
+							        ON DELETE CASCADE,
+    UNIQUE (user_id, group_id, role_id)
 );
 
 CREATE TABLE IF NOT EXISTS moo_operation_logs (
@@ -219,3 +233,4 @@ $$ language 'plpgsql';
 SELECT add_bgopuser_user();
 DROP FUNCTION add_bgopuser_user();
 `
+}

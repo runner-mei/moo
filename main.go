@@ -47,13 +47,6 @@ func On(cb func() Option) {
 	initFuncs = append(initFuncs, cb)
 }
 
-// Reset 这个只是用于测试用的
-func Reset(newFuncs []func() Option) []func() Option {
-	oldFuncs := initFuncs
-	initFuncs = newFuncs
-	return oldFuncs
-}
-
 func Run(args *Arguments) error {
 	for idx, a := range args.CommandArgs {
 		if a == "version" {

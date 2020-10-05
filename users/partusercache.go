@@ -361,7 +361,7 @@ func (c *UserCache) loadByID(ctx context.Context, userID int64) (api.User, error
 
 func (c *UserCache) userByID(ctx context.Context, userID int64, forceUpdate bool, read func(ctx context.Context, userID int64) (api.User, error), opts ...api.Option) (api.User, error) {
 	u, ok := c.Get(userID)
-	if ok {
+	if !ok {
 		var err error
 		u, err = read(ctx, userID)
 		if err != nil {

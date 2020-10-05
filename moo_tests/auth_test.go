@@ -14,6 +14,7 @@ import (
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/moo/api"
 	"go.uber.org/fx"
 	"golang.org/x/net/publicsuffix"
 )
@@ -133,24 +134,28 @@ func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 		srv.Args.CommandArgs = append(srv.Args.CommandArgs, fmt.Sprintf("%s=%v", key, value))
 	}
 
-	moo.On(func() moo.Option {
-		return fx.Populate(&srv.userManager)
-	})
-	moo.On(func() moo.Option {
-		return fx.Populate(&srv.sessions)
-	})
-	moo.On(func() moo.Option {
-		return fx.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
+	srv.Args.Options = append(srv.Args.Options, fx.Populate(&srv.userManager))
+	srv.Args.Options = append(srv.Args.Options, fx.Populate(&srv.sessions))
+
+
+	srv.Args.Options = append(srv.Args.Options, fx.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
 			httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(srv.responseText))
 			}))
-		})
-	})
+		}))
 
 	srv.Start(t)
 
-	_, err := srv.userManager.Create(context.Background(), "adm", "adm", "", "123",
+	ctx := context.Background()
+
+	user, err := srv.userManager.UserByName(ctx, api.UserBgOperator)
+	if err != nil {
+		t.Fatal("load" + api.UserBgOperator + " fail", err)
+	}
+	ctx = api.ContextWithUser(ctx, user)
+
+	_, err = srv.userManager.Create(ctx, "adm", "adm", "", "123",
 		map[string]interface{}{
 			"welcome_url":        "url,"+srv.URL,
 			"white_address_list": []string{"192.168.1.2", "192.168.1.9"},
