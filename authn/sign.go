@@ -48,41 +48,23 @@ func (m *signingMethodDefault) Verify(signingString, signature string, key inter
 	if len(signature) > 3 {
 		if signature[0] == '[' {
 			if signature[2] == ']' {
-				c := signature[1]
-				switch c {
-				case '0':
-					return bcrypto.Hashers[0].Comparer(signingString, signature[3:], key)
-				case '1':
-					return bcrypto.Hashers[1].Comparer(signingString, signature[3:], key)
-				case '2':
-					return bcrypto.Hashers[2].Comparer(signingString, signature[3:], key)
-				case '3':
-					return bcrypto.Hashers[3].Comparer(signingString, signature[3:], key)
-				case '4':
-					return bcrypto.Hashers[4].Comparer(signingString, signature[3:], key)
-				case '5':
-					return bcrypto.Hashers[5].Comparer(signingString, signature[3:], key)
-				case '6':
-					return bcrypto.Hashers[6].Comparer(signingString, signature[3:], key)
-				case '7':
-					return bcrypto.Hashers[7].Comparer(signingString, signature[3:], key)
-				case '8':
-					return bcrypto.Hashers[8].Comparer(signingString, signature[3:], key)
-				case '9':
-					return bcrypto.Hashers[9].Comparer(signingString, signature[3:], key)
-				default:
+				c := signature[1] - '0'
+				if c >= 0 && c <= 9 {
+					if bcrypto.Hashers[c].Comparer != nil {
+						return bcrypto.Hashers[c].Comparer(signingString, signature[3:], key)
+					}
+				}
+				return ErrSigningMethodMissing
+			}
+
+			idx := strings.Index(signature, "]")
+			if idx > 0 {
+				alg := signature[1:idx]
+				signingMethod := GetSigningMethod(alg)
+				if signingMethod == nil {
 					return ErrSigningMethodMissing
 				}
-			} else {
-				idx := strings.Index(signature, "]")
-				if idx > 0 {
-					alg := signature[1:idx]
-					signingMethod := GetSigningMethod(alg)
-					if signingMethod == nil {
-						return ErrSigningMethodMissing
-					}
-					return signingMethod.Verify(signingString, signature[idx+1:], key)
-				}
+				return signingMethod.Verify(signingString, signature[idx+1:], key)
 			}
 		}
 	}
@@ -97,6 +79,18 @@ func (m *signingMethodDefault) Verify(signingString, signature string, key inter
 
 // Only allow 'none' signing if UnsafeAllowNoneSignatureType is specified as the key
 func (m *signingMethodDefault) Sign(signingString string, key interface{}) (string, error) {
+	if len(signingString) > 3 {
+		if signingString[0] == '[' {
+			if signingString[2] == ']' {
+				return signingString, nil
+			}
+			idx := strings.Index(signingString, "]")
+			if idx > 0 {
+				return signingString, nil
+			}
+		}
+	}
+
 	return bcrypto.DefaultHasher(context.Background(), signingString)
 }
 
