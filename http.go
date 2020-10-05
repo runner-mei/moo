@@ -346,6 +346,10 @@ func (srv *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		pa = strings.TrimPrefix(r.URL.Path, srv.trimPrefix)
+		if pa == "" || pa == "/" {
+			http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+			return
+		}
 	}
 	name, urlPath := urlutil.SplitURLPath(pa)
 	if h, exists := srv.fastRoutes[name]; exists {

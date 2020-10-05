@@ -13,11 +13,13 @@ var (
 	BuildTime string = "N/A"
 	GitHash   string = "N/A"
 	GoVersion string = "N/A"
+
+	NS                 = "moo"
+	DefaultProductName = "moo"
+	DefaultURLPath     = "moo"
 )
 
 // go build -ldflags "-X 'github.com/runner-mei/moo.GoVersion=$(go version)' -X 'github.com/runner-mei/moo.GitBranch=$(git show -s --format=%H)' -X 'github.com/runner-mei/moo.GitHash=$(git show -s --format=%H)' -X 'github.com/runner-mei/moo.BuildTime=$(git show -s --format=%cd)'"
-
-var NS = "moo"
 
 type Arguments struct {
 	Defaults    []string

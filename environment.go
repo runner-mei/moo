@@ -40,10 +40,10 @@ func NewEnvironment(namespace string, cfg *cfg.Config, fs FileSystem, logger log
 	env := &Environment{
 		Logger:        logger,
 		Namespace:     namespace,
-		Name:          cfg.StringWithDefault("product.name", "moo"),
+		Name:          cfg.StringWithDefault("product.name", DefaultProductName),
 		Config:        cfg,
 		Fs:            fs,
-		DaemonUrlPath: cfg.StringWithDefault("daemon.urlpath", "moo"),
+		DaemonUrlPath: cfg.StringWithDefault("daemon.urlpath", DefaultURLPath),
 	}
 	if !strings.HasPrefix(env.DaemonUrlPath, "/") {
 		env.DaemonUrlPath = "/" + env.DaemonUrlPath
