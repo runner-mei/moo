@@ -26,8 +26,8 @@ func (l *httpLifecycle) OnHTTPs(addr string) {
 
 type AppTest struct {
 	// oldInitFuncs []func() moo.Option
-	closers      []io.Closer
-	shutdowner   fx.Shutdowner
+	closers    []io.Closer
+	shutdowner fx.Shutdowner
 
 	Env  *moo.Environment
 	Args moo.Arguments
@@ -83,8 +83,7 @@ func (a *AppTest) Start(t testing.TB) {
 
 	a.Args.Options = append(a.Args.Options, fx.Populate(&a.shutdowner))
 	a.Args.Options = append(a.Args.Options, fx.Populate(&a.Env))
-
-	a.Args.Options = append(a.Args.Options, 
+	a.Args.Options = append(a.Args.Options,
 		fx.Provide(func() moo.HTTPLifecycle {
 			return &httpLifecycle{
 				AppTest: a,
@@ -126,7 +125,7 @@ func NewAppTest(t testing.TB) *AppTest {
 
 	return &AppTest{
 		// oldInitFuncs: oldInitFuncs,
-		HttpOK:       make(chan error, 3),
+		HttpOK: make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{
 				"users.version=2",

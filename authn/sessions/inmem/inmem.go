@@ -14,7 +14,7 @@ import (
 
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func(lifecycle fx.Lifecycle, env *moo.Environment) (authn.Sessions, authn.SessionsForTest) {
 			mgr := &SessionManager{
 				expiresNano: env.Config.Int64WithDefault("sessions.inmem.expires", 0) * int64(time.Second),

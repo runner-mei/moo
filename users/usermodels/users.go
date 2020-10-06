@@ -19,7 +19,7 @@ type InUserPasswordHasher struct {
 	Hasher api.UserPasswordHasher `optional:"true"`
 }
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, hasher InUserPasswordHasher) *Users {
 			sessionRef := db.Factory.SessionReference()
 			if hasher.Hasher == nil {

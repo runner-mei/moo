@@ -17,7 +17,6 @@ import (
 	"github.com/runner-mei/moo/authz"
 	userservices "github.com/runner-mei/moo/users/services"
 	"github.com/runner-mei/moo/users/usermodels"
-	"go.uber.org/fx"
 )
 
 // func Create(env *moo.Environment, users *usermodels.Users, authorizer authz.Authorizer, logger log.Logger) (authn.UserManager, error) {
@@ -195,14 +194,14 @@ func (u *userInfo) IngressIPList() ([]netutil.IPChecker, error) {
 }
 
 type InAuthorizer struct {
-	fx.In
+	moo.In
 
 	Authorizer authz.Authorizer `optional:"true"`
 }
 
 func init() {
-	moo.On(func() moo.Option {
-		return fx.Provide(func(env *moo.Environment, users *usermodels.Users, userSvc *userservices.Service, optAuthorizer InAuthorizer, logger log.Logger) (authn.UserManager, api.UserManager, error) {
+	moo.On(func(*moo.Environment) moo.Option {
+		return moo.Provide(func(env *moo.Environment, users *usermodels.Users, userSvc *userservices.Service, optAuthorizer InAuthorizer, logger log.Logger) (authn.UserManager, api.UserManager, error) {
 			authorizer := optAuthorizer.Authorizer
 			if authorizer == nil {
 				authorizer = authz.EmptyAuthorizer{}

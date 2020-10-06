@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			casUserPrefix := env.Config.StringWithDefault(api.CfgUserCasUserPrefix, "")
 			sessionPrefix := urlutil.Join(env.DaemonUrlPath, "/sessions")
@@ -53,10 +53,8 @@ func init() {
 			return nil
 		})
 	})
-}
 
-func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			loginJWTFunc := loong.WrapContextHandler(sessions.LoginJWT)
 			web := httpSrv.Engine().Group("api")
@@ -93,10 +91,8 @@ func init() {
 			return nil
 		})
 	})
-}
 
-func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(env *moo.Environment, sessions *LoginManager, httpSrv *moo.HTTPServer, logger log.Logger) error {
 			ssoEcho := httpSrv.Engine().Group("sso")
 			mode := env.Config.StringWithDefault(api.CfgUserLoginURL, "sessions")

@@ -19,8 +19,11 @@ import (
 	"go.uber.org/fx"
 )
 
+var _ services.Authenticator = &fileUser{}
+var _ services.User = &fileUser{}
+
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger) (authn.UserManager, api.UserManager, error) {
 			fum, err := NewFileUserManager(env, logger)
 			return fum, fum, err
@@ -376,8 +379,6 @@ func (h *FileUserManager) UserByName(ctx context.Context, userName string, opts 
 	return user, nil
 }
 
-var _ services.User = &fileUser{}
-var _ services.Authorizer = &fileUser{}
 
 type fileUser struct {
 	fum           *FileUserManager
@@ -477,7 +478,6 @@ func (u *fileUser) HasPermissionAny(ctx context.Context, permissionIDs []string)
 	return true, nil
 }
 
-var _ services.Authorizer = &fileUser{}
 
 func (u *fileUser) Auth(ctx *services.AuthContext) (bool, error) {
 	err := u.fum.SigningMethod.Verify(ctx.Request.Password, u.password, u.fum.SecretKey)

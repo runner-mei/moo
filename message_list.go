@@ -159,13 +159,13 @@ func (list *MessageList) All() []Message {
 }
 
 func init() {
-	On(func() Option {
+	On(func(*Environment) Option {
 		return Provide(func() *MessageList {
 			return &MessageList{}
 		})
 	})
 
-	On(func() Option {
+	On(func(*Environment) Option {
 		return Invoke(func(lifecycle Lifecycle, httpSrv *HTTPServer, msgList *MessageList) error {
 			httpSrv.FastRoute(false, "messages", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)

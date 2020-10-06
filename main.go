@@ -42,9 +42,21 @@ var Invoke = fx.Invoke
 var Supply = fx.Supply
 var Populate = fx.Populate
 
-var initFuncs []func() Option
+type emptyOut struct {
+	Out
 
-func On(cb func() Option) {
+	Empty empty `group:"empty"`
+}
+
+type empty struct{}
+
+var None = Provide(func() emptyOut {
+	return emptyOut{}
+})
+
+var initFuncs []func(*Environment) Option
+
+func On(cb func(*Environment) Option) {
 	initFuncs = append(initFuncs, cb)
 }
 
@@ -124,7 +136,7 @@ func Run(args *Arguments) error {
 	}
 
 	for _, cb := range initFuncs {
-		opts = append(opts, cb())
+		opts = append(opts, cb(env))
 	}
 	app := fx.New(opts...)
 	app.Run()

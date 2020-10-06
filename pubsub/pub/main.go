@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, logger log.Logger) (pubsub.Publisher, error) {
 			return pubsub.NewHTTPPublisher(urlutil.Join(env.DaemonUrlPath, "pubsub"), logger)
 		})

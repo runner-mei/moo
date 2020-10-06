@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, db moodb.InModelFactory, logger log.Logger) (authn.WelcomeLocator, error) {
 			return NewWelcomeLocator(env, logger, db.Factory)
 		})

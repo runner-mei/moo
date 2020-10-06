@@ -918,7 +918,7 @@ type OptValidation struct {
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, model db.InModelFactory, users *usermodels.Users, opLogger api.OperationLogger, optValidator OptValidation) (*Service, error) {
 			validator := optValidator.Validator
 			if validator == nil {

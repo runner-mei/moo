@@ -19,7 +19,7 @@ type Params struct {
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Invoke(func(env *moo.Environment, params Params, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			uuidProxy := NewUuidLogin(env, params.Renderer, params.Sessions, params.Users)
 			httpSrv.FastRoute(false, "uuid", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

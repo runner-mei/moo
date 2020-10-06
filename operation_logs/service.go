@@ -301,7 +301,7 @@ func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) Operat
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, logger log.Logger) OperationLogger {
 			return NewOperationLogger(env, db.Factory.SessionReference())
 		})

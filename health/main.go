@@ -224,7 +224,7 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(env *moo.Environment, lifecycle moo.Lifecycle, bus *moo.Bus, subscriber pubsub.Subscriber, msgList *moo.MessageList, logger log.Logger) error {
 			logger = logger.Named("health.keeplived.commponents")
 			bus.RegisterTopics(api.BusSysKeepaliveStatus)

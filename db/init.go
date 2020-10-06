@@ -21,13 +21,13 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	}
 
 	if env.Config.BoolWithDefault(api.CfgTestCleanDatabase, false) {
-		_, err := db.Exec(ReplaceTableName(CleanSQL(), args))
+		_, err := db.Exec(CleanSQL(env, args))
 		if err != nil {
 			return errors.New("清理用户相关的表失败: " + err.Error())
 		}
 		logger.Info("清理用户相关的表成功")
 	} else if env.Config.BoolWithDefault(api.CfgTestCleanData, false) {
-		_, err := db.Exec(ReplaceTableName(CleanDataSQL(), args))
+		_, err := db.Exec(CleanDataSQL(env, args))
 		if err != nil {
 			return errors.New("清理用户相关的数据失败: " + err.Error())
 		}
@@ -35,7 +35,7 @@ func initDb(env *moo.Environment, logger log.Logger, db *sql.DB) error {
 	}
 
 	if env.Config.BoolWithDefault(api.CfgUserInitDatabase, false) {
-		_, err := db.Exec(ReplaceTableName(InitSQL(), args))
+		_, err := db.Exec(InitSQL(env, args))
 		if err != nil {
 			return errors.New("初始化用户相关的表失败: " + err.Error())
 		}
@@ -73,15 +73,15 @@ func ReplaceTableName(sqlStr string, args map[string]string) string {
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(env *moo.Environment, logger log.Logger, db InModelDB) error {
 			return initDb(env, logger, db.DB)
 		})
 	})
 }
 
-var CleanDataSQL = func() string {
-return `
+var CleanDataSQL = func(env *moo.Environment, args map[string]string) string {
+return ReplaceTableName(`
 -- users v1
 
 DELETE FROM moo_operation_logs;
@@ -92,11 +92,11 @@ DELETE FROM moo_user_profiles;
 DELETE FROM moo_users;
 DELETE FROM moo_roles;
 DELETE FROM moo_usergroups;
-`
+`, args)
 }
 
-var CleanSQL = func() string {
-return `
+var CleanSQL = func(env *moo.Environment, args map[string]string) string {
+return ReplaceTableName(`
 -- users v1
 
 DROP TABLE IF EXISTS moo_operation_logs CASCADE;
@@ -107,11 +107,15 @@ DROP TABLE IF EXISTS moo_user_profiles CASCADE;
 DROP TABLE IF EXISTS moo_users CASCADE;
 DROP TABLE IF EXISTS moo_roles CASCADE;
 DROP TABLE IF EXISTS moo_usergroups CASCADE;
-`
+`, args)
 }
 
-var InitSQL = func() string {
-return `
+var InitSQL = func(env *moo.Environment, args map[string]string) string {
+	txt := env.Config.StringWithDefault("moo.init_sql_text", "")
+	if txt != "" {
+		return txt
+	}
+return ReplaceTableName(`
 -- users v1
 
 CREATE TABLE IF NOT EXISTS moo_users (
@@ -232,5 +236,5 @@ $$ language 'plpgsql';
 -- +statementEnd
 SELECT add_bgopuser_user();
 DROP FUNCTION add_bgopuser_user();
-`
+`, args)
 }

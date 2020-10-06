@@ -26,7 +26,7 @@ type Params struct {
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Invoke(func(env *moo.Environment, params Params, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			usbAddr := strings.TrimSpace(env.Config.StringWithDefault(api.CfgUserUsbKeyListenAddress, ":38091"))
 			if usbAddr == "" {

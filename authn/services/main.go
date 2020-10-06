@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"strings"
-	"fmt"
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
@@ -175,12 +174,9 @@ func (as *AuthService) Auth(ctx *AuthContext) error {
 			return as.callError(ctx, err)
 		}
 		if ok {
-			fmt.Println("===aaaaaaa")
 			ctx.Response.IsOK = true
 			break
 		}
-
-			fmt.Println("===bbbbb")
 	}
 	ctx.Step = AfterAuthed
 	for _, a := range as.afterAuthFuncs {

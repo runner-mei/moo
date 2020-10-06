@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func() authn.Sessions {
 			return &EmptySessions{}
 		})

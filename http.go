@@ -26,7 +26,7 @@ type HTTPLifecycle interface {
 	OnHTTPs(addr string)
 }
 
-type HTTPLifecycleIn struct {
+type InHTTPLifecycle struct {
 	In
 
 	Lifecycle HTTPLifecycle `optional:"true"`
@@ -63,7 +63,7 @@ func init() {
 		return ctx.Value(api.UserKey)
 	}
 
-	On(func() Option {
+	On(func(*Environment) Option {
 		return Provide(func(env *Environment, logger log.Logger) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
@@ -96,8 +96,8 @@ func init() {
 		})
 	})
 
-	On(func() Option {
-		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, inAddress InAddress, httpLifecycle HTTPLifecycleIn) error {
+	On(func(*Environment) Option {
+		return Invoke(func(lifecycle Lifecycle, env *Environment, httpSrv *HTTPServer, inAddress InAddress, httpLifecycle InHTTPLifecycle) error {
 			var noListen = true
 
 			if inAddress.HttpFunc == nil {
@@ -115,134 +115,139 @@ func init() {
 				}
 			}
 
-			httpNetwork, httpListenAt, err := inAddress.HttpFunc()
-			if err != nil {
-				return err
-			}
-			if httpListenAt != "" {
-				var hsrv *http.Server
-				var listener net.Listener
+			if env.Config.BoolWithDefault(api.CfgHTTPEnabled, true) {
+				httpNetwork, httpListenAt, err := inAddress.HttpFunc()
+				if err != nil {
+					return err
+				}
+				if httpListenAt != "" {
+					var hsrv *http.Server
+					var listener net.Listener
 
-				lifecycle.Append(Hook{
-					OnStart: func(context.Context) error {
-						httpSrv.logger.Info("http listen at: " + httpNetwork + "+" + httpListenAt)
+					lifecycle.Append(Hook{
+						OnStart: func(context.Context) error {
+							httpSrv.logger.Info("http listen at: " + httpNetwork + "+" + httpListenAt)
 
-						hsrv = &http.Server{Addr: httpListenAt, Handler: httpSrv}
-						ln, err := netutil.Listen(httpNetwork, httpListenAt)
-						if err != nil {
-							return err
-						}
-						listener = ln
-
-						go func() {
-							tcpListener, ok := listener.(*net.TCPListener)
-							if ok {
-								listener = httputil.TcpKeepAliveListener{tcpListener}
-							}
-							err := hsrv.Serve(listener)
+							hsrv = &http.Server{Addr: httpListenAt, Handler: httpSrv}
+							ln, err := netutil.Listen(httpNetwork, httpListenAt)
 							if err != nil {
-								if http.ErrServerClosed != err {
-									httpSrv.logger.Error("start unsuccessful", log.Error(err))
+								return err
+							}
+							listener = ln
+
+							go func() {
+								tcpListener, ok := listener.(*net.TCPListener)
+								if ok {
+									listener = httputil.TcpKeepAliveListener{tcpListener}
+								}
+								err := hsrv.Serve(listener)
+								if err != nil {
+									if http.ErrServerClosed != err {
+										httpSrv.logger.Error("start unsuccessful", log.Error(err))
+									} else {
+										httpSrv.logger.Info("stopped")
+									}
+								}
+							}()
+
+
+							if httpLifecycle.Lifecycle != nil {
+								if httpListenAt == ":" || httpListenAt == ":0" || httpListenAt == "0.0.0.0:0" {
+									httpLifecycle.Lifecycle.OnHTTP(listener.Addr().String())
 								} else {
-									httpSrv.logger.Info("stopped")
+									httpLifecycle.Lifecycle.OnHTTP(httpListenAt)
 								}
 							}
-						}()
 
-						if httpLifecycle.Lifecycle != nil {
-							if httpListenAt == ":" || httpListenAt == ":0" || httpListenAt == "0.0.0.0:0" {
-								httpLifecycle.Lifecycle.OnHTTP(listener.Addr().String())
-							} else {
-								httpLifecycle.Lifecycle.OnHTTP(httpListenAt)
-							}
-						}
-
-						return nil
-					},
-					OnStop: func(context.Context) error {
-						err := hsrv.Close()
-						listener.Close()
-						return err
-					},
-				})
-				noListen = false
-			}
-
-			httpsNetwork, httpsListenAt, err := inAddress.HttpsFunc()
-			if err != nil {
-				return err
-			}
-			if httpsListenAt != "" {
-				var hsrv *http.Server
-				var listener net.Listener
-
-				lifecycle.Append(Hook{
-					OnStart: func(context.Context) error {
-						var certFile, keyFile string
-						for _, file := range []string{
-							env.Fs.FromConfig("cert.pem"),
-							env.Fs.FromDataConfig("cert.pem"),
-						} {
-							if fileExists(file, nil) {
-								certFile = file
-								break
-							}
-						}
-						for _, file := range []string{
-							env.Fs.FromConfig("key.pem"),
-							env.Fs.FromDataConfig("key.pem"),
-						} {
-							if fileExists(file, nil) {
-								keyFile = file
-								break
-							}
-						}
-						if keyFile == "" || certFile == "" {
-							return errors.New("keyFile or certFile isn't found")
-						}
-
-						httpSrv.logger.Info("https listen at: " + httpsNetwork + "+" + httpsListenAt)
-
-						hsrv = &http.Server{Addr: httpsListenAt, Handler: httpSrv}
-						ln, err := netutil.Listen(httpsNetwork, httpsListenAt)
-						if err != nil {
+							return nil
+						},
+						OnStop: func(context.Context) error {
+							err := hsrv.Close()
+							listener.Close()
 							return err
-						}
-						listener = ln
+						},
+					})
+					noListen = false
+				}
+			}
 
-						go func() {
-							tcpListener, ok := listener.(*net.TCPListener)
-							if ok {
-								listener = httputil.TcpKeepAliveListener{tcpListener}
-							}
-							err := hsrv.ServeTLS(listener, certFile, keyFile)
-							if err != nil {
-								if http.ErrServerClosed != err {
-									httpSrv.logger.Error("start unsuccessful", log.Error(err))
-								} else {
-									httpSrv.logger.Info("stopped")
+			if env.Config.BoolWithDefault(api.CfgHTTPSEnabled, true) {
+				httpsNetwork, httpsListenAt, err := inAddress.HttpsFunc()
+				if err != nil {
+					return err
+				}
+				if httpsListenAt != "" {
+					var hsrv *http.Server
+					var listener net.Listener
+
+					lifecycle.Append(Hook{
+						OnStart: func(context.Context) error {
+							var certFile, keyFile string
+							for _, file := range []string{
+								env.Fs.FromConfig("cert.pem"),
+								env.Fs.FromDataConfig("cert.pem"),
+							} {
+								if fileExists(file, nil) {
+									certFile = file
+									break
 								}
 							}
-						}()
-
-						if httpLifecycle.Lifecycle != nil {
-							if httpsListenAt == ":" || httpsListenAt == ":0" || httpsListenAt == "0.0.0.0:0" {
-								httpLifecycle.Lifecycle.OnHTTPs(listener.Addr().String())
-							} else {
-								httpLifecycle.Lifecycle.OnHTTPs(httpsListenAt)
+							for _, file := range []string{
+								env.Fs.FromConfig("key.pem"),
+								env.Fs.FromDataConfig("key.pem"),
+							} {
+								if fileExists(file, nil) {
+									keyFile = file
+									break
+								}
 							}
-						}
+							if keyFile == "" || certFile == "" {
+								return errors.New("keyFile or certFile isn't found")
+							}
 
-						return nil
-					},
-					OnStop: func(context.Context) error {
-						err := hsrv.Close()
-						listener.Close()
-						return err
-					},
-				})
+							httpSrv.logger.Info("https listen at: " + httpsNetwork + "+" + httpsListenAt)
 
-				noListen = false
+							hsrv = &http.Server{Addr: httpsListenAt, Handler: httpSrv}
+							ln, err := netutil.Listen(httpsNetwork, httpsListenAt)
+							if err != nil {
+								return err
+							}
+							listener = ln
+
+							go func() {
+								tcpListener, ok := listener.(*net.TCPListener)
+								if ok {
+									listener = httputil.TcpKeepAliveListener{tcpListener}
+								}
+								err := hsrv.ServeTLS(listener, certFile, keyFile)
+								if err != nil {
+									if http.ErrServerClosed != err {
+										httpSrv.logger.Error("start unsuccessful", log.Error(err))
+									} else {
+										httpSrv.logger.Info("stopped")
+									}
+								}
+							}()
+
+							if httpLifecycle.Lifecycle != nil {
+								if httpsListenAt == ":" || httpsListenAt == ":0" || httpsListenAt == "0.0.0.0:0" {
+									httpLifecycle.Lifecycle.OnHTTPs(listener.Addr().String())
+								} else {
+									httpLifecycle.Lifecycle.OnHTTPs(httpsListenAt)
+								}
+							}
+
+							return nil
+						},
+						OnStop: func(context.Context) error {
+							err := hsrv.Close()
+							listener.Close()
+							return err
+						},
+					})
+
+					noListen = false
+				}
 			}
 
 			if noListen {

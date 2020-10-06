@@ -33,13 +33,13 @@ type Params struct {
 }
 
 func init() {
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func(env *moo.Environment, db *db.InModelDB, ologger operation_logs.OperationLogger) (UserSyncer, error) {
 			return CreateUserSyncer(env, db.DB)
 		})
 	})
 
-	moo.On(func() moo.Option {
+	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Invoke(func(env *moo.Environment, params Params, httpSrv *moo.HTTPServer, middlewares moo.Middlewares, logger log.Logger) error {
 			casURL := strings.TrimSpace(env.Config.StringWithDefault(api.CfgUserCasServer, ""))
 			if casURL == "" {

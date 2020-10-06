@@ -9,12 +9,11 @@ import (
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/tunnel"
 	"github.com/runner-mei/errors"
-	"go.uber.org/fx"
 )
 
 func init() {
-	moo.On(func() moo.Option {
-		return fx.Provide(func(lifecycle fx.Lifecycle, env *moo.Environment, logger log.Logger) (*tunnel.TunnelListener, error) {
+	moo.On(func(*moo.Environment) moo.Option {
+		return moo.Provide(func(lifecycle moo.Lifecycle, env *moo.Environment, logger log.Logger) (*tunnel.TunnelListener, error) {
 			acceptURL := env.DaemonUrlPath
 			if !strings.HasPrefix(acceptURL, "/") {
 				acceptURL = "/" + acceptURL
@@ -38,7 +37,7 @@ func init() {
 				return nil, errors.Wrap( err, "tunel listen")
 			}
 
-			lifecycle.Append(fx.Hook{
+			lifecycle.Append(moo.Hook{
 				OnStart: func(context.Context) error {
 					return nil
 				},
@@ -50,8 +49,8 @@ func init() {
 		})
 	})
 
-	moo.On(func() moo.Option {
-		return fx.Invoke(func(tunnelSrv *tunnel.TunnelListener) error {
+	moo.On(func(*moo.Environment) moo.Option {
+		return moo.Invoke(func(tunnelSrv *tunnel.TunnelListener) error {
 			return nil
 		})
 	})

@@ -68,14 +68,17 @@ const (
 	CfgRootEndpoint = "moo_root_endpoint"
 	CfgHomeURL      = "home_url"
 
+	CfgTunnelRole              = "tunnel.remote.role"
 	CfgTunnelMaxThreads        = "tunnel.max_threads"
 	CfgTunnelRemoteNetwork     = "tunnel.remote.network"
 	CfgTunnelRemoteAddress     = "tunnel.remote.address"
 	CfgTunnelRemoteListenAtURL = "tunnel.remote.listen_at_url"
 	CfgTunnelEngineName        = "tunnel.remote.node_name"
 
+	CfgHTTPEnabled  = "http-enabled"
 	CfgHTTPNetwork  = "http-network"
 	CfgHTTPAddress  = "http-address"
+	CfgHTTPSEnabled = "https-enabled"
 	CfgHTTPSNetwork = "https-network"
 	CfgHTTPSAddress = "https-address"
 

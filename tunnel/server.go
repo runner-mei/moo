@@ -2,15 +2,24 @@ package tunnel
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/runner-mei/log"
+	"github.com/runner-mei/moo"
 )
+
+type InTunnelServer struct {
+	moo.In
+
+	TunnelServer *TunnelServer `optional:"true"`
+}
 
 type waitingConn struct {
 	c    net.Conn
@@ -121,6 +130,8 @@ func (srv *TunnelServer) Dial(engineName string) (net.Conn, error) {
 		srv.signel(engineName) // send connect to engine node.
 	}
 
+	fmt.Println("=== dial", "'"+engineName+"'", uintptr(unsafe.Pointer(srv)), uintptr(unsafe.Pointer(queue)))
+
 	timer := time.NewTimer(srv.timeout)
 	for {
 		select {
@@ -210,8 +221,9 @@ func (srv *TunnelServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//log.Println("accept connection -", engineName)
-	timer := time.NewTimer(2 * time.Second)
+	fmt.Println("=== wait", "'"+engineName+"'", uintptr(unsafe.Pointer(srv)), uintptr(unsafe.Pointer(queue)))
+	srv.logger.Info("accept connection", log.String("engine", engineName))
+	timer := time.NewTimer(60 * time.Second)
 	select {
 	case queue.c <- waitingConn{
 		c:    conn,
