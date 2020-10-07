@@ -46,7 +46,7 @@ func (srv *welcomeLocator) withTodolistURL(ctx context.Context, userID interface
 	var todolistCount int64
 	var err error
 
-	if userID != 0 {
+	if userID != nil && userID != 0 {
 		err = srv.conn.QueryRowContext(ctx, srv.todolistCountByUserID, userID).
 			Scan(&todolistCount)
 	} else {
@@ -67,7 +67,7 @@ func (srv *welcomeLocator) withTodolistURL(ctx context.Context, userID interface
 func (srv *welcomeLocator) Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
 	var value sql.NullString
 	var err error
-	if userID != 0 {
+	if userID != nil && userID != 0 {
 		err = srv.conn.QueryRowContext(ctx, srv.welcomeByUserID, userID).Scan(&value)
 	} else {
 		err = srv.conn.QueryRowContext(ctx, srv.welcomeByUsername, username).Scan(&value)

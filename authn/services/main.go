@@ -131,7 +131,6 @@ func (as *AuthService) Auth(ctx *AuthContext) error {
 
 	ctx.Step = Loading
 
-
 	// isLoaded := false
 	for _, a := range as.loadFuncs {
 		id, authentication, err := a(ctx)

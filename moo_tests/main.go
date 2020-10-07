@@ -18,10 +18,21 @@ type httpLifecycle struct {
 
 func (l *httpLifecycle) OnHTTP(addr string) {
 	l.AppTest.ListenAt = addr
-	l.HttpOK <- nil
+	_, port, _ := net.SplitHostPort(addr)
+	l.AppTest.HttpPort = port
+
+	select {
+	case l.HttpOK <- nil:
+	}
 }
 func (l *httpLifecycle) OnHTTPs(addr string) {
 	l.AppTest.SListenAt = addr
+	_, port, _ := net.SplitHostPort(addr)
+	l.AppTest.HttpsPort = port
+
+	select {
+	case l.HttpOK <- nil:
+	}
 }
 
 type AppTest struct {
@@ -32,6 +43,8 @@ type AppTest struct {
 	Env  *moo.Environment
 	Args moo.Arguments
 
+	HttpPort  string
+	HttpsPort string
 	ListenAt  string
 	SListenAt string
 	HttpOK    chan error
