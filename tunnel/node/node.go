@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"strings"
+	"net/http"
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
@@ -13,7 +14,7 @@ import (
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
-		return moo.Provide(func(lifecycle moo.Lifecycle, env *moo.Environment, logger log.Logger) (*tunnel.TunnelListener, error) {
+		return moo.Provide(func(lifecycle moo.Lifecycle, env *moo.Environment, httpSrv *moo.HTTPServer, logger log.Logger) (*tunnel.TunnelListener, error) {
 			acceptURL := env.DaemonUrlPath
 			if !strings.HasPrefix(acceptURL, "/") {
 				acceptURL = "/" + acceptURL
@@ -39,6 +40,11 @@ func init() {
 
 			lifecycle.Append(moo.Hook{
 				OnStart: func(context.Context) error {
+
+					go http.Serve(tunnelListener, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+						httpSrv.ServeHTTP(w, req)
+					}))
+
 					return nil
 				},
 				OnStop: func(context.Context) error {
@@ -50,6 +56,8 @@ func init() {
 	})
 
 	moo.On(func(*moo.Environment) moo.Option {
+		// 增加这个是为了确保会实例化 TunnelListener
+		// 不要删它
 		return moo.Invoke(func(tunnelSrv *tunnel.TunnelListener) error {
 			return nil
 		})

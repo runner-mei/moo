@@ -85,7 +85,7 @@ func Listen(logger log.Logger, threads int, network, address, path string) (*Tun
 		network = "tcp"
 	}
 
-	if network != "tcp" && network != "tls" {
+	if network != "tcp" && network != "tls" && network != "ssl" {
 		return nil, errors.New("netowrk is invalid")
 	}
 
@@ -116,6 +116,7 @@ func (listener *TunnelListener) Accept() (net.Conn, error) {
 			Err:  errors.New("listener is closed"),
 		}
 	}
+
 	conn, ok := <-listener.c
 	if ok {
 		listener.logger.Info("accept from '" + listener.addr.String() + "'.")
@@ -159,7 +160,7 @@ func (listener *TunnelListener) run(idx int) {
 func (listener *TunnelListener) connect() error {
 	var conn net.Conn
 	var err error
-	if listener.addr.network == "tls" {
+	if listener.addr.network == "tls" || listener.addr.network == "ssl" {
 		conn, err = tls.Dial("tcp", listener.addr.address, &tls.Config{
 			InsecureSkipVerify: true,
 		})
@@ -183,7 +184,8 @@ func (listener *TunnelListener) connect() error {
 			conn.Close()
 			return err
 		}
-		timer := time.NewTimer(2 * time.Second)
+
+		timer := time.NewTimer(10 * time.Second)
 		select {
 		case listener.c <- conn:
 			timer.Stop()
