@@ -141,6 +141,7 @@ func NewAppTest(t testing.TB) *AppTest {
 		HttpOK: make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{
+				"moo.runMode=dev",
 				"users.version=2",
 				"moo.operation_logger=2",
 				"users.redirect_mode=code",

@@ -68,7 +68,6 @@ func init() {
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
 			drvModels, urlModels := dbConfig.Url()
-			logger.Info(drvModels + " "+ urlModels)
 			dbModels, err := sql.Open(drvModels, urlModels)
 			if nil != err {
 				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
@@ -106,6 +105,10 @@ func init() {
 				dbModels.Close()
 				return DbModelResult{}, errors.Wrap(err, "connect to models factory failed")
 			}
+
+
+			logger.Debug("数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
+
 			return DbModelResult{
 				Constants:            constants,
 				DrvModels:            drvModels,
@@ -160,6 +163,10 @@ func init() {
 
 // DbConfig 数据库配置
 type DbConfig struct {
+	// NOTE: 为测试增加的
+	drvName string
+	connURL string
+
 	DbType   string
 	Address  string
 	Port     string
@@ -168,21 +175,25 @@ type DbConfig struct {
 	Password string
 }
 
-func (db *DbConfig) Host() string {
-	if "" != db.Port && "0" != db.Port {
-		return net.JoinHostPort(db.Address, db.Port)
-	}
-	switch db.DbType {
-	case "postgresql":
-		return net.JoinHostPort(db.Address, "5432")
-	case "mysql":
-		return net.JoinHostPort(db.Address, "3306")
-	default:
-		panic(errors.New("unknown db type - " + db.DbType))
-	}
-}
+// func (db *DbConfig) Host() string {
+// 	if "" != db.Port && "0" != db.Port {
+// 		return net.JoinHostPort(db.Address, db.Port)
+// 	}
+// 	switch db.DbType {
+// 	case "postgresql":
+// 		return net.JoinHostPort(db.Address, "5432")
+// 	case "mysql":
+// 		return net.JoinHostPort(db.Address, "3306")
+// 	default:
+// 		panic(errors.New("unknown db type - " + db.DbType))
+// 	}
+// }
 
-func (db *DbConfig) dbUrl() (string, string, error) {
+func (db *DbConfig) getURL() (string, string, error) {
+	if db.connURL != "" {
+	// NOTE: 为测试增加的
+		return db.drvName, db.connURL, nil
+	}
 	switch db.DbType {
 	case "postgresql":
 		if db.Port == "" {
@@ -205,7 +216,7 @@ func (db *DbConfig) dbUrl() (string, string, error) {
 }
 
 func (db *DbConfig) Url() (string, string) {
-	dbDrv, dbUrl, err := db.dbUrl()
+	dbDrv, dbUrl, err := db.getURL()
 	if err != nil {
 		panic(errors.New("unknown db type - " + db.DbType))
 	}
@@ -213,7 +224,7 @@ func (db *DbConfig) Url() (string, string) {
 }
 
 func readDbConfig(prefix string, props *cfg.Config) DbConfig {
-	return DbConfig{
+	dbConfig := DbConfig{
 		DbType:   props.StringWithDefault(prefix+"db.type", "postgresql"),
 		Address:  props.StringWithDefault(prefix+"db.address", "127.0.0.1"),
 		Port:     props.StringWithDefault(prefix+"db.port", ""),
@@ -221,4 +232,17 @@ func readDbConfig(prefix string, props *cfg.Config) DbConfig {
 		Username: props.StringWithDefault(prefix+"db.username", ""),
 		Password: props.StringWithDefault(prefix+"db.password", ""),
 	}
+
+	if props.StringWithDefault("moo.runMode", "") == "dev" {
+	// NOTE: 为测试增加的
+		switch prefix {
+		case "models.":
+			dbConfig.drvName = props.StringWithDefault("moo.test.models.db_drv", "")
+			dbConfig.connURL = props.StringWithDefault("moo.test.models.db_url", "")
+		case "data.":
+			dbConfig.drvName = props.StringWithDefault("moo.test.data.db_drv", "")
+			dbConfig.connURL = props.StringWithDefault("moo.test.data.db_url", "")
+		}
+	}
+	return dbConfig
 }
