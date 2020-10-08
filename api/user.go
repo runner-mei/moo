@@ -96,6 +96,7 @@ const (
 var (
 	// UserBgOperator background operator 用户名
 	UserBgOperator              = "background_operator"
+	RoleBgOperator              = "background_operator"
 	CfgUserSigningMethodDefault = "default"
 
 	ErrUnauthorized       = errors.ErrUnauthorized

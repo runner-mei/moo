@@ -11,7 +11,11 @@ import (
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn/services"
+	"github.com/runner-mei/goutils/netutil"
 )
+
+var _ api.User = &tokenUser{}
+var _ services.User  = &tokenUser{}
 
 type UserManager interface {
 	api.UserManager
@@ -36,7 +40,23 @@ func (u *tokenUser) Nickname() string {
 	return u.Username
 }
 
-var _ api.User = &tokenUser{}
+func (u *tokenUser) IsLocked() bool {
+	return false
+}
+
+func (u *tokenUser) Source() string {
+	return "api"
+}
+
+func (u *tokenUser)	Roles() []string {
+	return []string{
+		api.RoleBgOperator,
+	}
+}
+
+func (u *tokenUser) IngressIPList() ([]netutil.IPChecker, error) {
+	return []netutil.IPChecker{}, nil
+}
 
 func tokenToUser(um api.UserManager, cb loong.TokenCheckFunc) loong.TokenCheckFunc {
 	if um == nil {

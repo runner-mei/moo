@@ -1,6 +1,6 @@
 package services
 
-import "errors"
+import "fmt"
 
 type HasLock interface {
 	IsLocked() bool
@@ -9,9 +9,12 @@ type HasLock interface {
 func LockCheck() AuthOption {
 	return AuthOptionFunc(func(auth *AuthService) error {
 		auth.OnBeforeAuth(AuthFunc(func(ctx *AuthContext) error {
+			if ctx.Authentication == nil {
+				return nil
+			}
 			u, ok := ctx.Authentication.(HasLock)
 			if !ok {
-				return errors.New("user is unsupported for the error lock")
+				return fmt.Errorf("user is unsupported for the error lock - %T", ctx.Authentication)
 			}
 			if u.IsLocked() {
 				return ErrUserLocked
