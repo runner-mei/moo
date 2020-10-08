@@ -107,7 +107,7 @@ func init() {
 			}
 
 
-			logger.Debug("数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
+			logger.Debug("models 数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
 
 			return DbModelResult{
 				Constants:            constants,
@@ -150,6 +150,9 @@ func init() {
 				dbData.Close()
 				return DbDataResult{}, errors.Wrap(err, "connect to data factory failed")
 			}
+
+			logger.Debug("data 数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
+
 			return DbDataResult{
 				DrvData:              drvData,
 				Data:                 dbData,
