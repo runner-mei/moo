@@ -90,6 +90,8 @@ const (
 	CfgDbDataPrefix      = ".db_data_prefix"
 
 	CfgHealthKeepliveTimeout = "health.keeplive.timeout_sec"
+
+	CfgOperationLoggerVersion = "operation_logger.version"
 )
 
 // 常用的错误

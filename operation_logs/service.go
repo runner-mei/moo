@@ -285,7 +285,7 @@ func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession,
 	if err != nil {
 		return nil, err
 	}
-	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
+	if env.Config.IntWithDefault(api.CfgOperationLoggerVersion, 0) == 2 {
 		return operationQueryer{names: names, dao: api.NewOperationLogDao(session)}, nil
 	}
 
@@ -293,10 +293,9 @@ func NewOperationQueryer(env *moo.Environment, session gobatis.SqlSession,
 }
 
 func NewOperationLogger(env *moo.Environment, session gobatis.SqlSession) OperationLogger {
-	if env.Config.IntWithDefault("moo.operation_logger", 0) == 2 {
+	if env.Config.IntWithDefault(api.CfgOperationLoggerVersion, 0) == 2 {
 		return operationLogger{dao: api.NewOperationLogDao(session)}
 	}
-
 	return oldOperationLogger{dao: NewOldOperationLogDao(session)}
 }
 
