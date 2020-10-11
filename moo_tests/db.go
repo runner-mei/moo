@@ -25,7 +25,7 @@ func getenv(name string, args ...string) string {
 	return s
 }
 
-func (a *AppTest) init() {
+func (a *TestApp) init() {
 	a.Args.CommandArgs = append(a.Args.CommandArgs,
 		"moo.log.level=debug",
 		"test.clean_data=true",

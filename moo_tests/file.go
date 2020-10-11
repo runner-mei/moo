@@ -6,4 +6,4 @@ import (
 	_ "github.com/runner-mei/moo/authn/users/file"
 )
 
-func (a *AppTest) init() {}
+func (a *TestApp) init() {}

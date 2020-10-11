@@ -1,8 +1,8 @@
 package moo_tests
 
 import (
+	"context"
 	"io"
-	"log"
 	"net"
 	"strings"
 	"testing"
@@ -13,32 +13,27 @@ import (
 )
 
 type httpLifecycle struct {
-	*AppTest
+	*TestApp
 }
 
 func (l *httpLifecycle) OnHTTP(addr string) {
-	l.AppTest.ListenAt = addr
-	_, port, _ := net.SplitHostPort(addr)
-	l.AppTest.HttpPort = port
-
+	l.TestApp.ListenAt = addr
 	select {
-	case l.HttpOK <- nil:
+	case l.httpOK <- nil:
 	}
 }
 func (l *httpLifecycle) OnHTTPs(addr string) {
-	l.AppTest.SListenAt = addr
-	_, port, _ := net.SplitHostPort(addr)
-	l.AppTest.HttpsPort = port
-
+	l.TestApp.SListenAt = addr
 	select {
-	case l.HttpOK <- nil:
+	case l.httpOK <- nil:
 	}
 }
 
-type AppTest struct {
+type TestApp struct {
+	App *moo.App
 	// oldInitFuncs []func() moo.Option
-	closers    []io.Closer
-	shutdowner fx.Shutdowner
+	closers []io.Closer
+	// shutdowner fx.Shutdowner
 
 	Env  *moo.Environment
 	Args moo.Arguments
@@ -47,35 +42,39 @@ type AppTest struct {
 	HttpsPort string
 	ListenAt  string
 	SListenAt string
-	HttpOK    chan error
+	URL       string
 
-	URL string
+	httpOK chan error
 }
 
-func (a *AppTest) Close() error {
-	if a.shutdowner != nil {
-		err := a.shutdowner.Shutdown()
-		if err != nil {
-			log.Println(err)
-		}
-	}
+func (a *TestApp) Read(value interface{}) {
+	a.Args.Options = append(a.Args.Options, moo.Populate(value))
+}
 
+func (a *TestApp) Close() error {
+	// if a.shutdowner != nil {
+	// 	err := a.shutdowner.Shutdown()
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+	// }
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), a.App.StopTimeout())
+	defer cancel()
+
+	err := a.App.Stop(stopCtx)
 	for _, closer := range a.closers {
 		closer.Close()
 	}
-
-	close(a.HttpOK)
-	a.HttpOK = nil
-
 	// moo.Reset(a.oldInitFuncs)
-	return nil
+	return err
 }
 
-func (a *AppTest) OnClosing(closer io.Closer) {
+func (a *TestApp) OnClosing(closer io.Closer) {
 	a.closers = append(a.closers, closer)
 }
 
-func (a *AppTest) Start(t testing.TB) {
+func (a *TestApp) Start(t testing.TB) {
 	a.init()
 
 	found := false
@@ -90,55 +89,78 @@ func (a *AppTest) Start(t testing.TB) {
 	}
 	a.Args.CommandArgs = append(a.Args.CommandArgs, "operation_logger=2")
 
-	if a.HttpOK == nil {
-		a.HttpOK = make(chan error, 3)
+	if a.httpOK == nil {
+		a.httpOK = make(chan error, 3)
 	}
 
-	a.Args.Options = append(a.Args.Options, fx.Populate(&a.shutdowner))
-	a.Args.Options = append(a.Args.Options, fx.Populate(&a.Env))
+	//a.Args.Options = append(a.Args.Options, fx.Populate(&a.shutdowner))
+	//a.Args.Options = append(a.Args.Options, fx.Populate(&a.Env))
 	a.Args.Options = append(a.Args.Options,
 		fx.Provide(func() moo.HTTPLifecycle {
 			return &httpLifecycle{
-				AppTest: a,
+				TestApp: a,
 			}
 		}))
 
-	go func() {
-		err := moo.Run(&a.Args)
+	var err error
+	a.App, err = moo.NewApp(&a.Args)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+		return
+	}
+	a.Env = a.App.Environment
+
+	startCtx, cancel := context.WithTimeout(context.Background(), a.App.StartTimeout())
+	defer cancel()
+	if err := a.App.Start(startCtx); err != nil {
+		t.Errorf("ERROR\t\tFailed to start: %v", err)
+		t.FailNow()
+		return
+
+	}
+	select {
+	case <-a.httpOK:
+	case <-startCtx.Done():
+		t.Error("ERROR\t\tFailed to start: timeout")
+		t.FailNow()
+		return
+	}
+
+	if a.ListenAt != "" {
+		_, port, err := net.SplitHostPort(a.ListenAt)
 		if err != nil {
 			t.Error(err)
+			t.FailNow()
+			return
 		}
-		select {
-		case a.HttpOK <- err:
-		default:
+		a.HttpPort = port
+		a.URL = "http://127.0.0.1:" + port
+	} else if a.SListenAt != "" {
+		_, port, err := net.SplitHostPort(a.SListenAt)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+			return
 		}
-	}()
 
-	err := <-a.HttpOK
-	if err != nil {
-		t.Error(err)
+		a.HttpsPort = port
+		a.URL = "https://127.0.0.1:" + port
+	} else {
+
+		t.Error("im")
 		t.FailNow()
-		return
 	}
-
-	_, port, err := net.SplitHostPort(a.ListenAt)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-		return
-	}
-
-	a.URL = "http://127.0.0.1:" + port
 }
 
-func NewAppTest(t testing.TB) *AppTest {
+func NewTestApp(t testing.TB) *TestApp {
 	// oldInitFuncs := moo.Reset(nil)
 	// moo.Reset(oldInitFuncs)
 	// defer moo.Reset(oldInitFuncs)
 
-	return &AppTest{
+	return &TestApp{
 		// oldInitFuncs: oldInitFuncs,
-		HttpOK: make(chan error, 3),
+		// HttpOK: make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{
 				"moo.runMode=dev",

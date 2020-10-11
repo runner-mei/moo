@@ -20,7 +20,7 @@ import (
 )
 
 type loginServer struct {
-	*AppTest
+	*TestApp
 
 	responseText string
 	client       *http.Client
@@ -127,16 +127,16 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 
 func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 	srv := &loginServer{
-		AppTest: NewAppTest(t),
+		TestApp: NewTestApp(t),
 		responseText: "WelcomeOK",
 	}
 	for key, value := range opts {
 		srv.Args.CommandArgs = append(srv.Args.CommandArgs, fmt.Sprintf("%s=%v", key, value))
 	}
 
-	srv.Args.Options = append(srv.Args.Options, fx.Populate(&srv.userManager))
-	srv.Args.Options = append(srv.Args.Options, fx.Populate(&srv.sessions))
-
+	srv.Read(&srv.userManager)
+	srv.Read(&srv.sessions)
+	
 
 	srv.Args.Options = append(srv.Args.Options, fx.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
 			httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

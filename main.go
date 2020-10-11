@@ -1,6 +1,7 @@
 package moo
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -36,6 +37,7 @@ type Hook = fx.Hook
 type In = fx.In
 type Out = fx.Out
 type Shutdowner = fx.Shutdowner
+type Annotated = fx.Annotated
 
 var Provide = fx.Provide
 var Invoke = fx.Invoke
@@ -60,7 +62,43 @@ func On(cb func(*Environment) Option) {
 	initFuncs = append(initFuncs, cb)
 }
 
-func Run(args *Arguments) error {
+type App struct {
+	*fx.App
+	Environment *Environment
+
+	undo func()
+}
+
+func (app *App) Start(ctx context.Context) error {
+	return app.App.Start(ctx)
+}
+
+func (app *App) Stop(ctx context.Context) error {
+
+	defer func() {
+		if app.undo != nil {
+			app.undo()
+			app.undo = nil
+		}
+	}()
+
+	return app.App.Stop(ctx)
+}
+
+func (app *App) Run() error {
+	defer func() {
+		if app.undo != nil {
+			app.undo()
+			app.undo = nil
+		}
+	}()
+
+	app.App.Run()
+
+	return app.App.Err()
+}
+
+func NewApp(args *Arguments) (*App, error) {
 	for idx, a := range args.CommandArgs {
 		if a == "version" {
 			fmt.Println("Version=" + Version)
@@ -76,7 +114,7 @@ func Run(args *Arguments) error {
 
 	params, err := ReadCommandLineArgs(args.CommandArgs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var namespace = os.Getenv("moo.namespace")
@@ -91,33 +129,29 @@ func Run(args *Arguments) error {
 
 	fs, err := NewFileSystem(namespace, params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	existnames, nonexistnames, config, err := ReadConfigs(fs, namespace+".", args, params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger, undo, err := NewLogger(config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Debug("load config successful",
 		log.StringArray("existnames", existnames),
 		log.StringArray("nonexistnames", nonexistnames))
 
-	if undo != nil {
-		defer undo()
-	}
-
 	env := NewEnvironment(namespace, config, fs, logger)
 
 	if args.PreRun != nil {
 		err := args.PreRun(env)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -139,6 +173,19 @@ func Run(args *Arguments) error {
 		opts = append(opts, cb(env))
 	}
 	app := fx.New(opts...)
-	app.Run()
-	return app.Err()
+
+	return &App{
+		App:         app,
+		Environment: env,
+
+		undo: undo,
+	}, nil
+}
+
+func Run(args *Arguments) error {
+	app, err := NewApp(args)
+	if err != nil {
+		return err
+	}
+	return app.Run()
 }
