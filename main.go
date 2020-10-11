@@ -74,7 +74,6 @@ func (app *App) Start(ctx context.Context) error {
 }
 
 func (app *App) Stop(ctx context.Context) error {
-
 	defer func() {
 		if app.undo != nil {
 			app.undo()
