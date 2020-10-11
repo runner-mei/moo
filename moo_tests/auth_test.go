@@ -12,10 +12,10 @@ import (
 
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/urlutil"
+	_ "github.com/runner-mei/moo/authn/sessions/inmem"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/api"
-	"go.uber.org/fx"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -136,9 +136,9 @@ func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 
 	srv.Read(&srv.userManager)
 	srv.Read(&srv.sessions)
-	
 
-	srv.Args.Options = append(srv.Args.Options, fx.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
+
+	srv.Args.Options = append(srv.Args.Options, moo.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
 			httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(srv.responseText))

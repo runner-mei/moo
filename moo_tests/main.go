@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/runner-mei/moo"
-	_ "github.com/runner-mei/moo/authn/sessions/inmem"
-	"go.uber.org/fx"
 )
 
 type httpLifecycle struct {
@@ -96,7 +94,7 @@ func (a *TestApp) Start(t testing.TB) {
 	//a.Args.Options = append(a.Args.Options, fx.Populate(&a.shutdowner))
 	//a.Args.Options = append(a.Args.Options, fx.Populate(&a.Env))
 	a.Args.Options = append(a.Args.Options,
-		fx.Provide(func() moo.HTTPLifecycle {
+		moo.Provide(func() moo.HTTPLifecycle {
 			return &httpLifecycle{
 				TestApp: a,
 			}
