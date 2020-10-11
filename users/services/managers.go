@@ -295,7 +295,7 @@ func (svc *Service) CreateUserWithRoleNames(ctx *RequestContext, user *usermodel
 		role, err := svc.Users.GetRoleByName(ctx.Ctx, name)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return errors.New("角色 '"+ name +"' 不存在")
+				return 0, errors.New("角色 '"+ name +"' 不存在")
 			}
 			return 0, err
 		}
