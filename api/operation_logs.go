@@ -6,6 +6,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 	"time"
@@ -51,8 +52,8 @@ type TimeRange struct {
 type OperationLogDao interface {
 	Insert(ctx context.Context, ol *OperationLog) error
 	DeleteBy(ctx context.Context, createdAt TimeRange) error
-	Count(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange) (int64, error)
-	List(ctx context.Context, userids []int64, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
+	Count(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, createdAt TimeRange) (int64, error)
+	List(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, createdAt TimeRange, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
 // @gobatis.ignore
@@ -67,10 +68,10 @@ type OperationQueryer interface {
 	Types(ctx context.Context) map[string]OperationLogLocaleConfig
 
 	// @http.GET(path="/count")
-	Count(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error)
+	Count(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time) (int64, error)
 
 	// @http.GET(path="")
-	List(ctx context.Context, useridList []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
+	List(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error)
 }
 
 func BoolToString(value bool) string {

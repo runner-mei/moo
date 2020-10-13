@@ -4,6 +4,7 @@ package operation_logs
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"time"
 
@@ -42,23 +43,23 @@ type OldOperationLogDao interface {
 
 	// @default SELECT count(*) FROM <tablename type="OldOperationLog" /> <where>
 	// <if test="len(usernames) &gt; 0"> <foreach collection="usernames" open="user_name in (" close=")"  separator="," >#{item}</foreach> </if>
-	// <if test="successful"> AND successful = #{successful} </if>
+	// <if test="successful.Valid"> AND successful = #{successful.Bool} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")" separator="," >#{item}</foreach> </if>
 	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
 	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
-	Count(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange) (int64, error)
+	Count(ctx context.Context, usernames []string, successful sql.NullBool, typeList []string, createdAt TimeRange) (int64, error)
 
 	// @default SELECT * FROM <tablename type="OldOperationLog" /> <where>
 	// <if test="len(usernames) &gt; 0"> <foreach collection="usernames" open="user_name in (" close=")"  separator="," >#{item}</foreach> </if>
-	// <if test="successful"> AND successful = #{successful} </if>
+	// <if test="successful.Valid"> AND successful = #{successful.Bool} </if>
 	// <if test="len(typeList) &gt; 0"> AND <foreach collection="typeList" open="type in (" close=")"  separator="," >#{item}</foreach> </if>
 	// <if test="!createdAt.Start.IsZero()"> AND created_at &gt;= #{createdAt.Start} </if>
 	// <if test="!createdAt.End.IsZero()"> AND created_at &lt; #{createdAt.End} </if>
 	// </where>
 	// <sort_by />
 	// <pagination />
-	List(ctx context.Context, usernames []string, successful bool, typeList []string, createdAt TimeRange, offset, limit int64, sort string) ([]OldOperationLog, error)
+	List(ctx context.Context, usernames []string, successful sql.NullBool, typeList []string, createdAt TimeRange, offset, limit int64, sort string) ([]OldOperationLog, error)
 }
 
 var InitOperationQueryer = api.InitOperationQueryer
@@ -151,11 +152,11 @@ func (queryer operationQueryer) toTypeTilte(ctx context.Context, typeName string
 	return s.Title
 }
 
-func (queryer operationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
+func (queryer operationQueryer) Count(ctx context.Context, userid []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time) (int64, error) {
 	return queryer.dao.Count(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt})
 }
 
-func (queryer operationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
+func (queryer operationQueryer) List(ctx context.Context, userid []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
 	items, err := queryer.dao.List(ctx, userid, successful, typeList, TimeRange{Start: beginAt, End: endAt}, offset, limit, sortBy)
 	if err != nil {
 		return nil, err
@@ -196,7 +197,7 @@ func (queryer oldOperationQueryer) toTypeTilte(ctx context.Context, typeName str
 	return s.Title
 }
 
-func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time) (int64, error) {
+func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time) (int64, error) {
 	usernames, err := queryer.getUsernames(ctx, userid)
 	if err != nil {
 		return 0, err
@@ -204,7 +205,7 @@ func (queryer oldOperationQueryer) Count(ctx context.Context, userid []int64, su
 	return queryer.dao.Count(ctx, usernames, successful, typeList, TimeRange{Start: beginAt, End: endAt})
 }
 
-func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, successful bool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
+func (queryer oldOperationQueryer) List(ctx context.Context, userid []int64, successful sql.NullBool, typeList []string, beginAt, endAt time.Time, offset, limit int64, sortBy string) ([]OperationLog, error) {
 	usernames, err := queryer.getUsernames(ctx, userid)
 	if err != nil {
 		return nil, err

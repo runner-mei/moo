@@ -2,6 +2,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,9 +29,10 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 			}
 			useridList = useridListValue
 		}
-		var successful bool
+		var successful sql.NullBool
 		if s := ctx.QueryParam("successful"); s != "" {
-			successful = toBool(s)
+			successful.Valid = true
+			successful.Bool = toBool(s)
 		}
 		var typeList = ctx.QueryParamArray("type_list")
 		var beginAt time.Time
@@ -65,9 +67,10 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 			}
 			useridList = useridListValue
 		}
-		var successful bool
+		var successful sql.NullBool
 		if s := ctx.QueryParam("successful"); s != "" {
-			successful = toBool(s)
+			successful.Valid = true
+			successful.Bool = toBool(s)
 		}
 		var typeList = ctx.QueryParamArray("type_list")
 		var beginAt time.Time
