@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 )
 
 type httpLifecycle struct {
@@ -33,8 +34,9 @@ type TestApp struct {
 	closers []io.Closer
 	// shutdowner fx.Shutdowner
 
-	Env  *moo.Environment
-	Args moo.Arguments
+	Env        *moo.Environment
+	Args       moo.Arguments
+	HTTPServer *moo.HTTPServer
 
 	HttpPort  string
 	HttpsPort string
@@ -99,6 +101,7 @@ func (a *TestApp) Start(t testing.TB) {
 				TestApp: a,
 			}
 		}))
+	a.Read(&a.HTTPServer)
 
 	var err error
 	a.App, err = moo.NewApp(&a.Args)
@@ -163,7 +166,7 @@ func NewTestApp(t testing.TB) *TestApp {
 			CommandArgs: []string{
 				"moo.runMode=dev",
 				"users.version=2",
-				"moo.operation_logger=2",
+				api.CfgOperationLoggerVersion + "=2",
 				"users.redirect_mode=code",
 			},
 		},
