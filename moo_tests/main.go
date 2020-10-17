@@ -29,7 +29,8 @@ func (l *httpLifecycle) OnHTTPs(addr string) {
 }
 
 type TestApp struct {
-	App *moo.App
+	started bool
+	App     *moo.App
 	// oldInitFuncs []func() moo.Option
 	closers []io.Closer
 	// shutdowner fx.Shutdowner
@@ -74,7 +75,14 @@ func (a *TestApp) OnClosing(closer io.Closer) {
 	a.closers = append(a.closers, closer)
 }
 
+func (a *TestApp) IsStarted() bool {
+	return a.started
+}
+
 func (a *TestApp) Start(t testing.TB) {
+	if !a.started {
+		a.started = true
+	}
 	a.init()
 
 	found := false
