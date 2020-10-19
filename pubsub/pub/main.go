@@ -1,9 +1,8 @@
 package pub
 
 import (
-	"log"
-
 	"github.com/runner-mei/goutils/urlutil"
+	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/pubsub"
 )

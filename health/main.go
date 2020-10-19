@@ -203,6 +203,12 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 		return
 	}
 
+	err = Register(publisher, appid, title)
+	if err != nil {
+		logger.Fatal("register health fail", log.Error(err))
+		return
+	}
+
 	var activeTimeout func()
 
 	activeTimeout = func() {
@@ -215,11 +221,6 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 		}
 	}
 
-	err = Register(publisher, appid, title)
-	if err != nil {
-		logger.Error("register health fail", log.Error(err))
-	}
-
 	time.AfterFunc(interval, activeTimeout)
 }
 
@@ -229,11 +230,7 @@ func init() {
 			logger = logger.Named("health.keeplived.commponents")
 			bus.RegisterTopics(api.BusSysKeepaliveStatus)
 
-			components := &HealthComponents{
-				logger:  logger,
-				source:  "health.keeplived.commponents",
-				timeout: env.Config.Int64WithDefault(api.CfgHealthKeepliveTimeout, 60*5),
-			}
+			components := NewHealthComponents(env, logger)
 
 			ctx := context.Background()
 			ch, err := subscriber.Subscribe(ctx, keepliveTopic)
