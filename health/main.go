@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
@@ -192,21 +193,19 @@ func Active(publisher pubsub.Publisher, appid, title string) error {
 	return publisher.Publish(keepliveTopic, message)
 }
 
-func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title string, interval time.Duration) {
+func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title string, interval time.Duration) error {
 	if interval == 0 {
 		interval = 2 * time.Minute
 	}
 
 	publisher, err := pubsub.NewHTTPPublisher(pubsubURL, logger)
 	if err != nil {
-		logger.Fatal("start publisher fail", log.Error(err))
-		return
+		return errors.Wrap(err, "启动心跳 '"+appid+"' 失败")
 	}
 
 	err = Register(publisher, appid, title)
 	if err != nil {
-		logger.Fatal("register health fail", log.Error(err))
-		return
+		return errors.Wrap(err, "注册心跳 '"+appid+"' 失败")
 	}
 
 	var activeTimeout func()
@@ -222,6 +221,7 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 	}
 
 	time.AfterFunc(interval, activeTimeout)
+	return nil
 }
 
 func init() {
