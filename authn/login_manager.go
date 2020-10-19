@@ -45,7 +45,6 @@ type InAuthFunc struct {
 	Funcs []loong.AuthValidateFunc `group:"authValidate"`
 }
 
-
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, userManager UserManager, online Sessions, locator ArgWelcomeLocator, authopts services.InAuthOpts) (AuthOut, error) {
@@ -213,7 +212,7 @@ func (mgr *LoginManager) LoginWith(ctx context.Context, w http.ResponseWriter, r
 		ctype := r.Header.Get(HeaderContentType)
 		switch {
 		case strings.HasPrefix(ctype, MIMEApplicationJSON):
-			if err := json.NewDecoder(r.Body).Decode(authCtx.Request); err != nil {
+			if err := json.NewDecoder(r.Body).Decode(&authCtx.Request); err != nil {
 				if ute, ok := err.(*json.UnmarshalTypeError); ok {
 					msg := fmt.Sprintf("Unmarshal type error: expected=%v, got=%v, field=%v, offset=%v", ute.Type, ute.Value, ute.Field, ute.Offset)
 					returnError(authCtx, w, r, errors.NewError(http.StatusBadRequest, msg))
