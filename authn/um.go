@@ -8,14 +8,14 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/netutil"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn/services"
-	"github.com/runner-mei/goutils/netutil"
 )
 
 var _ api.User = &tokenUser{}
-var _ services.User  = &tokenUser{}
+var _ services.User = &tokenUser{}
 
 type UserManager interface {
 	api.UserManager
@@ -48,7 +48,7 @@ func (u *tokenUser) Source() string {
 	return "api"
 }
 
-func (u *tokenUser)	Roles() []string {
+func (u *tokenUser) Roles() []string {
 	return []string{
 		api.RoleBgOperator,
 	}

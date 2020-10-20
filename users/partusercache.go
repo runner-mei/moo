@@ -331,6 +331,7 @@ func (c *UserCache) UserByName(ctx context.Context, username string, opts ...api
 		}
 		return nil, err
 	}
+	id = mu.ID
 
 	c.nmu.Lock()
 	if c.name2id == nil {
