@@ -9,6 +9,7 @@ import (
 
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/moo/authn"
 )
 
 type httpLifecycle struct {
@@ -35,9 +36,10 @@ type TestApp struct {
 	closers []io.Closer
 	// shutdowner fx.Shutdowner
 
-	Env        *moo.Environment
-	Args       moo.Arguments
-	HTTPServer *moo.HTTPServer
+	Env         *moo.Environment
+	Args        moo.Arguments
+	HTTPServer  *moo.HTTPServer
+	UserManager authn.UserManager
 
 	HttpPort  string
 	HttpsPort string
@@ -50,6 +52,27 @@ type TestApp struct {
 
 func (a *TestApp) Read(value interface{}) {
 	a.Args.Options = append(a.Args.Options, moo.Populate(value))
+}
+
+func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...map[string]interface{}) interface{} {
+	ctx := context.Background()
+
+	user, err := a.UserManager.UserByName(ctx, api.UserBgOperator)
+	if err != nil {
+		t.Fatal("load"+api.UserBgOperator+" fail", err)
+	}
+	ctx = api.ContextWithUser(ctx, user)
+
+	var params = map[string]interface{}{}
+	if len(attributes) > 0 {
+		params = attributes[0]
+	}
+	userid, err := a.UserManager.Create(ctx,
+		name, name, "", password, params, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return userid
 }
 
 func (a *TestApp) Close() error {
@@ -110,6 +133,7 @@ func (a *TestApp) Start(t testing.TB) {
 			}
 		}))
 	a.Read(&a.HTTPServer)
+	a.Read(&a.UserManager)
 
 	var err error
 	a.App, err = moo.NewApp(&a.Args)

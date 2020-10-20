@@ -12,10 +12,9 @@ import (
 
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/urlutil"
-	_ "github.com/runner-mei/moo/authn/sessions/inmem"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/authn"
-	"github.com/runner-mei/moo/api"
+	_ "github.com/runner-mei/moo/authn/sessions/inmem"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -24,8 +23,8 @@ type loginServer struct {
 
 	responseText string
 	client       *http.Client
-	sessions authn.SessionsForTest
-	userManager authn.UserManager
+	sessions     authn.SessionsForTest
+	// userManager authn.UserManager
 }
 
 func (srv *loginServer) newHTTPClient(t *testing.T, hasJar bool) *http.Client {
@@ -113,7 +112,7 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 
 	resposeAll := string(bs)
 	if res.StatusCode != http.StatusOK {
-		t.Error("响应码不正确",  res.Status)
+		t.Error("响应码不正确", res.Status)
 		t.Error("excepted is", responseText)
 		t.Error("actual   is", resposeAll)
 		return
@@ -127,42 +126,29 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 
 func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 	srv := &loginServer{
-		TestApp: NewTestApp(t),
+		TestApp:      NewTestApp(t),
 		responseText: "WelcomeOK",
 	}
 	for key, value := range opts {
 		srv.Args.CommandArgs = append(srv.Args.CommandArgs, fmt.Sprintf("%s=%v", key, value))
 	}
 
-	srv.Read(&srv.userManager)
+	// srv.Read(&srv.userManager)
 	srv.Read(&srv.sessions)
 
-
 	srv.Args.Options = append(srv.Args.Options, moo.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
-			httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(srv.responseText))
-			}))
+		httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(srv.responseText))
 		}))
+	}))
 
 	srv.Start(t)
 
-	ctx := context.Background()
-
-	user, err := srv.userManager.UserByName(ctx, api.UserBgOperator)
-	if err != nil {
-		t.Fatal("load" + api.UserBgOperator + " fail", err)
-	}
-	ctx = api.ContextWithUser(ctx, user)
-
-	_, err = srv.userManager.Create(ctx, "adm", "adm", "", "123",
-		map[string]interface{}{
-			"welcome_url":        "url,"+srv.URL,
-			"white_address_list": []string{"192.168.1.2", "192.168.1.9"},
-		}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv.CreateUser(t, "adm", "123", map[string]interface{}{
+		"welcome_url":        "url," + srv.URL,
+		"white_address_list": []string{"192.168.1.2", "192.168.1.9"},
+	})
 	return srv
 }
 

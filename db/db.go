@@ -7,9 +7,9 @@ import (
 
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/cfg"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/goutils/cfg"
 	"github.com/runner-mei/moo/api"
 	"go.uber.org/fx"
 )
@@ -47,27 +47,30 @@ type InConstants struct {
 
 type DbModelResult struct {
 	fx.Out
-	Constants            map[string]interface{}  `name:"db_constants"`
-	DrvModels            string                  `name:"drv_models"`
-	Models               *sql.DB                 `name:"models"`
-	ModelsSessionFactory *gobatis.SessionFactory `name:"modelFactory"`
-	InitSQL func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
+	Constants            map[string]interface{}                                          `name:"db_constants"`
+	DrvModels            string                                                          `name:"drv_models"`
+	Models               *sql.DB                                                         `name:"models"`
+	ModelsSessionFactory *gobatis.SessionFactory                                         `name:"modelFactory"`
+	InitSQL              func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
 }
 
 type DbDataResult struct {
 	fx.Out
-	DrvData              string                  `name:"drv_data"`
-	Data                 *sql.DB                 `name:"data"`
-	DataSessionFactory   *gobatis.SessionFactory `name:"dataFactory"`
+	DrvData            string                  `name:"drv_data"`
+	Data               *sql.DB                 `name:"data"`
+	DataSessionFactory *gobatis.SessionFactory `name:"dataFactory"`
 }
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger) (DbModelResult, error) {
-			dbPrefix := env.Config.StringWithDefault(env.Namespace + api.CfgDbPrefix, env.Namespace + ".")
+			dbPrefix := env.Config.StringWithDefault(env.Namespace+api.CfgDbPrefix, env.Namespace+".")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
 			drvModels, urlModels := dbConfig.Url()
+
+			logger.Debug("准备连接数据库", log.String("drvName", drvModels), log.String("URL", urlModels))
+
 			dbModels, err := sql.Open(drvModels, urlModels)
 			if nil != err {
 				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
@@ -106,7 +109,6 @@ func init() {
 				return DbModelResult{}, errors.Wrap(err, "connect to models factory failed")
 			}
 
-
 			logger.Debug("models 数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
 
 			return DbModelResult{
@@ -114,17 +116,20 @@ func init() {
 				DrvModels:            drvModels,
 				Models:               dbModels,
 				ModelsSessionFactory: modelFactory,
-				InitSQL: initDb,
+				InitSQL:              initDb,
 			}, nil
 		})
 	})
 
 	moo.On(func(*moo.Environment) moo.Option {
 		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants InConstants) (DbDataResult, error) {
-			dbPrefix := env.Config.StringWithDefault(env.Namespace + api.CfgDbDataPrefix, env.Namespace + ".data.")
+			dbPrefix := env.Config.StringWithDefault(env.Namespace+api.CfgDbDataPrefix, env.Namespace+".data.")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
 			drvData, urlData := dbConfig.Url()
+
+			logger.Debug("准备连接数据库", log.String("drvName", drvData), log.String("URL", urlData))
+
 			dbData, err := sql.Open(drvData, urlData)
 			if nil != err {
 				return DbDataResult{}, errors.Wrap(err, "connect to models database failed")
@@ -154,15 +159,13 @@ func init() {
 			logger.Debug("data 数据库连接成功", log.String("drvName", drvData), log.String("URL", urlData))
 
 			return DbDataResult{
-				DrvData:              drvData,
-				Data:                 dbData,
-				DataSessionFactory:   dataFactory,
+				DrvData:            drvData,
+				Data:               dbData,
+				DataSessionFactory: dataFactory,
 			}, nil
 		})
 	})
 }
-
-
 
 // DbConfig 数据库配置
 type DbConfig struct {
@@ -194,7 +197,7 @@ type DbConfig struct {
 
 func (db *DbConfig) getURL() (string, string, error) {
 	if db.connURL != "" {
-	// NOTE: 为测试增加的
+		// NOTE: 为测试增加的
 		return db.drvName, db.connURL, nil
 	}
 	switch db.DbType {
@@ -237,7 +240,7 @@ func readDbConfig(prefix string, props *cfg.Config) DbConfig {
 	}
 
 	if props.StringWithDefault("moo.runMode", "") == "dev" {
-	// NOTE: 为测试增加的
+		// NOTE: 为测试增加的
 		switch prefix {
 		case "models.":
 			dbConfig.drvName = props.StringWithDefault("moo.test.models.db_drv", "")
