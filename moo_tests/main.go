@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn"
+	"github.com/runner-mei/resty"
 )
 
 type httpLifecycle struct {
@@ -78,13 +80,25 @@ func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...
 	return userid.(int64)
 }
 
-func (a *TestApp) CreateCookieWithUsername(t testing.TB, username string) string {
+func (a *TestApp) CreateCookieWithUsername(t testing.TB, username string) *http.Cookie {
 	queryParams := url.Values{}
 	queryParams.Set(authclient.SESSION_EXPIRE_KEY, "session")
 	queryParams.Set(authclient.SESSION_VALID_KEY, "true")
 	queryParams.Set(authclient.SESSION_USER_KEY, username)
 
-	return authclient.Encode(queryParams, a.cfg.GetSessionHashFunc(), a.cfg.SessionSecretKey)
+	value := authclient.Encode(queryParams, a.cfg.GetSessionHashFunc(), a.cfg.SessionSecretKey)
+	return &http.Cookie{
+		Name:  a.cfg.SessionKey,
+		Value: value,
+		Path:  a.cfg.SessionPath,
+	}
+}
+
+func (app *TestApp) GetAuthFuncForCookie(t testing.TB, username string) resty.AuthFunc {
+	value := app.CreateCookieWithUsername(t, username)
+	return func(ctx context.Context, r *resty.Request, force bool) (*resty.Request, error) {
+		return r.AddCookie(value), nil
+	}
 }
 
 func (a *TestApp) Close() error {
