@@ -625,6 +625,6 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 		fs.ServeHTTP(w, r)
 	})
 
-	srv.sessonHashFunc = createSessonHashFunc(srv.config.SessionHashFunc)
+	srv.sessonHashFunc = srv.config.GetSessionHashFunc()
 	return srv, nil
 }

@@ -51,6 +51,15 @@ type Config struct {
 	DefaultWelcomeURL      string
 	RedirectMode           string
 	CookiesForLogout       []*http.Cookie
+
+	sessionHashFunc func() hash.Hash
+}
+
+func (cfg *Config) GetSessionHashFunc() func() hash.Hash {
+	if cfg.sessionHashFunc == nil {
+		cfg.sessionHashFunc = createSessonHashFunc(cfg.SessionHashFunc)
+	}
+	return cfg.sessionHashFunc
 }
 
 func readWelcomeURL(env *moo.Environment) string {
@@ -87,16 +96,16 @@ func readSessonPath(env *moo.Environment) string {
 }
 
 func createSessonHashFunc(method string) func() hash.Hash {
-	sessonHashFunc := sha1.New
+	sessionHashFunc := sha1.New
 	switch method {
 	case "", "sha1":
 	case "md5", "MD5":
-		sessonHashFunc = md5.New
+		sessionHashFunc = md5.New
 	}
-	return sessonHashFunc
+	return sessionHashFunc
 }
 
-func readConfig(env *moo.Environment) *Config {
+func ReadConfig(env *moo.Environment) *Config {
 	config := &Config{
 		Logger: env.Logger.Named("sso.ui"),
 		Captcha: services.CaptchaConfig{

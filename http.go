@@ -21,6 +21,12 @@ import (
 	"github.com/runner-mei/moo/api"
 )
 
+type InAuthFuncs struct {
+	In
+
+	Funcs []loong.AuthValidateFunc `group:"authValidate"`
+}
+
 type HTTPLifecycle interface {
 	OnHTTP(addr string)
 	OnHTTPs(addr string)
@@ -64,7 +70,7 @@ func init() {
 	}
 
 	On(func(*Environment) Option {
-		return Provide(func(env *Environment, logger log.Logger) *HTTPServer {
+		return Provide(func(env *Environment, logger log.Logger, authFuncs InAuthFuncs) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
 				noPrefix:   env.DaemonUrlPath == "" || env.DaemonUrlPath == "/",
@@ -73,6 +79,7 @@ func init() {
 				engine:     loong.New(),
 				fastRoutes: map[string]FastHandlerFunc{},
 				homePage:   urlutil.JoinURLPath(env.DaemonUrlPath, "home/"),
+				authFuncs:  authFuncs.Funcs,
 			}
 			httpSrv.engine.Logger = httpSrv.logger
 
@@ -149,7 +156,6 @@ func init() {
 									}
 								}
 							}()
-
 
 							if httpLifecycle.Lifecycle != nil {
 								if httpListenAt == ":" || httpListenAt == ":0" || httpListenAt == "0.0.0.0:0" {
@@ -285,6 +291,12 @@ type HTTPServer struct {
 
 	engine     *loong.Engine
 	fastRoutes map[string]FastHandlerFunc
+
+	authFuncs []loong.AuthValidateFunc
+}
+
+func (srv *HTTPServer) AuthMiddlewares() loong.MiddlewareFunc {
+	return loong.HTTPAuth(srv.authFuncs...)
 }
 
 func (srv *HTTPServer) Engine() *loong.Engine {

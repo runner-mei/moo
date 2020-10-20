@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"hash"
 	"io"
 	"net/http"
 	"net/url"
@@ -39,16 +38,15 @@ type AuthOut struct {
 	Session      loong.AuthValidateFunc `group:"authValidate"`
 }
 
-type InAuthFunc struct {
-	moo.In
-
-	Funcs []loong.AuthValidateFunc `group:"authValidate"`
-}
+type InAuthFunc = moo.InAuthFuncs
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
-		return moo.Provide(func(env *moo.Environment, userManager UserManager, online Sessions, locator ArgWelcomeLocator, authopts services.InAuthOpts) (AuthOut, error) {
-			loginManager, err := NewLoginManager(env, userManager, online, locator.Locator, authopts.Opts)
+		return moo.Provide(ReadConfig)
+	})
+	moo.On(func(*moo.Environment) moo.Option {
+		return moo.Provide(func(env *moo.Environment, cfg *Config, userManager UserManager, online Sessions, locator ArgWelcomeLocator, authopts services.InAuthOpts) (AuthOut, error) {
+			loginManager, err := NewLoginManager(env, cfg, userManager, online, locator.Locator, authopts.Opts)
 			if err != nil {
 				return AuthOut{}, err
 			}
@@ -68,7 +66,6 @@ type LoginManager struct {
 	env         *moo.Environment
 	logger      log.Logger
 	cfg         *Config
-	sessionHash func() hash.Hash
 	Renderer    *Renderer
 	userManager UserManager
 	online      Sessions
@@ -517,7 +514,7 @@ func (mgr *LoginManager) Signature(ctx context.Context, w http.ResponseWriter, r
 		queryParams.Set(authclient.SESSION_USER_KEY, user)
 	}
 
-	value := authclient.Encode(queryParams, mgr.sessionHash, mgr.cfg.SessionSecretKey)
+	value := authclient.Encode(queryParams, mgr.cfg.GetSessionHashFunc(), mgr.cfg.SessionSecretKey)
 
 	http.SetCookie(w, &http.Cookie{Name: mgr.cfg.SessionKey,
 		Value: value,
@@ -534,7 +531,7 @@ func (mgr *LoginManager) Signature(ctx context.Context, w http.ResponseWriter, r
 
 // GetSession 从当前请求是获取该请求的会话
 func (mgr *LoginManager) GetSession(r *http.Request) (url.Values, error) {
-	return authclient.GetValues(r, mgr.cfg.SessionKey, mgr.sessionHash, mgr.cfg.SessionSecretKey)
+	return authclient.GetValues(r, mgr.cfg.SessionKey, mgr.cfg.GetSessionHashFunc(), mgr.cfg.SessionSecretKey)
 }
 
 // CurrentUser 从当前请求是获取该请求的用户名
@@ -578,7 +575,7 @@ func (mgr *LoginManager) AuthValidates() []loong.AuthValidateFunc {
 	}
 }
 
-func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessions, locator WelcomeLocator, authOpts []services.AuthOption) (*LoginManager, error) {
+func NewLoginManager(env *moo.Environment, cfg *Config, userManager UserManager, online Sessions, locator WelcomeLocator, authOpts []services.AuthOption) (*LoginManager, error) {
 	logger := env.Logger.Named("sessions")
 
 	counter := services.CreateFailCounter()
@@ -608,7 +605,6 @@ func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessi
 		return nil, err
 	}
 
-	cfg := readConfig(env)
 	ui, err := CreateRenderer(cfg, locator)
 	if err != nil {
 		return nil, err
@@ -618,7 +614,6 @@ func NewLoginManager(env *moo.Environment, userManager UserManager, online Sessi
 		env:         env,
 		logger:      logger,
 		cfg:         cfg,
-		sessionHash: ui.sessonHashFunc,
 		Renderer:    ui,
 		userManager: userManager,
 		online:      online,

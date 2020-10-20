@@ -4,11 +4,13 @@ import (
 	"context"
 	"io"
 	"net"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/moo/api/authclient"
 	"github.com/runner-mei/moo/authn"
 )
 
@@ -40,6 +42,7 @@ type TestApp struct {
 	Args        moo.Arguments
 	HTTPServer  *moo.HTTPServer
 	UserManager authn.UserManager
+	cfg         *authn.Config
 
 	HttpPort  string
 	HttpsPort string
@@ -54,7 +57,7 @@ func (a *TestApp) Read(value interface{}) {
 	a.Args.Options = append(a.Args.Options, moo.Populate(value))
 }
 
-func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...map[string]interface{}) interface{} {
+func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...map[string]interface{}) int64 {
 	ctx := context.Background()
 
 	user, err := a.UserManager.UserByName(ctx, api.UserBgOperator)
@@ -72,7 +75,16 @@ func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...
 	if err != nil {
 		t.Fatal(err)
 	}
-	return userid
+	return userid.(int64)
+}
+
+func (a *TestApp) CreateCookieWithUsername(t testing.TB, username string) string {
+	queryParams := url.Values{}
+	queryParams.Set(authclient.SESSION_EXPIRE_KEY, "session")
+	queryParams.Set(authclient.SESSION_VALID_KEY, "true")
+	queryParams.Set(authclient.SESSION_USER_KEY, username)
+
+	return authclient.Encode(queryParams, a.cfg.GetSessionHashFunc(), a.cfg.SessionSecretKey)
 }
 
 func (a *TestApp) Close() error {
@@ -134,6 +146,7 @@ func (a *TestApp) Start(t testing.TB) {
 		}))
 	a.Read(&a.HTTPServer)
 	a.Read(&a.UserManager)
+	a.Read(&a.cfg)
 
 	var err error
 	a.App, err = moo.NewApp(&a.Args)
@@ -150,7 +163,6 @@ func (a *TestApp) Start(t testing.TB) {
 		t.Errorf("ERROR\t\tFailed to start: %v", err)
 		t.FailNow()
 		return
-
 	}
 	select {
 	case <-a.httpOK:
