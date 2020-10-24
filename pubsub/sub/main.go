@@ -26,7 +26,7 @@ func init() {
 
 	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Invoke(func(httpSrv *moo.HTTPServer, handler *SubscribeHttpHandler) error {
-			httpSrv.FastRoute(false, "pubsub", handler.Handler)
+			httpSrv.FastRoute(true, "pubsub", handler.Handler)
 			return nil
 		})
 	})
