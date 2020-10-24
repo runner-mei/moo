@@ -62,7 +62,7 @@ func (u *tokenUser) Roles() []string {
 			api.RoleBgOperator,
 		}
 	}
-	return append(roles, api.RoleBgOperator}
+	return append(roles, api.RoleBgOperator)
 }
 
 func (u *tokenUser) IngressIPList() ([]netutil.IPChecker, error) {
