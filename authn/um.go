@@ -48,10 +48,21 @@ func (u *tokenUser) Source() string {
 	return "api"
 }
 
-func (u *tokenUser) Roles() []string {
-	return []string{
-		api.RoleBgOperator,
+func (u *tokenUser) HasRole(name string) bool {
+	if name == api.RoleBgOperator {
+		return true
 	}
+	return u.User.HasRole(name)
+}
+
+func (u *tokenUser) Roles() []string {
+	roles := u.User.Roles()
+	if len(roles) == 0 {
+		return []string{
+			api.RoleBgOperator,
+		}
+	}
+	return append(roles, api.RoleBgOperator}
 }
 
 func (u *tokenUser) IngressIPList() ([]netutil.IPChecker, error) {
