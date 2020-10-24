@@ -17,7 +17,7 @@ import (
 type InModelDB struct {
 	fx.In
 	DrvName string  `name:"drv_models"`
-	ConnUrl string  `name:"conn_url_models"`
+	ConnURL string  `name:"conn_url_models"`
 	DB      *sql.DB `name:"models"`
 
 	InitSQL func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
@@ -26,7 +26,7 @@ type InModelDB struct {
 type InDataDB struct {
 	fx.In
 	DrvName string  `name:"drv_data"`
-	ConnUrl string  `name:"conn_url_data"`
+	ConnURL string  `name:"conn_url_data"`
 	DB      *sql.DB `name:"data"`
 }
 
@@ -51,7 +51,7 @@ type DbModelResult struct {
 	fx.Out
 	Constants            map[string]interface{}                                          `name:"db_constants"`
 	DrvModels            string                                                          `name:"drv_models"`
-	ConnUrl              string                                                          `name:"conn_url_models"`
+	ConnURL              string                                                          `name:"conn_url_models"`
 	Models               *sql.DB                                                         `name:"models"`
 	ModelsSessionFactory *gobatis.SessionFactory                                         `name:"modelFactory"`
 	InitSQL              func(env *moo.Environment, logger log.Logger, db *sql.DB) error `name:"initSQL"`
@@ -60,7 +60,7 @@ type DbModelResult struct {
 type DbDataResult struct {
 	fx.Out
 	DrvData            string                  `name:"drv_data"`
-	ConnUrl            string                  `name:"conn_url_data"`
+	ConnURL            string                  `name:"conn_url_data"`
 	Data               *sql.DB                 `name:"data"`
 	DataSessionFactory *gobatis.SessionFactory `name:"dataFactory"`
 }
@@ -118,7 +118,7 @@ func init() {
 			return DbModelResult{
 				Constants:            constants,
 				DrvModels:            drvModels,
-				ConnUrl:              urlModels,
+				ConnURL:              urlModels,
 				Models:               dbModels,
 				ModelsSessionFactory: modelFactory,
 				InitSQL:              initDb,
@@ -165,7 +165,7 @@ func init() {
 
 			return DbDataResult{
 				DrvData:            drvData,
-				ConnUrl:            urlData,
+				ConnURL:            urlData,
 				Data:               dbData,
 				DataSessionFactory: dataFactory,
 			}, nil
