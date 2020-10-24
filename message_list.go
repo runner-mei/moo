@@ -100,8 +100,8 @@ func (ph *placeholder) toMessage() Message {
 }
 
 type MessageChangeListenerSetter interface {
-		SetMessageChangeListener(MessageChangeListenerFunc)
-	}
+	SetMessageChangeListener(MessageChangeListenerFunc)
+}
 
 type MessageProvider interface {
 	Get() []Message
@@ -212,75 +212,94 @@ func (list *MessageList) All() []Message {
 	return results
 }
 
-type watcher struct {
+type MessageWatcher struct {
+	lock   sync.Mutex
 	logger log.Logger
 	list   *MessageList
 	bus    *Bus
 	last   []Message
 }
 
-func (w *watcher) on(action int, msg *Message) {
+func (w *MessageWatcher) on(action int, msg *Message) {
 
-	var cb func()
+	go func() {
+		ctx := context.Background()
+		w.lock.Lock()
+		defer w.lock.Unlock()
 
-	switch action {
-	case MessageChangeRecheck:
-		cb = func() {
-			ctx := context.Background()
+		switch action {
+		case MessageChangeRecheck:
 			w.check(ctx)
-		}
-	case MessageChangeCreated:
-		if w.last != nil {
-			w.last = append(w.last, *msg)
-		}
-		cb = func() {
-			ctx := context.Background()
+		case MessageChangeCreated:
+			if w.last != nil {
+				foundIndex := -1
+				for idx := range w.last {
+					if w.last[idx].ID == msg.ID {
+						foundIndex = idx
+						break
+					}
+				}
+				if foundIndex >= 0 {
+					return
+				}
+				w.last = append(w.last, *msg)
+			}
 			err := w.bus.Emit(ctx, api.BusMessageEventCreated, msg)
 			if err != nil {
 				w.logger.Warn("发送 Message 变动失败", log.Error(err))
 			}
-		}
-	case MessageChangeUpdated:
-		if w.last != nil {
-			for idx := range w.last {
-				if w.last[idx].ID == msg.ID {
-					w.last[idx].Content = msg.Content
-					w.last[idx].CreatedAt = msg.CreatedAt
+		case MessageChangeUpdated:
+			if w.last != nil {
+				foundIndex := -1
+				for idx := range w.last {
+					if w.last[idx].ID == msg.ID {
+						foundIndex = idx
+						break
+					}
 				}
+				if foundIndex < 0 {
+					return
+				}
+				w.last[foundIndex].Content = msg.Content
+				w.last[foundIndex].CreatedAt = msg.CreatedAt
 			}
-		}
-		cb = func() {
-			ctx := context.Background()
 			err := w.bus.Emit(ctx, api.BusMessageEventUpdated, msg)
 			if err != nil {
 				w.logger.Warn("发送 Message 变动失败", log.Error(err))
 			}
-		}
-	case MessageChangeDeleted:
-		if w.last != nil {
-			for idx := range w.last {
-				if w.last[idx].ID == msg.ID {
-					if idx < len(w.last)-1 {
-						copy(w.last[idx:], w.last[idx+1:])
+		case MessageChangeDeleted:
+			if w.last != nil {
+				foundIndex := -1
+				for idx := range w.last {
+					if w.last[idx].ID == msg.ID {
+						if idx < len(w.last)-1 {
+							copy(w.last[idx:], w.last[idx+1:])
+						}
+						w.last = w.last[:len(w.last)-1]
+						foundIndex = idx
+						break
 					}
-					w.last = w.last[:len(w.last)-1]
+				}
+				if foundIndex < 0 {
+					return
 				}
 			}
-		}
 
-		cb = func() {
-			ctx := context.Background()
 			err := w.bus.Emit(ctx, api.BusMessageEventDeleted, msg)
 			if err != nil {
 				w.logger.Warn("发送 Message 变动失败", log.Error(err))
 			}
 		}
-	}
-
-	go cb()
+	}()
 }
 
-func (w *watcher) check(ctx context.Context) {
+func (w *MessageWatcher) Check(ctx context.Context) {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+
+	w.check(ctx)
+}
+func (w *MessageWatcher) check(ctx context.Context) {
 	current := w.list.All()
 	if w.last == nil {
 		w.last = current
@@ -341,6 +360,23 @@ func findMessageByID(list []Message, id string) *Message {
 	return nil
 }
 
+func NewMessageWatcher(env *Environment,
+	bus *Bus,
+	msgList *MessageList,
+	logger log.Logger) *MessageWatcher {
+
+	bus.RegisterTopics(api.BusMessageEventCreated)
+	bus.RegisterTopics(api.BusMessageEventUpdated)
+	bus.RegisterTopics(api.BusMessageEventDeleted)
+	w := &MessageWatcher{
+		logger: logger,
+		list:   msgList,
+		bus:    bus,
+	}
+	msgList.onChange = w.on
+	return w
+}
+
 func init() {
 	On(func(*Environment) Option {
 		return Provide(func() *MessageList {
@@ -371,7 +407,7 @@ func init() {
 			bus.RegisterTopics(api.BusMessageEventUpdated)
 			bus.RegisterTopics(api.BusMessageEventDeleted)
 
-			w := &watcher{
+			w := &MessageWatcher{
 				logger: logger,
 				list:   msgList,
 				bus:    bus,
@@ -382,7 +418,7 @@ func init() {
 			lifecycle.Append(Hook{
 				OnStart: func(context.Context) error {
 					timer.Start(30*time.Second, func() bool {
-						w.check(context.Background())
+						w.Check(context.Background())
 						return true
 					})
 					return nil

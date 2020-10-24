@@ -131,6 +131,7 @@ func TestMessageList(t *testing.T) {
 	var provider = &testMessageProvider{}
 	msgList.SetupProvider(provider)
 	provider.cb(moo.MessageChangeRecheck, nil)
+	time.Sleep(1 * time.Second)
 
 	if created != nil {
 		t.Error("created isnot nil")
@@ -140,6 +141,10 @@ func TestMessageList(t *testing.T) {
 	}
 	if deleted != nil {
 		t.Error("deleted isnot nil")
+	}
+
+	if ml := msgList.All(); len(ml) != 0 {
+		t.Error("want 0 got", len(ml))
 	}
 }
 
