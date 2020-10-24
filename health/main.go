@@ -14,7 +14,7 @@ import (
 	"github.com/runner-mei/moo/pubsub"
 )
 
-type HealthComponents struct {
+type Keeplived struct {
 	logger  log.Logger
 	source  string
 	timeout int64
@@ -43,7 +43,7 @@ func (com *component) toMessage(source, id string, timeout int64) (bool, moo.Mes
 	}
 }
 
-func (hs *HealthComponents) getComponents() map[string]*component {
+func (hs *Keeplived) getComponents() map[string]*component {
 	o := hs.components.Load()
 	if o == nil {
 		return nil
@@ -52,13 +52,13 @@ func (hs *HealthComponents) getComponents() map[string]*component {
 	return comps
 }
 
-func (hs *HealthComponents) activeComponent(id string, unixSec int64) *component {
+func (hs *Keeplived) activeComponent(id string, unixSec int64) *component {
 	com := hs.addComponent(id, "")
 	atomic.StoreInt64(&com.lastAt, unixSec)
 	return com
 }
 
-func (hs *HealthComponents) addComponent(id, title string) *component {
+func (hs *Keeplived) addComponent(id, title string) *component {
 	var comps map[string]*component
 	o := hs.components.Load()
 	if o != nil {
@@ -97,7 +97,7 @@ func (hs *HealthComponents) addComponent(id, title string) *component {
 	return value
 }
 
-func (hs *HealthComponents) removeComponent(id string) *component {
+func (hs *Keeplived) removeComponent(id string) *component {
 	var comps map[string]*component
 	o := hs.components.Load()
 	if o != nil {
@@ -122,7 +122,7 @@ func (hs *HealthComponents) removeComponent(id string) *component {
 	return old
 }
 
-func (hs *HealthComponents) Get() []moo.Message {
+func (hs *Keeplived) Get() []moo.Message {
 	var messages []moo.Message
 	for key, comp := range hs.getComponents() {
 		ok, msg := comp.toMessage(hs.source, key, hs.timeout)
@@ -133,7 +133,7 @@ func (hs *HealthComponents) Get() []moo.Message {
 	return messages
 }
 
-func (hs *HealthComponents) OnEvent(ctx context.Context, topicName string, value interface{}) {
+func (hs *Keeplived) OnEvent(ctx context.Context, topicName string, value interface{}) {
 	evt, ok := value.(*api.SysKeepaliveEvent)
 	if !ok {
 		hs.logger.Warn("不可识的 action", log.Stringer("value", log.StringerFunc(func() string {
@@ -165,8 +165,8 @@ func DrainToBus(ctx context.Context, logger log.Logger, topicName string, bus *m
 	})
 }
 
-func NewHealthComponents(env *moo.Environment, logger log.Logger) *HealthComponents {
-	return &HealthComponents{
+func NewKeeplived(env *moo.Environment, logger log.Logger) *Keeplived {
+	return &Keeplived{
 		logger:  logger,
 		source:  "health.keeplived.commponents",
 		timeout: env.Config.Int64WithDefault(api.CfgHealthKeepliveTimeout, 60*5),
@@ -230,7 +230,7 @@ func init() {
 			logger = logger.Named("health.keeplived.commponents")
 			bus.RegisterTopics(api.BusSysKeepaliveStatus)
 
-			components := NewHealthComponents(env, logger)
+			components := NewKeeplived(env, logger)
 
 			ctx := context.Background()
 			ch, err := subscriber.Subscribe(ctx, keepliveTopic)

@@ -6,6 +6,10 @@ const (
 	SysKeepaliveEventAdd    = "add"
 	SysKeepaliveEventRemove = "remove"
 	SysKeepaliveEventActive = "active"
+
+	BusMessageEventCreated = "moo.messages.created"
+	BusMessageEventUpdated = "moo.messages.updated"
+	BusMessageEventDeleted = "moo.messages.deleted"
 )
 
 type SysKeepaliveEvent struct {
