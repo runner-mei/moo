@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"strings"
 
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
@@ -75,7 +76,11 @@ func init() {
 
 			logger.Debug("准备连接数据库", log.String("drvName", drvModels), log.String("URL", urlModels))
 
-			dbModels, err := sql.Open(drvModels, urlModels)
+			drv := drvModels
+			if strings.HasPrefix(drvModels, "odbc_with_") {
+				drv = "odbc"
+			}
+			dbModels, err := sql.Open(drv, urlModels)
 			if nil != err {
 				return DbModelResult{}, errors.Wrap(err, "connect to models database failed")
 			}
@@ -135,7 +140,11 @@ func init() {
 
 			logger.Debug("准备连接数据库", log.String("drvName", drvData), log.String("URL", urlData))
 
-			dbData, err := sql.Open(drvData, urlData)
+			drv := drvData
+			if strings.HasPrefix(drvData, "odbc_with_") {
+				drv = "odbc"
+			}
+			dbData, err := sql.Open(drv, urlData)
 			if nil != err {
 				return DbDataResult{}, errors.Wrap(err, "connect to models database failed")
 			}
