@@ -172,15 +172,22 @@ func NewFileSystem(namespace string, params map[string]string) (FileSystem, erro
 		}
 	}
 
+	if installDir := os.Getenv(namespace + "_install_dir"); installDir != "" {
+		fs.installDir = installDir
+		fs.binDir = filepath.Join(installDir, "bin")
+	}
 	if confDir := os.Getenv(namespace + "_conf_dir"); confDir != "" {
 		fs.confDir = confDir
 	}
-
 	if dataDir := os.Getenv(namespace + "_data_dir"); dataDir != "" {
 		fs.dataDir = dataDir
 	}
 
 	if params != nil {
+		if s := params[namespace+"_install_dir"]; s != "" {
+			fs.installDir = s
+			fs.binDir = filepath.Join(s, "bin")
+		}
 		if s := params[namespace+"_conf_dir"]; s != "" {
 			fs.confDir = s
 		}
