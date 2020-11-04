@@ -10,6 +10,7 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/authn"
 	"github.com/runner-mei/moo/authn/uuidlogin"
 	"github.com/runner-mei/moo/users/usermodels"

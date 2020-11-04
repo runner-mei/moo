@@ -210,7 +210,7 @@ func (c *UsbKey) Login(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	if !isLogin {
-		authCtx.Ctx = authn.ContextWithRedirectFunc(ctx, func(c context.Context, w http.ResponseWriter, r *http.Request, to string) error {
+		authCtx.Ctx = authn.ContextWithRedirectFunc(ctx, func(c context.Context, isLogin bool, w http.ResponseWriter, r *http.Request, to string) error {
 			renderOK(http.StatusOK, to, username)
 			return nil
 		})

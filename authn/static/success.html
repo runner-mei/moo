@@ -9,7 +9,7 @@
     </script>
     <noscript>你的浏览器不支持 JavaScript!</noscript>
     <div>
-      登录已成功，正在跳转中......
+      {{if .message}}{{.message}}登录已成功，正在跳转中......{{end}}
     </div>
   </body>
 </html>

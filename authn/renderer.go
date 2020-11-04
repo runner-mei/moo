@@ -40,11 +40,11 @@ func (ctxRedirectFuncKey) String() string {
 
 var ctxRedirectKey = ctxRedirectFuncKey{}
 
-func ContextWithRedirectFunc(c context.Context, redirect func(context.Context, http.ResponseWriter, *http.Request, string) error) context.Context {
+func ContextWithRedirectFunc(c context.Context, redirect func(context.Context, bool, http.ResponseWriter, *http.Request, string) error) context.Context {
 	return context.WithValue(c, ctxRedirectKey, redirect)
 }
 
-func RedirectFuncFromContext(c context.Context) func(context.Context, http.ResponseWriter, *http.Request, string) error {
+func RedirectFuncFromContext(c context.Context) func(context.Context, bool, http.ResponseWriter, *http.Request, string) error {
 	if c == nil {
 		return nil
 	}
@@ -54,7 +54,7 @@ func RedirectFuncFromContext(c context.Context) func(context.Context, http.Respo
 		return nil
 	}
 
-	f, ok := o.(func(context.Context, http.ResponseWriter, *http.Request, string) error)
+	f, ok := o.(func(context.Context, bool, http.ResponseWriter, *http.Request, string) error)
 	if !ok {
 		return nil
 	}
@@ -70,7 +70,7 @@ type Renderer struct {
 	data           map[string]interface{}
 	hasAutoLoad    bool
 	templates      templates
-	redirect       func(c context.Context, w http.ResponseWriter, r *http.Request, url string) error
+	redirect       func(c context.Context, isLogin bool, w http.ResponseWriter, r *http.Request, url string) error
 	assetsHandler  http.Handler
 	captchaStore   base64Captcha.Store
 	welcomeLocator WelcomeLocator
@@ -324,7 +324,7 @@ func (srv *Renderer) LoginOK(authCtx *services.AuthContext, w http.ResponseWrite
 	if redirect == nil {
 		redirect = srv.redirect
 	}
-	return redirect(authCtx.Ctx, w, r, urlStr)
+	return redirect(authCtx.Ctx, true, w, r, urlStr)
 }
 
 func (srv *Renderer) Logout(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -380,7 +380,7 @@ func (srv *Renderer) LogoutWithRedirect(ctx context.Context, w http.ResponseWrit
 	if redirect == nil {
 		redirect = srv.redirect
 	}
-	return redirect(ctx, w, r, redirectURL)
+	return redirect(ctx, false, w, r, redirectURL)
 }
 
 type templates struct {
@@ -537,7 +537,7 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 
 	srv := &Renderer{
 		config: *config,
-		redirect: func(c context.Context, w http.ResponseWriter, r *http.Request, toURL string) error {
+		redirect: func(c context.Context, isLogin bool, w http.ResponseWriter, r *http.Request, toURL string) error {
 			http.Redirect(w, r, toURL, http.StatusTemporaryRedirect)
 			return nil
 		},
@@ -577,10 +577,13 @@ func CreateRenderer(config *Config, locator WelcomeLocator) (*Renderer, error) {
 	}
 
 	if config.RedirectMode == "html" {
-		srv.redirect = func(c context.Context, w http.ResponseWriter, r *http.Request, toURL string) error {
+		srv.redirect = func(c context.Context, isLogin bool, w http.ResponseWriter, r *http.Request, toURL string) error {
 			data := map[string]interface{}{
 				"global":    srv.data,
 				"returnURL": toURL,
+			}
+			if !isLogin {
+				data["message"] = "登出已成功，正在跳转中......"
 			}
 			return srv.templates.Render(w, r, "success.html", data)
 		}
