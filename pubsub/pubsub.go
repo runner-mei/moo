@@ -36,7 +36,7 @@ func NewHTTPPublisher(urlstr string, logger log.Logger) (Publisher, error) {
 		Client:                            httputil.InsecureHttpClent,
 		DoNotLogResponseBodyOnServerError: true,
 	}
-	return httpmill.NewPublisher(config, watermill.NopLogger{})
+	return httpmill.NewPublisher(config, NewLoggerAdapter(logger))
 }
 
 func NewHTTPSubscriber(urlstr string, logger log.Logger) (http.Handler, Subscriber, error) {
@@ -45,7 +45,7 @@ func NewHTTPSubscriber(urlstr string, logger log.Logger) (http.Handler, Subscrib
 			return httpmill.DefaultUnmarshalMessageFunc(requrl, req)
 		}),
 	}
-	subscriber, err := httpmill.NewSubscriber(":0", config, watermill.NopLogger{})
+	subscriber, err := httpmill.NewSubscriber(":0", config, NewLoggerAdapter(logger))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,4 +82,39 @@ func DrainToBus(ctx context.Context, logger log.Logger, topicName string, bus *m
 		msg.Ack()
 		logger.Warn("转发消息到 bus 成功", log.Error(err))
 	}
+}
+
+func NewLoggerAdapter(logger log.Logger) watermill.LoggerAdapter {
+	return loggerAdapter{logger}
+}
+
+type loggerAdapter struct {
+	logger log.Logger
+}
+
+func (a loggerAdapter) toFields(fields watermill.LogFields) []log.Field {
+	var innerfields = make([]log.Field, 0, len(fields))
+	for key, value := range fields {
+		innerfields = append(innerfields, log.Any(key, value))
+	}
+	return innerfields
+}
+
+func (a loggerAdapter) Error(msg string, err error, fields watermill.LogFields) {
+	var innerfields = a.toFields(fields)
+	innerfields = append(innerfields, log.Error(err))
+	a.logger.Error(msg, innerfields...)
+}
+
+func (a loggerAdapter) Info(msg string, fields watermill.LogFields) {
+	a.logger.Info(msg, a.toFields(fields)...)
+}
+func (a loggerAdapter) Debug(msg string, fields watermill.LogFields) {
+	a.logger.Debug(msg, a.toFields(fields)...)
+}
+func (a loggerAdapter) Trace(msg string, fields watermill.LogFields) {
+	a.logger.Debug(msg, a.toFields(fields)...)
+}
+func (a loggerAdapter) With(fields watermill.LogFields) watermill.LoggerAdapter {
+	return loggerAdapter{a.logger.With(a.toFields(fields)...)}
 }

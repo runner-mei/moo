@@ -92,6 +92,9 @@ const (
 	CfgHealthKeepliveTimeout = "health.keeplive.timeout_sec"
 
 	CfgOperationLoggerVersion = "operation_logger.version"
+
+	CfgQueueCluster = "pubsub.nats.cluster"
+	CfgQueueURL     = "pubsub.nats.url"
 )
 
 // 常用的错误
