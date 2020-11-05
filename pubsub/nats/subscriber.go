@@ -2,7 +2,6 @@ package pubsubnats
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -33,6 +32,8 @@ type StreamingSubscriberConfig struct {
 
 	// SubscribersCount determines wow much concurrent subscribers should be started.
 	SubscribersCount int
+
+	NoAcks map[string]bool
 
 	// CloseTimeout determines how long subscriber will wait for Ack/Nack on close.
 	// When no Ack/Nack is received after CloseTimeout, subscriber will be closed.
@@ -67,6 +68,8 @@ type StreamingSubscriberSubscriptionConfig struct {
 	// SubscribersCount determines wow much concurrent subscribers should be started.
 	SubscribersCount int
 
+	NoAcks map[string]bool
+
 	// CloseTimeout determines how long subscriber will wait for Ack/Nack on close.
 	// When no Ack/Nack is received after CloseTimeout, subscriber will be closed.
 	CloseTimeout time.Duration
@@ -77,6 +80,7 @@ func (c *StreamingSubscriberConfig) GetStreamingSubscriberSubscriptionConfig() S
 		Unmarshaler:      c.Unmarshaler,
 		QueueGroup:       c.QueueGroup,
 		SubscribersCount: c.SubscribersCount,
+		NoAcks:           c.NoAcks,
 		CloseTimeout:     c.CloseTimeout,
 	}
 }
@@ -160,6 +164,11 @@ func NewStreamingSubscriberWithConn(conn *nats.Conn, config StreamingSubscriberS
 func (s *StreamingSubscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
 	output := make(chan *message.Message, 10000)
 
+	noAck := false
+	if s.config.NoAcks != nil {
+		noAck = s.config.NoAcks[topic]
+	}
+
 	for i := 0; i < s.config.SubscribersCount; i++ {
 		s.outputsWg.Add(1)
 		subscriberLogFields := watermill.LogFields{
@@ -171,7 +180,7 @@ func (s *StreamingSubscriber) Subscribe(ctx context.Context, topic string) (<-ch
 
 		processMessagesWg := &sync.WaitGroup{}
 
-		sub, err := s.subscribe(ctx, output, topic, subscriberLogFields, processMessagesWg)
+		sub, err := s.subscribe(ctx, noAck, output, topic, subscriberLogFields, processMessagesWg)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot subscribe")
 		}
@@ -207,6 +216,7 @@ func (s *StreamingSubscriber) Subscribe(ctx context.Context, topic string) (<-ch
 func (s *StreamingSubscriber) SubscribeInitialize(topic string) (err error) {
 	sub, err := s.subscribe(
 		context.Background(),
+		true,
 		make(chan *message.Message),
 		topic,
 		nil,
@@ -225,6 +235,7 @@ func (s *StreamingSubscriber) SubscribeInitialize(topic string) (err error) {
 
 func (s *StreamingSubscriber) subscribe(
 	ctx context.Context,
+	noAck bool,
 	output chan *message.Message,
 	topic string,
 	subscriberLogFields watermill.LogFields,
@@ -242,7 +253,7 @@ func (s *StreamingSubscriber) subscribe(
 				processMessagesWg.Add(1)
 				defer processMessagesWg.Done()
 
-				s.processMessage(ctx, m, output, subscriberLogFields)
+				s.processMessage(ctx, noAck, m, output, subscriberLogFields)
 			},
 		)
 	}
@@ -253,13 +264,14 @@ func (s *StreamingSubscriber) subscribe(
 			processMessagesWg.Add(1)
 			defer processMessagesWg.Done()
 
-			s.processMessage(ctx, m, output, subscriberLogFields)
+			s.processMessage(ctx, noAck, m, output, subscriberLogFields)
 		},
 	)
 }
 
 func (s *StreamingSubscriber) processMessage(
 	ctx context.Context,
+	noAck bool,
 	m *nats.Msg,
 	output chan *message.Message,
 	logFields watermill.LogFields,
@@ -303,7 +315,10 @@ func (s *StreamingSubscriber) processMessage(
 		return
 	}
 
-	fmt.Println(msg.Acked())
+	if noAck {
+		return
+	}
+
 	select {
 	case <-msg.Acked():
 		s.logger.Trace("Starting ack", messageLogFields)

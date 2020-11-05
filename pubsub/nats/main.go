@@ -10,7 +10,23 @@ import (
 	"github.com/runner-mei/moo/pubsub"
 )
 
-func NewPublisher(env *moo.Environment, clientID string, logger log.Logger) (pubsub.Publisher, error) {
+type OutNoAck struct {
+	moo.Out
+
+	Name string `group:"nats_noack"`
+}
+
+type InNoAcks struct {
+	moo.In
+
+	Names []string `group:"nats_noack"`
+}
+
+func NoAck(name string) OutNoAck {
+  return OutNoAck{Name: name}
+}
+
+func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger log.Logger) (pubsub.Publisher, error) {
 	if clientID == "" {
 		clientID = "tpt-pub-" + time.Now().Format(time.RFC3339)
 	}
@@ -22,12 +38,13 @@ func NewPublisher(env *moo.Environment, clientID string, logger log.Logger) (pub
 			Options: []nats.Option{
 				nats.Name(clientID),
 			},
+			NoAcks: toNoAcks(noAcks),
 		},
 		pubsub.NewLoggerAdapter(logger),
 	)
 }
 
-func NewSubscriber(env *moo.Environment, clientID string, logger log.Logger) (pubsub.Subscriber, error) {
+func NewSubscriber(env *moo.Environment, clientID string, noAcks []string, logger log.Logger) (pubsub.Subscriber, error) {
 	if clientID == "" {
 		clientID = "tpt-sub-" + time.Now().Format(time.RFC3339)
 	}
@@ -40,6 +57,7 @@ func NewSubscriber(env *moo.Environment, clientID string, logger log.Logger) (pu
 			URL:        queueURL,
 			QueueGroup: queueGroup,
 			// DurableName:      "my-durable",
+			NoAcks:           toNoAcks(noAcks),
 			SubscribersCount: subscribersCount, // how many goroutines should consume messages
 			CloseTimeout:     time.Minute,
 			Unmarshaler:      GobMarshaler{},
@@ -49,4 +67,12 @@ func NewSubscriber(env *moo.Environment, clientID string, logger log.Logger) (pu
 		},
 		pubsub.NewLoggerAdapter(logger),
 	)
+}
+
+func toNoAcks(noacks []string) map[string]bool {
+	results := map[string]bool{}
+	for _, noack := range noacks {
+		results[noack] = true
+	}
+	return results
 }

@@ -23,6 +23,7 @@ type StreamingPublisherConfig struct {
 	// Marshaler is marshaler used to marshal messages to nats format.
 	Marshaler Marshaler
 
+	NoAcks          map[string]bool
 	SendWaitTimeout time.Duration
 }
 
@@ -30,6 +31,7 @@ type StreamingPublisherPublishConfig struct {
 	// Marshaler is marshaler used to marshal messages to nats format.
 	Marshaler Marshaler
 
+	NoAcks          map[string]bool
 	SendWaitTimeout time.Duration
 }
 
@@ -44,6 +46,7 @@ func (c StreamingPublisherConfig) Validate() error {
 func (c StreamingPublisherConfig) GetStreamingPublisherPublishConfig() StreamingPublisherPublishConfig {
 	return StreamingPublisherPublishConfig{
 		Marshaler:       c.Marshaler,
+		NoAcks:          c.NoAcks,
 		SendWaitTimeout: c.SendWaitTimeout,
 	}
 }
@@ -92,6 +95,11 @@ func NewStreamingPublisherWithConn(conn *nats.Conn, config StreamingPublisherPub
 // Publish will not return until an ack has been received from NATS Streaming.
 // When one of messages delivery fails - function is interrupted.
 func (p StreamingPublisher) Publish(topic string, messages ...*message.Message) error {
+	noAck := false
+	if p.config.NoAcks != nil {
+		noAck = p.config.NoAcks[topic]
+	}
+
 	for _, msg := range messages {
 		messageFields := watermill.LogFields{
 			"message_uuid": msg.UUID,
@@ -105,15 +113,20 @@ func (p StreamingPublisher) Publish(topic string, messages ...*message.Message) 
 			return err
 		}
 
-		resp, err := p.conn.Request(topic, b, p.config.SendWaitTimeout)
-		if err != nil {
-			return errors.Wrap(err, "sending message failed")
-		}
+		if noAck {
+			if err := p.conn.Publish(topic, b); err != nil {
+				return errors.Wrap(err, "sending message failed")
+			}
+		} else {
+			resp, err := p.conn.Request(topic, b, p.config.SendWaitTimeout)
+			if err != nil {
+				return errors.Wrap(err, "sending message failed")
+			}
 
-		if !bytes.Equal(resp.Data, []byte("OK")) {
-			return errors.Wrap(ErrErrorResponse, string(resp.Data))
+			if !bytes.Equal(resp.Data, []byte("OK")) {
+				return errors.Wrap(ErrErrorResponse, string(resp.Data))
+			}
 		}
-
 		p.logger.Trace("Message published", messageFields)
 	}
 

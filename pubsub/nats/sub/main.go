@@ -9,8 +9,8 @@ import (
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
-		return moo.Provide(func(env *moo.Environment, logger log.Logger) (pubsub.Subscriber, error) {
-			return pubsubnats.NewSubscriber(env, "", logger.Named("pubsub"))
+		return moo.Provide(func(env *moo.Environment, noAcks pubsubnats.InNoAcks, logger log.Logger) (pubsub.Subscriber, error) {
+			return pubsubnats.NewSubscriber(env, "", noAcks.Names, logger.Named("pubsub"))
 		})
 	})
 }
