@@ -1,12 +1,17 @@
 package pubsubnats
 
 import (
+	"bytes"
+	"time"
+
 	nats "github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
+	"github.com/runner-mei/errors"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 )
+
+var ErrErrorResponse = errors.New("server responded with error status")
 
 type StreamingPublisherConfig struct {
 	// URL is the NATS url.
@@ -17,11 +22,15 @@ type StreamingPublisherConfig struct {
 
 	// Marshaler is marshaler used to marshal messages to nats format.
 	Marshaler Marshaler
+
+	SendWaitTimeout time.Duration
 }
 
 type StreamingPublisherPublishConfig struct {
 	// Marshaler is marshaler used to marshal messages to nats format.
 	Marshaler Marshaler
+
+	SendWaitTimeout time.Duration
 }
 
 func (c StreamingPublisherConfig) Validate() error {
@@ -34,7 +43,8 @@ func (c StreamingPublisherConfig) Validate() error {
 
 func (c StreamingPublisherConfig) GetStreamingPublisherPublishConfig() StreamingPublisherPublishConfig {
 	return StreamingPublisherPublishConfig{
-		Marshaler: c.Marshaler,
+		Marshaler:       c.Marshaler,
+		SendWaitTimeout: c.SendWaitTimeout,
 	}
 }
 
@@ -95,9 +105,16 @@ func (p StreamingPublisher) Publish(topic string, messages ...*message.Message) 
 			return err
 		}
 
-		if err := p.conn.Publish(topic, b); err != nil {
+		resp, err := p.conn.Request(topic, b, p.config.SendWaitTimeout)
+		if err != nil {
 			return errors.Wrap(err, "sending message failed")
 		}
+
+		if !bytes.Equal(resp.Data, []byte("OK")) {
+			return errors.Wrap(ErrErrorResponse, string(resp.Data))
+		}
+
+		p.logger.Trace("Message published", messageFields)
 	}
 
 	return nil

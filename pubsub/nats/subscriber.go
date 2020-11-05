@@ -2,16 +2,15 @@ package pubsubnats
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	internalSync "github.com/ThreeDotsLabs/watermill/pubsub/sync"
-
-	"github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
-
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
+	internalSync "github.com/ThreeDotsLabs/watermill/pubsub/sync"
+	"github.com/nats-io/nats.go"
+	"github.com/runner-mei/errors"
 )
 
 type StreamingSubscriberConfig struct {
@@ -159,7 +158,7 @@ func NewStreamingSubscriberWithConn(conn *nats.Conn, config StreamingSubscriberS
 //
 // Subscribe will spawn SubscribersCount goroutines making subscribe.
 func (s *StreamingSubscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	output := make(chan *message.Message, 0)
+	output := make(chan *message.Message, 10000)
 
 	for i := 0; i < s.config.SubscribersCount; i++ {
 		s.outputsWg.Add(1)
@@ -184,7 +183,7 @@ func (s *StreamingSubscriber) Subscribe(ctx context.Context, topic string) (<-ch
 			case <-ctx.Done():
 				// unblock
 			}
-			if err := sub.Unsubscribe(); err != nil && err != nats.ErrBadSubscription {
+			if err := sub.Unsubscribe(); err != nil && err != nats.ErrConnectionClosed {
 				s.logger.Error("Cannot close subscriber", err, subscriberLogFields)
 			}
 
@@ -217,7 +216,11 @@ func (s *StreamingSubscriber) SubscribeInitialize(topic string) (err error) {
 		return errors.Wrap(err, "cannot initialize subscribe")
 	}
 
-	return errors.Wrap(sub.Unsubscribe(), "cannot close after subscribe initialize")
+	err = sub.Unsubscribe()
+	if err == nil {
+		return nil
+	}
+	return errors.Wrap(err, "cannot close after subscribe initialize")
 }
 
 func (s *StreamingSubscriber) subscribe(
@@ -272,7 +275,13 @@ func (s *StreamingSubscriber) processMessage(
 
 	msg, err := s.config.Unmarshaler.Unmarshal(m)
 	if err != nil {
-		s.logger.Error("Cannot unmarshal message", err, logFields)
+		e := m.Respond([]byte("Cannot unmarshal message: " + err.Error()))
+		if e != nil {
+			logFields["responderror"] = e
+			s.logger.Error("Cannot unmarshal message", err, logFields)
+		} else {
+			s.logger.Error("Cannot unmarshal message", err, logFields)
+		}
 		return
 	}
 
@@ -294,22 +303,26 @@ func (s *StreamingSubscriber) processMessage(
 		return
 	}
 
+	fmt.Println(msg.Acked())
 	select {
 	case <-msg.Acked():
-
-		// FIXME: aa
-		// 	if err := m.Ack(); err != nil {
-		// 		s.logger.Error("Cannot send ack", err, messageLogFields)
-		// 		return
-		// 	}
-		s.logger.Trace("Message Acked", messageLogFields)
+		s.logger.Trace("Starting ack", messageLogFields)
+		e := m.Respond([]byte("OK"))
+		if e != nil {
+			messageLogFields["responderror"] = e
+			s.logger.Trace("Message Acked", messageLogFields)
+		} else {
+			s.logger.Trace("Message Acked", messageLogFields)
+		}
 	case <-msg.Nacked():
-		s.logger.Trace("Message Nacked", messageLogFields)
+		e := m.Respond([]byte("Nacked"))
+		if e != nil {
+			messageLogFields["responderror"] = e
+			s.logger.Trace("Message Nacked", messageLogFields)
+		} else {
+			s.logger.Trace("Message Nacked", messageLogFields)
+		}
 		return
-		// FIXME: aa
-	// case <-time.After(s.config.AckWaitTimeout):
-	// 	s.logger.Trace("Ack timeouted", messageLogFields)
-	// 	return
 	case <-s.closing:
 		s.logger.Trace("Closing, message discarded before ack", messageLogFields)
 		return

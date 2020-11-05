@@ -93,8 +93,10 @@ const (
 
 	CfgOperationLoggerVersion = "operation_logger.version"
 
-	CfgQueueCluster = "pubsub.nats.cluster"
-	CfgQueueURL     = "pubsub.nats.url"
+	CfgPubsubNatsCluster    = "pubsub.nats.cluster"
+	CfgPubsubNatsURL        = "pubsub.nats.url"
+	CfgPubsubNatsQueueGroup = "pubsub.nats.queue_group"
+	CfgPubsubNatsSubThreads = "pubsub.nats.sub_threads"
 )
 
 // 常用的错误
