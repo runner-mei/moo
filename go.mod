@@ -23,6 +23,7 @@ require (
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mojocn/base64Captcha v1.3.0
+	github.com/nats-io/nats.go v1.10.0
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/revel/config v0.21.0 // indirect
