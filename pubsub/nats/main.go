@@ -10,6 +10,8 @@ import (
 	"github.com/runner-mei/moo/pubsub"
 )
 
+var ErrNoConnect   = errors.New("connection is missing")
+
 type OutNoAck struct {
 	moo.Out
 
@@ -75,4 +77,81 @@ func toNoAcks(noacks []string) map[string]bool {
 		results[noack] = true
 	}
 	return results
+}
+
+func NewSender(env *moo.Environment, clientID string, logger log.Logger) api.Sender {
+	if clientID == "" {
+		clientID = "tpt-send-" + time.Now().Format(time.RFC3339)
+	}
+	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
+	return &sender{
+		logger: logger,
+		marshaler: GobMarshaler{},
+		connurl:       queueURL,
+		options: []nats.Option{
+			nats.Name(clientID),
+		},
+	}
+}
+
+type sender struct {
+	logger log.Logger
+	marshaler Marshaler
+	connurl string
+	options []nats.Option
+
+	connecting int32
+	lock sync.Mutex
+	conn    atomic.Value
+}
+
+func (s *sender) get() *nats.Conn {
+	o := s.conn.Load()
+	if o == nil {
+		return nil
+	}
+	conn, _ := o.(*nats.Conn)
+	return conn
+}
+
+func (s *sender) startConnect() {
+	if atomic.CompareAndSwapInt32(&s.connecting, 0, 1) {
+		go func() {
+			defer atomic.StoreInt32(&s.connecting, 0)
+			s.connect()
+		}
+	}
+}
+
+func (s *sender) connect() (conn *nats.Conn, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	conn = s.get()
+	if conn != nil {
+		return conn, nil
+	}
+
+	conn, err = nats.Connet(s.connurl, s.options...)
+	if err != nil {
+		return nil, err
+	}
+	s.conn.Store(conn)
+	return conn, nil
+}
+
+func (s *sender) Send(ctx context.Context, toppic, source string, payload interface{}) error {
+	msg := pubsub.NewMessage(source, payload)
+	b, err := s.marshaler.Marshal(topic, msg)
+	if err != nil {
+		return err
+	}
+
+	conn:= s.get()
+	if conn == nil {
+		s.startConnect()
+		return ErrNoConnect
+	}
+
+	return conn.Publish(topic, b)
 }
