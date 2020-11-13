@@ -197,7 +197,7 @@ func init() {
 				}
 				sb.WriteString(" AS ")
 				sb.WriteString("uug")
-				sb.WriteString(" where uug.group_id = #{groupID}\r\n       <if test=\"userEnabled.Valid\">\r\n         AND EXISTS (\r\n           SELECT * FROM ")
+				sb.WriteString("\r\n      WHERE <if test=\"len(groupIDs) == 1\"> uug.group_id = <foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach></if>\r\n             <if test=\"len(groupIDs) &gt; 1\"> uug.group_id in (<foreach collection=\"groupIDs\" separator=\",\">#{item}</foreach>)</if>\r\n       <if test=\"userEnabled.Valid\">\r\n         AND EXISTS (\r\n           SELECT * FROM ")
 				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
 					return err
 				} else {

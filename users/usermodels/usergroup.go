@@ -73,7 +73,9 @@ type UsergroupQueryer interface {
 	//  <if test="userEnabled.Valid"> AND EXISTS (SELECT * FROM <tablename type="User" as="u" /> WHERE <if test="!userEnabled.Bool"> NOT </if> ( disabled IS NULL or disabled = false ) AND uug.user_id = u.id) </if>
 	// </if>
 	// <if test="!recursive">
-	//    SELECT user_id FROM <tablename type="UserAndUsergroup" as="uug" /> where uug.group_id = #{groupID}
+	//    SELECT user_id FROM <tablename type="UserAndUsergroup" as="uug" />
+	//      WHERE <if test="len(groupIDs) == 1"> uug.group_id = <foreach collection="groupIDs" separator=",">#{item}</foreach></if>
+	//             <if test="len(groupIDs) &gt; 1"> uug.group_id in (<foreach collection="groupIDs" separator=",">#{item}</foreach>)</if>
 	//       <if test="userEnabled.Valid">
 	//         AND EXISTS (
 	//           SELECT * FROM <tablename type="User" as="u" />
