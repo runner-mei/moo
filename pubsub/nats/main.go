@@ -89,7 +89,7 @@ func toNoAcks(noacks []string) map[string]bool {
 	return results
 }
 
-func NewSender(env *moo.Environment, clientID string, logger log.Logger) api.Sender {
+func NewSender(env *moo.Environment, clientID string, logger log.Logger) *sender {
 	if clientID == "" {
 		clientID = "tpt-send-" + time.Now().Format(time.RFC3339)
 	}
@@ -103,6 +103,8 @@ func NewSender(env *moo.Environment, clientID string, logger log.Logger) api.Sen
 		},
 	}
 }
+
+var _ api.Sender = &sender{}
 
 type sender struct {
 	logger    log.Logger
@@ -124,7 +126,7 @@ func (s *sender) get() *nats.Conn {
 	return conn
 }
 
-func (s *sender) startConnect() {
+func (s *sender) StartConnect() {
 	if atomic.CompareAndSwapInt32(&s.connecting, 0, 1) {
 		go func() {
 			defer atomic.StoreInt32(&s.connecting, 0)
@@ -153,7 +155,7 @@ func (s *sender) connect() (conn *nats.Conn, err error) {
 func (s *sender) Send(ctx context.Context, topic, source string, payload interface{}) error {
 	conn := s.get()
 	if conn == nil {
-		s.startConnect()
+		s.StartConnect()
 		return ErrNoConnect
 	}
 
