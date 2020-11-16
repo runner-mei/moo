@@ -10,6 +10,8 @@ const (
 	BusMessageEventCreated = "moo.messages.created"
 	BusMessageEventUpdated = "moo.messages.updated"
 	BusMessageEventDeleted = "moo.messages.deleted"
+
+	EventAlerts = "event.alerts"
 )
 
 type SysKeepaliveEvent struct {

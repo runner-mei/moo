@@ -4,6 +4,7 @@ import (
 	"time"
 
 	nats "github.com/nats-io/nats.go"
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
@@ -23,7 +24,7 @@ type InNoAcks struct {
 }
 
 func NoAck(name string) OutNoAck {
-  return OutNoAck{Name: name}
+	return OutNoAck{Name: name}
 }
 
 func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger log.Logger) (pubsub.Publisher, error) {
@@ -31,6 +32,9 @@ func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger
 		clientID = "tpt-pub-" + time.Now().Format(time.RFC3339)
 	}
 	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
+	if queueURL == "" {
+		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
+	}
 	return NewStreamingPublisher(
 		StreamingPublisherConfig{
 			URL:       queueURL,
@@ -52,6 +56,9 @@ func NewSubscriber(env *moo.Environment, clientID string, noAcks []string, logge
 	queueGroup := env.Config.StringWithDefault(api.CfgPubsubNatsQueueGroup, "")
 	subscribersCount := env.Config.IntWithDefault(api.CfgPubsubNatsSubThreads, 10)
 
+	if queueURL == "" {
+		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
+	}
 	return NewStreamingSubscriber(
 		StreamingSubscriberConfig{
 			URL:        queueURL,
