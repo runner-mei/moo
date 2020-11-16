@@ -31,8 +31,8 @@ require (
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v0.21.0
 	github.com/runner-mei/GoBatis v1.1.13
-	github.com/runner-mei/errors v0.0.0-20200925124023-a98df9958a8b
-	github.com/runner-mei/goutils v0.0.0-20200929112137-25338fee19bf
+	github.com/runner-mei/errors v0.0.0-20201010035246-8a62d69e86eb
+	github.com/runner-mei/goutils v0.0.0-20201104115921-01651437ab41
 	github.com/runner-mei/log v1.0.3
 	github.com/runner-mei/loong v1.0.8
 	github.com/runner-mei/resty v0.0.0-20200814091018-9ded4cf5cc97
@@ -43,7 +43,7 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/fx v1.13.0
-	go.uber.org/zap v1.15.0
+	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381

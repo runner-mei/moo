@@ -1,5 +1,7 @@
 package api
 
+import "context"
+
 const (
 	BusSysKeepaliveStatus = "sys.keepalive"
 
@@ -21,6 +23,6 @@ type SysKeepaliveEvent struct {
 	Action string `json:"action,omitempty"`
 }
 
-// func SendKeepalive(ctx context.Context, id, app string) error {
-
-// }
+type Sender interface {
+	Send(ctx context.Context, source string, payload interface{}) error
+}
