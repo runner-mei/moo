@@ -24,5 +24,5 @@ type SysKeepaliveEvent struct {
 }
 
 type Sender interface {
-	Send(ctx context.Context, source string, payload interface{}) error
+	Send(ctx context.Context, toppic, source string, payload interface{}) error
 }

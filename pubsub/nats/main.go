@@ -1,6 +1,9 @@
 package pubsubnats
 
 import (
+	"context"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	nats "github.com/nats-io/nats.go"
@@ -11,7 +14,7 @@ import (
 	"github.com/runner-mei/moo/pubsub"
 )
 
-var ErrNoConnect   = errors.New("connection is missing")
+var ErrNoConnect = errors.New("connection is missing")
 
 type OutNoAck struct {
 	moo.Out
@@ -92,9 +95,9 @@ func NewSender(env *moo.Environment, clientID string, logger log.Logger) api.Sen
 	}
 	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
 	return &sender{
-		logger: logger,
+		logger:    logger,
 		marshaler: GobMarshaler{},
-		connurl:       queueURL,
+		connurl:   queueURL,
 		options: []nats.Option{
 			nats.Name(clientID),
 		},
@@ -102,14 +105,14 @@ func NewSender(env *moo.Environment, clientID string, logger log.Logger) api.Sen
 }
 
 type sender struct {
-	logger log.Logger
+	logger    log.Logger
 	marshaler Marshaler
-	connurl string
-	options []nats.Option
+	connurl   string
+	options   []nats.Option
 
 	connecting int32
-	lock sync.Mutex
-	conn    atomic.Value
+	lock       sync.Mutex
+	conn       atomic.Value
 }
 
 func (s *sender) get() *nats.Conn {
@@ -126,7 +129,7 @@ func (s *sender) startConnect() {
 		go func() {
 			defer atomic.StoreInt32(&s.connecting, 0)
 			s.connect()
-		}
+		}()
 	}
 }
 
@@ -139,7 +142,7 @@ func (s *sender) connect() (conn *nats.Conn, err error) {
 		return conn, nil
 	}
 
-	conn, err = nats.Connet(s.connurl, s.options...)
+	conn, err = nats.Connect(s.connurl, s.options...)
 	if err != nil {
 		return nil, err
 	}
@@ -147,14 +150,14 @@ func (s *sender) connect() (conn *nats.Conn, err error) {
 	return conn, nil
 }
 
-func (s *sender) Send(ctx context.Context, toppic, source string, payload interface{}) error {
+func (s *sender) Send(ctx context.Context, topic, source string, payload interface{}) error {
 	msg := pubsub.NewMessage(source, payload)
 	b, err := s.marshaler.Marshal(topic, msg)
 	if err != nil {
 		return err
 	}
 
-	conn:= s.get()
+	conn := s.get()
 	if conn == nil {
 		s.startConnect()
 		return ErrNoConnect
