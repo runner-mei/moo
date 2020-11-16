@@ -151,16 +151,16 @@ func (s *sender) connect() (conn *nats.Conn, err error) {
 }
 
 func (s *sender) Send(ctx context.Context, topic, source string, payload interface{}) error {
-	msg := pubsub.NewMessage(source, payload)
-	b, err := s.marshaler.Marshal(topic, msg)
-	if err != nil {
-		return err
-	}
-
 	conn := s.get()
 	if conn == nil {
 		s.startConnect()
 		return ErrNoConnect
+	}
+
+	msg := pubsub.NewMessage(source, payload)
+	b, err := s.marshaler.Marshal(topic, msg)
+	if err != nil {
+		return err
 	}
 
 	return conn.Publish(topic, b)
