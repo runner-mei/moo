@@ -55,7 +55,7 @@ func NewSubscriber(env *moo.Environment, clientID string, noAcks []string, logge
 		clientID = "tpt-sub-" + time.Now().Format(time.RFC3339)
 	}
 	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
-	queueGroup := env.Config.StringWithDefault(api.CfgPubsubNatsQueueGroup, "")
+	queueGroup := env.Config.StringWithDefault(api.CfgPubsubNatsQueueGroup, "tpt_queue_sub")
 	subscribersCount := env.Config.IntWithDefault(api.CfgPubsubNatsSubThreads, 10)
 
 	if queueURL == "" {
