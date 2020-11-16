@@ -89,14 +89,17 @@ const (
 	CfgDbPrefix          = ".db_prefix"
 	CfgDbDataPrefix      = ".db_data_prefix"
 
-	CfgHealthKeepliveTimeout = "health.keeplive.timeout_sec"
-
+	CfgHealthKeepliveTimeout  = "health.keeplive.timeout_sec"
 	CfgOperationLoggerVersion = "operation_logger.version"
 
-	CfgPubsubNatsCluster    = "pubsub.nats.cluster"
-	CfgPubsubNatsURL        = "pubsub.nats.url"
-	CfgPubsubNatsQueueGroup = "pubsub.nats.queue_group"
-	CfgPubsubNatsSubThreads = "pubsub.nats.sub_threads"
+	CfgNatsURL = "nats.url"
+
+	CfgPubsubNatsCluster    = "nats.pubsub.cluster"
+	CfgPubsubNatsQueueGroup = "nats.pubsub.queue_group"
+	CfgPubsubNatsSubThreads = "nats.pubsub.sub_threads"
+
+	CfgSamplingNatsQueueGroup = "nats.sampling.queue_group"
+	CfgSamplingNatsSubThreads = "nats.sampling.sub_threads"
 )
 
 // 常用的错误

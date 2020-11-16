@@ -36,7 +36,7 @@ func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger
 	if clientID == "" {
 		clientID = "tpt-pub-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
+	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
 	if queueURL == "" {
 		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
 	}
@@ -57,7 +57,7 @@ func NewSubscriber(env *moo.Environment, clientID string, noAcks []string, logge
 	if clientID == "" {
 		clientID = "tpt-sub-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
+	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
 	queueGroup := env.Config.StringWithDefault(api.CfgPubsubNatsQueueGroup, "tpt_queue_sub")
 	subscribersCount := env.Config.IntWithDefault(api.CfgPubsubNatsSubThreads, 10)
 
