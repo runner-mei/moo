@@ -93,7 +93,7 @@ func NewSender(env *moo.Environment, clientID string, logger log.Logger) *sender
 	if clientID == "" {
 		clientID = "tpt-send-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgPubsubNatsURL, "")
+	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
 	return &sender{
 		logger:    logger,
 		marshaler: GobMarshaler{},
