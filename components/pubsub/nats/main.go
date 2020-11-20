@@ -11,7 +11,8 @@ import (
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/pubsub"
+	compnats "github.com/runner-mei/moo/components/nats"
+	"github.com/runner-mei/moo/components/pubsub"
 )
 
 var ErrNoConnect = errors.New("connection is missing")
@@ -32,18 +33,16 @@ func NoAck(name string) OutNoAck {
 	return OutNoAck{Name: name}
 }
 
-func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger log.Logger) (pubsub.Publisher, error) {
+func NewPublisher(env *moo.Environment, factory *compnats.Factory, clientID string, noAcks []string, logger log.Logger) (pubsub.Publisher, error) {
 	if clientID == "" {
 		clientID = "tpt-pub-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
-	if queueURL == "" {
-		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
-	}
 	return NewStreamingPublisher(
 		StreamingPublisherConfig{
-			URL:       queueURL,
-			Marshaler: GobMarshaler{},
+			Factory:    factory,
+			ClientName: clientID,
+			IsDefault:  env.Config.BoolWithDefault(api.CfgPubsubNatsUseDefaultConn, false),
+			Marshaler:  GobMarshaler{},
 			Options: []nats.Option{
 				nats.Name(clientID),
 			},
@@ -53,20 +52,17 @@ func NewPublisher(env *moo.Environment, clientID string, noAcks []string, logger
 	)
 }
 
-func NewSubscriber(env *moo.Environment, clientID string, noAcks []string, logger log.Logger) (pubsub.Subscriber, error) {
+func NewSubscriber(env *moo.Environment, factory *compnats.Factory, clientID string, noAcks []string, logger log.Logger) (pubsub.Subscriber, error) {
 	if clientID == "" {
 		clientID = "tpt-sub-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
 	queueGroup := env.Config.StringWithDefault(api.CfgPubsubNatsQueueGroup, "tpt_queue_sub")
 	subscribersCount := env.Config.IntWithDefault(api.CfgPubsubNatsSubThreads, 10)
-
-	if queueURL == "" {
-		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
-	}
 	return NewStreamingSubscriber(
 		StreamingSubscriberConfig{
-			URL:        queueURL,
+			Factory:    factory,
+			ClientName: clientID,
+			IsDefault:  env.Config.BoolWithDefault(api.CfgPubsubNatsUseDefaultConn, false),
 			QueueGroup: queueGroup,
 			// DurableName:      "my-durable",
 			NoAcks:           toNoAcks(noAcks),

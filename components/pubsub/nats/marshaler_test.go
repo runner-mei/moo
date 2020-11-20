@@ -7,7 +7,7 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	nats "github.com/nats-io/nats.go"
-	pubsubnats "github.com/runner-mei/moo/pubsub/nats"
+	pubsubnats "github.com/runner-mei/moo/components/pubsub/nats"
 	"github.com/stretchr/testify/assert"
 
 	//"github.com/nats-io/nats.go/pb"

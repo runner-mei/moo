@@ -6,7 +6,7 @@ import (
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/pubsub"
+	"github.com/runner-mei/moo/components/pubsub"
 )
 
 type SubscribeHttpHandler struct {

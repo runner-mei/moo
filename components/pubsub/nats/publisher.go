@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"time"
 
-	nats "github.com/nats-io/nats.go"
-	"github.com/runner-mei/errors"
-
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
+	nats "github.com/nats-io/nats.go"
+	"github.com/runner-mei/errors"
+	compnats "github.com/runner-mei/moo/components/nats"
 )
 
 var ErrErrorResponse = errors.New("server responded with error status")
 
 type StreamingPublisherConfig struct {
-	// URL is the NATS url.
-	URL string
+	Factory    *compnats.Factory
+	ClientName string
+	IsDefault  bool
 
 	// StanOptions are custom options for a connection.
 	Options []nats.Option
@@ -70,9 +71,15 @@ func NewStreamingPublisher(config StreamingPublisherConfig, logger watermill.Log
 		return nil, err
 	}
 
-	conn, err := nats.Connect(config.URL, config.Options...)
+	var conn *nats.Conn
+	var err error
+	if config.IsDefault {
+		conn, err = config.Factory.Default()
+	} else {
+		conn, err = config.Factory.Create(nil, config.ClientName, config.Options...)
+	}
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot connect to nats")
+		return nil, errors.Wrap(err, "cannot connect to NATS")
 	}
 
 	return NewStreamingPublisherWithConn(conn, config.GetStreamingPublisherPublishConfig(), logger)

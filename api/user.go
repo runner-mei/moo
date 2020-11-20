@@ -92,11 +92,13 @@ const (
 	CfgHealthKeepliveTimeout  = "health.keeplive.timeout_sec"
 	CfgOperationLoggerVersion = "operation_logger.version"
 
-	CfgNatsURL = "nats.url"
+	CfgNatsURL        = "nats.url"
+	CfgNatsClientName = "nats.default_client_name"
 
-	CfgPubsubNatsCluster    = "nats.pubsub.cluster"
-	CfgPubsubNatsQueueGroup = "nats.pubsub.queue_group"
-	CfgPubsubNatsSubThreads = "nats.pubsub.sub_threads"
+	CfgPubsubNatsCluster        = "nats.pubsub.cluster"
+	CfgPubsubNatsQueueGroup     = "nats.pubsub.queue_group"
+	CfgPubsubNatsSubThreads     = "nats.pubsub.sub_threads"
+	CfgPubsubNatsUseDefaultConn = "nats.pubsub.use_default_conn"
 
 	CfgSamplingNatsQueueGroup = "nats.sampling.queue_group"
 	CfgSamplingNatsSubThreads = "nats.sampling.sub_threads"

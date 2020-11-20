@@ -11,7 +11,9 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message/subscriber"
 	"github.com/ThreeDotsLabs/watermill/pubsub/tests"
 	nats "github.com/nats-io/nats.go"
-	pubsubnats "github.com/runner-mei/moo/pubsub/nats"
+	mylog "github.com/runner-mei/log"
+	compnats "github.com/runner-mei/moo/components/nats"
+	pubsubnats "github.com/runner-mei/moo/components/pubsub/nats"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,13 +26,19 @@ func newPubSub(t *testing.T, clientID string, queueName string) (message.Publish
 	}
 
 	options := []nats.Option{
-		nats.Name(clientID),
+		// nats.Name(clientID),
 		// 	stan.NatsURL(natsURL),
 		// 	nats.ConnectWait(time.Second * 15),
 	}
 
+	factory := compnats.NewFactory(mylog.Empty(), natsURL, "default")
+
 	pub, err := pubsubnats.NewStreamingPublisher(pubsubnats.StreamingPublisherConfig{
-		URL:             natsURL,
+
+		Factory:    factory,
+		ClientName: clientID,
+		IsDefault:  false,
+
 		Marshaler:       pubsubnats.GobMarshaler{},
 		Options:         options,
 		SendWaitTimeout: time.Second, // AckTiemout < 5 required for continueAfterErrors
@@ -38,7 +46,10 @@ func newPubSub(t *testing.T, clientID string, queueName string) (message.Publish
 	require.NoError(t, err)
 
 	sub, err := pubsubnats.NewStreamingSubscriber(pubsubnats.StreamingSubscriberConfig{
-		URL:        natsURL,
+		Factory:    factory,
+		ClientName: clientID,
+		IsDefault:  false,
+
 		QueueGroup: queueName,
 		//DurableName:      "durable-name",
 		SubscribersCount: 10,

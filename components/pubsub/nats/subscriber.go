@@ -10,11 +10,13 @@ import (
 	internalSync "github.com/ThreeDotsLabs/watermill/pubsub/sync"
 	"github.com/nats-io/nats.go"
 	"github.com/runner-mei/errors"
+	compnats "github.com/runner-mei/moo/components/nats"
 )
 
 type StreamingSubscriberConfig struct {
-	// URL is the NATS url.
-	URL string
+	Factory    *compnats.Factory
+	ClientName string
+	IsDefault  bool
 
 	// QueueGroup is the NATS Streaming queue group.
 	//
@@ -132,7 +134,13 @@ type StreamingSubscriber struct {
 //		}
 //		// ...
 func NewStreamingSubscriber(config StreamingSubscriberConfig, logger watermill.LoggerAdapter) (*StreamingSubscriber, error) {
-	conn, err := nats.Connect(config.URL, config.Options...)
+	var conn *nats.Conn
+	var err error
+	if config.IsDefault {
+		conn, err = config.Factory.Default()
+	} else {
+		conn, err = config.Factory.Create(nil, config.ClientName, config.Options...)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot connect to NATS")
 	}
