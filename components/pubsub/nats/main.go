@@ -85,28 +85,27 @@ func toNoAcks(noacks []string) map[string]bool {
 	return results
 }
 
-func NewSender(env *moo.Environment, clientID string, logger log.Logger) *sender {
+func NewSender(env *moo.Environment, factory *compnats.Factory, useDefaultConn bool, clientID string, logger log.Logger) *sender {
 	if clientID == "" {
 		clientID = "tpt-send-" + time.Now().Format(time.RFC3339)
 	}
-	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
 	return &sender{
-		logger:    logger,
-		marshaler: GobMarshaler{},
-		connurl:   queueURL,
-		options: []nats.Option{
-			nats.Name(clientID),
-		},
+		logger:         logger,
+		marshaler:      GobMarshaler{},
+		factory:        factory,
+		useDefaultConn: useDefaultConn,
+		clientID:       clientID,
 	}
 }
 
 var _ api.Sender = &sender{}
 
 type sender struct {
-	logger    log.Logger
-	marshaler Marshaler
-	connurl   string
-	options   []nats.Option
+	logger         log.Logger
+	marshaler      Marshaler
+	useDefaultConn bool
+	factory        *compnats.Factory
+	clientID       string
 
 	connecting int32
 	lock       sync.Mutex
@@ -139,8 +138,11 @@ func (s *sender) connect() (conn *nats.Conn, err error) {
 	if conn != nil {
 		return conn, nil
 	}
-
-	conn, err = nats.Connect(s.connurl, s.options...)
+	if s.useDefaultConn {
+		conn, err = s.factory.Default()
+	} else {
+		conn, err = s.factory.Create(s.logger, s.clientID)
+	}
 	if err != nil {
 		return nil, err
 	}
