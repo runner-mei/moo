@@ -2,14 +2,14 @@ package server
 
 import (
 	"context"
-	"strings"
 	"net/http"
+	"strings"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
-	"github.com/runner-mei/moo/tunnel"
-	"github.com/runner-mei/errors"
+	"github.com/runner-mei/moo/components/tunnel"
 )
 
 func init() {
@@ -26,8 +26,7 @@ func init() {
 			}
 
 			engineName := env.Config.StringWithDefault(api.CfgTunnelEngineName, "")
-			acceptURL = acceptURL + "/"+ engineName +"?engine_name="+engineName
-
+			acceptURL = acceptURL + "/" + engineName + "?engine_name=" + engineName
 
 			tunnelListener, err := tunnel.Listen(logger,
 				env.Config.IntWithDefault(api.CfgTunnelMaxThreads, 10),
@@ -35,7 +34,7 @@ func init() {
 				env.Config.StringWithDefault(api.CfgTunnelRemoteAddress, ""),
 				env.Config.StringWithDefault(api.CfgTunnelRemoteListenAtURL, acceptURL))
 			if err != nil {
-				return nil, errors.Wrap( err, "tunel listen")
+				return nil, errors.Wrap(err, "tunel listen")
 			}
 
 			lifecycle.Append(moo.Hook{

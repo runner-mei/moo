@@ -5,8 +5,8 @@ import (
 
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/tunnel"
 	"github.com/runner-mei/moo/api"
+	"github.com/runner-mei/moo/components/tunnel"
 )
 
 func init() {
