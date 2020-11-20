@@ -1,4 +1,4 @@
-package compnats
+package nats
 
 import (
 	"fmt"
@@ -11,6 +11,18 @@ import (
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 )
+func New(env *moo.Environment, logger log.Logger) (*Factory, error) {
+	queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
+	if queueURL == "" {
+		return nil, errors.New("Nats 服务器参数不正确： URL 为空")
+	}
+
+	return &Factory{
+		logger:          logger.Named("nats"),
+		queueURL:        queueURL,
+		defaultConnName: env.Config.StringWithDefault(api.CfgNatsClientName, "moo.client"),
+	}, nil
+}
 
 func NewFactory(logger log.Logger, queueURL, defaultConnName string) *Factory {
 	return &Factory{
@@ -90,17 +102,6 @@ func (f *Factory) setupConnOptions(logger log.Logger, opts []nats.Option) []nats
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
-		return moo.Provide(func(env *moo.Environment, logger log.Logger) (*Factory, error) {
-			queueURL := env.Config.StringWithDefault(api.CfgNatsURL, "")
-			if queueURL == "" {
-				return nil, errors.New("Nats 服务器参数不正确： URL 为空")
-			}
-
-			return &Factory{
-				logger:          logger.Named("nats"),
-				queueURL:        queueURL,
-				defaultConnName: env.Config.StringWithDefault(api.CfgNatsClientName, "moo.client"),
-			}, nil
-		})
+		return moo.Provide(New)
 	})
 }
