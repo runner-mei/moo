@@ -172,3 +172,15 @@ func GetValues(req *http.Request, sessionKey string, h func() hash.Hash, secretK
 		return Verify(data, sig, h, secretKey)
 	})
 }
+
+func GetValuesWithSkipVerifyIfEmpty(req *http.Request, sessionKey string, h func() hash.Hash, secretKey []byte) (url.Values, error) {
+	return GetValuesFromCookie(req, sessionKey, func(data, sig string) bool {
+		if secretKey == nil {
+			return true
+		}
+		if len(sig) == 0 {
+			return true
+		}
+		return Verify(data, sig, h, secretKey)
+	})
+}
