@@ -66,9 +66,7 @@ func (h *FileUserManager) CreateByDict(ctx context.Context, fields map[string]in
 func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
 	var users, err = h.All()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	var maxID int64
@@ -76,7 +74,6 @@ func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, pa
 	var old map[string]interface{}
 
 	if len(users) == 0 {
-
 		adm := h.createAdminUser()
 		op := h.createBgOpUser()
 
@@ -146,15 +143,11 @@ func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, pa
 func (h *FileUserManager) Update(ctx context.Context, name string, values map[string]interface{}) error {
 	var users, err = h.All()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
 
 	foundIndex := -1
 	for idx, user := range users {
-
 		u, err := h.toAPIUser(ctx, 0, "", user)
 		if err != nil {
 			return err
@@ -165,8 +158,18 @@ func (h *FileUserManager) Update(ctx context.Context, name string, values map[st
 		}
 	}
 
-	if foundIndex <= 0 {
-		return services.ErrUserNotFound
+	if foundIndex < 0 {
+		if name == api.UserAdmin {
+			adm := h.createAdminUser()
+			users = []map[string]interface{}{adm.data}
+			foundIndex = 0
+		} else if name == api.UserBgOperator {
+			op := h.createBgOpUser()
+			users = []map[string]interface{}{op.data}
+			foundIndex = 0
+		} else {
+			return services.ErrUserNotFound
+		}
 	}
 
 	for key, value := range values {
@@ -182,10 +185,11 @@ func (h *FileUserManager) Update(ctx context.Context, name string, values map[st
 func (h *FileUserManager) Delete(ctx context.Context, name string) error {
 	var users, err = h.All()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
 		return err
+	}
+
+	if name == api.UserAdmin || name == api.UserBgOperator{
+		return errors.New("内建用户不可删除")
 	}
 
 	offset := 0
@@ -272,17 +276,57 @@ func (h *FileUserManager) writeUsers(ctx context.Context, users []map[string]int
 	return err
 }
 
+var emptyUsers = []map[string]interface{}{}
+
 func (h *FileUserManager) All() ([]map[string]interface{}, error) {
 	file := h.env.Fs.FromDataConfig(h.filename)
 	reader, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		return emptyUsers, nil
 	}
 	defer reader.Close()
 
 	var users []map[string]interface{}
 	err = json.NewDecoder(reader).Decode(&users)
 	return users, err
+}
+
+func (h *FileUserManager) AllWithDefaultUsers() ([]map[string]interface{}, error) {
+	users, err := h.All()
+	if err != nil {
+		return nil, err
+	}
+	if len(users) == 0 {
+		adm := h.createAdminUser()
+		op := h.createBgOpUser()
+		return []map[string]interface{}{adm.data, op.data}, nil
+	}
+
+
+	hasAdmUser := false
+	hasOpUser := false
+	for _, user := range users {
+		uname := as.StringWithDefault(user["username"], "")
+		if uname == api.UserAdmin {
+			hasAdmUser = true
+		} else 	if uname == api.UserBgOperator {
+			hasOpUser = true
+		}
+	}
+
+	if hasAdmUser {
+		u := h.createAdminUser()
+		users = append(users, u.data)
+	}
+	if hasOpUser {
+		u := h.createBgOpUser()
+		users = append(users, u.data)
+	}
+
+	return users, nil
 }
 
 func (h *FileUserManager) toAPIUser(ctx context.Context, userID int64, username string, fields map[string]interface{}) (*fileUser, error) {
@@ -302,20 +346,8 @@ func (h *FileUserManager) toAPIUser(ctx context.Context, userID int64, username 
 }
 
 func (h *FileUserManager) Find(ctx context.Context, name string) ([]map[string]interface{}, *fileUser, error) {
-	var users, err = h.All()
+	var users, err = h.AllWithDefaultUsers()
 	if err != nil {
-		if os.IsNotExist(err) {
-			if name == api.UserAdmin {
-				u := h.createAdminUser()
-				return []map[string]interface{}{u.data}, u, nil
-			}
-
-			if name == api.UserBgOperator {
-				u := h.createBgOpUser()
-				return []map[string]interface{}{u.data}, u, nil
-			}
-			return nil, nil, services.ErrUserNotFound
-		}
 		return nil, nil, err
 	}
 
@@ -326,18 +358,14 @@ func (h *FileUserManager) Find(ctx context.Context, name string) ([]map[string]i
 			return users, u, err
 		}
 	}
-	return users, nil, nil
+	return nil, nil, services.ErrUserNotFound
 }
 
 func (h *FileUserManager) Users(ctx context.Context, opts ...api.Option) ([]api.User, error) {
-	var users, err = h.All()
+	var users, err = h.AllWithDefaultUsers()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, services.ErrUserNotFound
-		}
-		return []api.User{h.createAdminUser(), h.createBgOpUser()}, nil
+		return nil, err
 	}
-
 	var results = make([]api.User, 0, len(users))
 	for _, user := range users {
 		u, err := h.toAPIUser(ctx, 0, "", user)
@@ -350,14 +378,10 @@ func (h *FileUserManager) Users(ctx context.Context, opts ...api.Option) ([]api.
 }
 
 func (h *FileUserManager) UserByID(ctx context.Context, userID int64, opts ...api.Option) (api.User, error) {
-	var users, err = h.All()
+	var users, err = h.AllWithDefaultUsers()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, services.ErrUserNotFound
-		}
 		return nil, err
 	}
-
 	for _, user := range users {
 		id := as.Int64WithDefault(user["id"], 0)
 		if id == userID {
@@ -368,7 +392,7 @@ func (h *FileUserManager) UserByID(ctx context.Context, userID int64, opts ...ap
 			return u, nil
 		}
 	}
-	return nil, nil
+	return nil, services.ErrUserNotFound
 }
 
 func (h *FileUserManager) UserByName(ctx context.Context, userName string, opts ...api.Option) (api.User, error) {

@@ -43,6 +43,7 @@ func SSO(sessionKey, sessionPath string, h func() hash.Hash, secretKey []byte, s
 				log.Println("session is invalid")
 				return echo.ErrUnauthorized
 			}
+
 			return next(c)
 		}
 	}
