@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	bgo "github.com/digitalcrab/browscap_go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/httputil"
@@ -26,6 +27,13 @@ type InAuthFuncs struct {
 
 	Funcs []loong.AuthValidateFunc `group:"authValidate"`
 }
+
+type InHttpTracing struct {
+	In
+
+	Tracer opentracing.Tracer `optional:"true"`
+}
+
 
 type HTTPLifecycle interface {
 	OnHTTP(addr string)
@@ -70,7 +78,7 @@ func init() {
 	}
 
 	On(func(*Environment) Option {
-		return Provide(func(env *Environment, logger log.Logger, authFuncs InAuthFuncs) *HTTPServer {
+		return Provide(func(env *Environment, logger log.Logger, authFuncs InAuthFuncs, tracer InHttpTracing) *HTTPServer {
 			httpSrv := &HTTPServer{
 				logger:     env.Logger.Named("http"),
 				noPrefix:   env.DaemonUrlPath == "" || env.DaemonUrlPath == "/",
@@ -83,6 +91,7 @@ func init() {
 			}
 			httpSrv.engine.Logger = httpSrv.logger
 
+
 			for _, file := range []string{
 				env.Fs.FromData("resources", "favicon.ico"),
 				env.Fs.FromInstallRoot("web", "resources", "favicon.ico"),
@@ -93,11 +102,19 @@ func init() {
 				}
 			}
 
-			if env.Config.BoolWithDefault("opentracing", false) {
+			if tracer.Tracer != nil {
+				tracer := loong.Tracing(tracer.Tracer, "moo", false)
+				httpSrv.engine.Use(tracer)
+
+				httpSrv.logger.Named("opentracing").Info("opentracing is enabled")
+			} else if env.Config.BoolWithDefault("opentracing", false) {
 				jaeger.Init("wserver", httpSrv.logger.Named("jaegertracing").Unwrap())
-				httpSrv.logger.Named("jaegertracing").Info("opentracing is enabled")
+				tracer := loong.Tracing(opentracing.GlobalTracer(), "moo", false)
+				httpSrv.engine.Use(tracer)
+
+				httpSrv.logger.Named("opentracing").Info("opentracing is enabled")
 			} else {
-				httpSrv.logger.Named("jaegertracing").Info("opentracing is disabled")
+				httpSrv.logger.Named("opentracing").Info("opentracing is disabled")
 			}
 			return httpSrv
 		})
