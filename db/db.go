@@ -68,7 +68,7 @@ type DbDataResult struct {
 
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
-		return fx.Provide(func(env *moo.Environment, logger log.Logger) (DbModelResult, error) {
+		return fx.Provide(func(env *moo.Environment, logger log.Logger, closes *moo.Closes) (DbModelResult, error) {
 			dbPrefix := env.Config.StringWithDefault(env.Namespace+api.CfgDbPrefix, env.Namespace+".")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
@@ -120,6 +120,7 @@ func init() {
 
 			logger.Debug("models 数据库连接成功", log.String("drvName", drvModels), log.String("URL", urlModels))
 
+			closes.OnClosing(dbModels)
 			return DbModelResult{
 				Constants:            constants,
 				DrvModels:            drvModels,
@@ -132,7 +133,7 @@ func init() {
 	})
 
 	moo.On(func(*moo.Environment) moo.Option {
-		return fx.Provide(func(env *moo.Environment, logger log.Logger, constants InConstants) (DbDataResult, error) {
+		return fx.Provide(func(env *moo.Environment, logger log.Logger, closes *moo.Closes, constants InConstants) (DbDataResult, error) {
 			dbPrefix := env.Config.StringWithDefault(env.Namespace+api.CfgDbDataPrefix, env.Namespace+".data.")
 			dbConfig := readDbConfig(dbPrefix, env.Config)
 
@@ -172,6 +173,7 @@ func init() {
 
 			logger.Debug("data 数据库连接成功", log.String("drvName", drvData), log.String("URL", urlData))
 
+			closes.OnClosing(dbData)
 			return DbDataResult{
 				DrvData:            drvData,
 				ConnURL:            urlData,

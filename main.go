@@ -3,8 +3,11 @@ package moo
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"sync"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/log"
 	"go.uber.org/fx"
 )
@@ -44,6 +47,35 @@ var Invoke = fx.Invoke
 var Supply = fx.Supply
 var Populate = fx.Populate
 
+type Closes struct {
+	mu      sync.Mutex
+	closers []io.Closer
+}
+
+func (self *Closes) OnClosing(closers ...io.Closer) {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	self.closers = append(self.closers, closers...)
+}
+
+func (self *Closes) Close() error {
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	var errList []error
+	for _, closer := range self.closers {
+		if e := closer.Close(); e != nil {
+			errList = append(errList, e)
+		}
+	}
+	if len(errList) == 0 {
+		return nil
+	}
+	if len(errList) == 1 {
+		return errList[0]
+	}
+	return errors.ErrArray(errList)
+}
+
 type emptyOut struct {
 	Out
 
@@ -65,6 +97,7 @@ func On(cb func(*Environment) Option) {
 type App struct {
 	*fx.App
 	Environment *Environment
+	Closes
 
 	undo func()
 }
@@ -154,14 +187,20 @@ func NewApp(args *Arguments) (*App, error) {
 		}
 	}
 
+	app := &App{
+		Environment: env,
+		undo:        undo,
+	}
+
 	var opts = []fx.Option{
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),
 		fx.Supply(env.Config),
 		fx.Supply(env.Fs),
-		fx.Provide(func() log.Logger {
+		fx.Provide(func() log.Logger{
 			return env.Logger
 		}),
 		fx.Supply(env),
+		fx.Supply(&app.Closes),
 		fx.Provide(NewBus),
 	}
 	if len(args.Options) > 0 {
@@ -171,20 +210,18 @@ func NewApp(args *Arguments) (*App, error) {
 	for _, cb := range initFuncs {
 		opts = append(opts, cb(env))
 	}
-	app := fx.New(opts...)
-
-	return &App{
-		App:         app,
-		Environment: env,
-
-		undo: undo,
-	}, nil
+	app.App = fx.New(opts...)
+	return app, nil
 }
 
-func Run(args *Arguments) error {
+func Run(args *Arguments) (rerr error) {
 	app, err := NewApp(args)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		errList := app.Close()
+		rerr = errors.Join(rerr, errList)
+	}()
 	return app.Run()
 }

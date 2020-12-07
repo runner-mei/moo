@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/runner-mei/errors"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/api/authclient"
@@ -36,9 +37,6 @@ func (l *httpLifecycle) OnHTTPs(addr string) {
 type TestApp struct {
 	started bool
 	App     *moo.App
-	// oldInitFuncs []func() moo.Option
-	closers []io.Closer
-	// shutdowner fx.Shutdowner
 
 	Env         *moo.Environment
 	Args        moo.Arguments
@@ -112,16 +110,13 @@ func (a *TestApp) Close() error {
 	stopCtx, cancel := context.WithTimeout(context.Background(), a.App.StopTimeout())
 	defer cancel()
 
-	err := a.App.Stop(stopCtx)
-	for _, closer := range a.closers {
-		closer.Close()
-	}
-	// moo.Reset(a.oldInitFuncs)
-	return err
+	err1 := a.App.Stop(stopCtx)
+	err2 := a.App.Close()
+	return errors.Join(err1, err2)
 }
 
 func (a *TestApp) OnClosing(closer io.Closer) {
-	a.closers = append(a.closers, closer)
+	a.App.OnClosing(closer)
 }
 
 func (a *TestApp) IsStarted() bool {
