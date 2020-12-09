@@ -37,6 +37,7 @@ func (l *httpLifecycle) OnHTTPs(addr string) {
 type TestApp struct {
 	started bool
 	App     *moo.App
+	closers []io.Closer
 
 	Env         *moo.Environment
 	Args        moo.Arguments
@@ -116,6 +117,10 @@ func (a *TestApp) Close() error {
 }
 
 func (a *TestApp) OnClosing(closer io.Closer) {
+	if a.App == nil {
+		a.closers = append(a.closers, closer)
+		return
+	}
 	a.App.OnClosing(closer)
 }
 
@@ -165,6 +170,11 @@ func (a *TestApp) Start(t testing.TB) {
 		return
 	}
 	a.Env = a.App.Environment
+
+	for _, closer := range a.closers {
+		a.App.OnClosing(closer)
+	}
+	a.closers = nil
 
 	startCtx, cancel := context.WithTimeout(context.Background(), a.App.StartTimeout())
 	defer cancel()

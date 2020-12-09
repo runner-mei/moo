@@ -196,7 +196,7 @@ func NewApp(args *Arguments) (*App, error) {
 		fx.Logger(&LoggerPrinter{logger: logger.Named("fx").AddCallerSkip(3)}),
 		fx.Supply(env.Config),
 		fx.Supply(env.Fs),
-		fx.Provide(func() log.Logger{
+		fx.Provide(func() log.Logger {
 			return env.Logger
 		}),
 		fx.Supply(env),
