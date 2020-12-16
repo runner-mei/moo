@@ -21,6 +21,7 @@ import (
 	bgo "github.com/digitalcrab/browscap_go"
 	"github.com/mojocn/base64Captcha"
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/gettext"
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/moo/api"
@@ -101,21 +102,21 @@ func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseW
 	if e := errors.Unwrap(err); e != nil {
 		err = e
 	}
-	message := "用户名或密码不正确!"
+	message := gettext.Gettext("用户名或密码不正确!")
 
 	if err == services.ErrCaptchaKey || rawerr == services.ErrCaptchaKey {
-		message = "请输入验证码"
+		message = gettext.Gettext("请输入验证码")
 	} else if err == services.ErrCaptchaMissing || rawerr == services.ErrCaptchaMissing {
-		message = "验证码错误"
+		message = gettext.Gettext("验证码错误")
 	} else if err == services.ErrUserIPBlocked || rawerr == services.ErrUserIPBlocked {
-		message = "用户不能在该地址访问"
+		message = gettext.Gettext("用户不能在该地址访问")
 	} else if err == services.ErrUserLocked || rawerr == services.ErrUserLocked ||
 		err == services.ErrUserErrorCountExceedLimit || rawerr == services.ErrUserErrorCountExceedLimit {
-		message = "错误次数大多，帐号被锁定！"
+		message = gettext.Gettext("错误次数太多，帐号被锁定！")
 	} else if err == services.ErrPermissionDenied || rawerr == services.ErrPermissionDenied {
-		message = "用户没有访问权限"
+		message = gettext.Gettext("用户没有访问权限")
 	} else if err == services.ErrMutiUsers || rawerr == services.ErrMutiUsers {
-		message = "同名的用户有多个"
+		message = gettext.Gettext("同名的用户有多个")
 	} else if services.IsErrExternalServer(err) {
 		message = err.Error()
 	} else if _, ok := IsOnlinedError(err); ok {
@@ -123,7 +124,7 @@ func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseW
 		err = services.ErrUserAlreadyOnline
 	}
 	if message == "" {
-		message = "用户名或密码不正确!"
+		message = gettext.Gettext("用户名或密码不正确!")
 	}
 
 	data := map[string]interface{}{"global": srv.data,
