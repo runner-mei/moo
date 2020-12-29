@@ -2,9 +2,9 @@ package users
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
-	"database/sql"
 
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/as"
@@ -80,6 +80,9 @@ func (um *UserManager) Read(ctx *services.AuthContext) (interface{}, services.Us
 		}
 		return nil, nil, nil
 	}
+
+	// 因为用户名是大小写不敏感的，所以这里确保用户名和数据库中的一致
+	ctx.Request.Username = user.user.Name
 	return user.user.ID, user, err
 }
 

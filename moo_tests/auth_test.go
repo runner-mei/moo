@@ -80,7 +80,7 @@ func (srv *loginServer) assertOnlineCount(t *testing.T, username string, address
 	}
 }
 
-func (a *loginServer) assertResult(t *testing.T, url string, responseText string, headers ...map[string]string) {
+func (a *loginServer) assertResult(t *testing.T, url string, responseText string, username string, headers ...map[string]string) {
 	t.Helper()
 
 	client := a.client
@@ -118,6 +118,7 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 		return
 	}
 
+	responseText = responseText + "|-|" + username
 	if !strings.Contains(resposeAll, responseText) {
 		t.Error("excepted is", responseText)
 		t.Error("actual   is", resposeAll)
@@ -138,8 +139,15 @@ func startLoginServer(t *testing.T, opts map[string]interface{}) *loginServer {
 
 	srv.Args.Options = append(srv.Args.Options, moo.Invoke(func(env *moo.Environment, httpSrv *moo.HTTPServer) {
 		httpSrv.FastRoute(false, "home", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+			responseText := srv.responseText
+			params := req.URL.Query()
+			username := params.Get("username")
+			if username != "" {
+				responseText = responseText + "|-|" + username
+			}
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(srv.responseText))
+			w.Write([]byte(responseText))
 		}))
 	}))
 
@@ -161,11 +169,11 @@ func TestLoginError(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		t.Log(i)
 		hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-			"sso/login?_method=POST&username=adm&password=sss&service="), "用户名或密码不正确")
+			"sso/login?_method=POST&username=adm&password=sss&service="), "用户名或密码不正确", "adm")
 	}
 
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-		"sso/login?_method=POST&username=adm&password=123&service=/"), "错误次数大多")
+		"sso/login?_method=POST&username=adm&password=123&service=/"), "错误次数太多", "adm")
 }
 
 func TestLoginCaptcha(t *testing.T) {
@@ -173,10 +181,10 @@ func TestLoginCaptcha(t *testing.T) {
 	defer hwsrv.Close()
 
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-		"sso/login?_method=POST&username=adm&password=sss&service="), "用户名或密码不正确")
+		"sso/login?_method=POST&username=adm&password=sss&service="), "用户名或密码不正确", "adm")
 	for i := 0; i < 10; i++ {
 		hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-			"sso/login?_method=POST&username=adm&password=sss&service="), "验证码错误")
+			"sso/login?_method=POST&username=adm&password=sss&service="), "验证码错误", "adm")
 	}
 }
 
@@ -194,7 +202,7 @@ func TestLoginOnline(t *testing.T) {
 
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="+
-			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText)
+			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText, "adm")
 
 	hwsrv.assertOnlineCount(t, "adm", "127.0.0.1", 1)
 	hwsrv.assertOnlineCount(t, "adm", "", 1)
@@ -213,7 +221,7 @@ func TestLoginOnline(t *testing.T) {
 	t.Log("第二个用户登录失败， 因为已在线")
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="+
-			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), "上登录，最后一次活动时间为",
+			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), "上登录，最后一次活动时间为", "adm",
 		map[string]string{
 			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
@@ -232,7 +240,7 @@ func TestLoginOnline(t *testing.T) {
 	t.Log("第一个用户登出")
 	hwsrv.client = client1
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-		"sso/logout"), "请输入用户名")
+		"sso/logout"), "请输入用户名", "adm")
 	hwsrv.assertOnlineCount(t, "adm", "127.0.0.1", 0)
 
 	fmt.Println("第一个用户登出成功后, 第二个用户登录成功， 因为前一个已退出")
@@ -240,7 +248,7 @@ func TestLoginOnline(t *testing.T) {
 	hwsrv.client = client2
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="+
-			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText,
+			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText, "adm",
 		map[string]string{
 			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
@@ -252,7 +260,7 @@ func TestLoginOnline(t *testing.T) {
 	t.Log("第二个用户再次登录成功， 因为同一个用户同一地点是没有问题的")
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="+
-			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText,
+			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"), hwsrv.responseText, "adm",
 		map[string]string{
 			authn.HeaderXForwardedFor: "192.168.1.2",
 		})
@@ -268,7 +276,7 @@ func TestLoginOnline(t *testing.T) {
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 		"sso/login?_method=POST&username=adm&password=123&service="+
 			strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"/"),
-		"上登录，最后一次活动时间为",
+		"上登录，最后一次活动时间为", "adm",
 		map[string]string{
 			authn.HeaderXForwardedFor: "192.168.1.9",
 		})
@@ -283,7 +291,7 @@ func TestLoginBlockIP(t *testing.T) {
 	defer hwsrv.Close()
 
 	hwsrv.assertResult(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
-		"sso/login?_method=POST&username=adm&password=123&service="), "用户不能在该地址访问",
+		"sso/login?_method=POST&username=adm&password=123&service="), "用户不能在该地址访问", "adm",
 		map[string]string{
 			authn.HeaderXForwardedFor: "192.168.100.9",
 		})
@@ -294,7 +302,7 @@ func TestWelcome(t *testing.T) {
 	defer hwsrv.Close()
 
 	assert := func(t *testing.T, s string) {
-		hwsrv.assertResult(t, s, hwsrv.responseText)
+		hwsrv.assertResult(t, s, hwsrv.responseText, "adm")
 	}
 
 	t.Run("test 1", func(t *testing.T) {
@@ -328,6 +336,12 @@ func TestWelcome(t *testing.T) {
 	t.Run("test 6", func(t *testing.T) {
 		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
 			"sso/login?_method=POST&username=adm&password=123&service="+
+				strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"//"))
+	})
+
+	t.Run("test 7", func(t *testing.T) {
+		assert(t, urlutil.Join(hwsrv.URL, hwsrv.Env.DaemonUrlPath,
+			"sso/login?_method=POST&username=Adm&password=123&service="+
 				strings.TrimSuffix(hwsrv.Env.DaemonUrlPath, "/")+"//"))
 	})
 }

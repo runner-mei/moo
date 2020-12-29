@@ -40,7 +40,7 @@ type welcomeLocator struct {
 
 func (srv *welcomeLocator) withTodolistURL(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
 	if srv.todolistDisabled {
-		return defaultURL, nil
+		return srv.returnDefaultURL(ctx, userID, username, defaultURL)
 	}
 
 	var todolistCount int64
@@ -61,9 +61,26 @@ func (srv *welcomeLocator) withTodolistURL(ctx context.Context, userID interface
 		}
 		return srv.todolistURL + "?returnTo=" + url.QueryEscape(defaultURL), nil
 	}
-	return defaultURL, nil
+	return srv.returnDefaultURL(ctx, userID, username, defaultURL)
 }
 
+func (srv *welcomeLocator) returnDefaultURL(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
+	if s := strings.ToLower(defaultURL); strings.HasPrefix(s, "http://") ||
+		strings.HasPrefix(s, "https://") {
+
+		if strings.Contains(defaultURL, "?") {
+			if strings.HasSuffix(defaultURL, "&") || strings.HasSuffix(defaultURL, "?") {
+				defaultURL = defaultURL + "username=" + url.QueryEscape(username)
+			} else {
+				defaultURL = defaultURL + "&username=" + url.QueryEscape(username)
+			}
+		} else {
+			defaultURL = defaultURL + "?username=" + url.QueryEscape(username)
+		}
+	}
+
+	return defaultURL, nil
+}
 func (srv *welcomeLocator) Locate(ctx context.Context, userID interface{}, username, defaultURL string) (string, error) {
 	var value sql.NullString
 	var err error

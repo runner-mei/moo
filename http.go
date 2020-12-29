@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	bgo "github.com/digitalcrab/browscap_go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/httputil"
 	"github.com/runner-mei/goutils/netutil"
@@ -33,7 +33,6 @@ type InHttpTracing struct {
 
 	Tracer opentracing.Tracer `optional:"true"`
 }
-
 
 type HTTPLifecycle interface {
 	OnHTTP(addr string)
@@ -90,7 +89,6 @@ func init() {
 				authFuncs:  authFuncs.Funcs,
 			}
 			httpSrv.engine.Logger = httpSrv.logger
-
 
 			for _, file := range []string{
 				env.Fs.FromData("resources", "favicon.ico"),
@@ -371,7 +369,11 @@ func (srv *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					srv.homePrefix == r.URL.Path ||
 					srv.homePrefix == r.URL.Path+"/" ||
 					srv.homePage == r.URL.Path+"/" {
-					http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+					if r.URL.RawQuery == "" {
+						http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+					} else {
+						http.Redirect(w, r, srv.homePage+"?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+					}
 					return
 				}
 				http.DefaultServeMux.ServeHTTP(w, r)
@@ -381,7 +383,11 @@ func (srv *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		pa = strings.TrimPrefix(r.URL.Path, srv.trimPrefix)
 		if pa == "" || pa == "/" {
-			http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+			if r.URL.RawQuery == "" {
+				http.Redirect(w, r, srv.homePage, http.StatusTemporaryRedirect)
+			} else {
+				http.Redirect(w, r, srv.homePage+"?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+			}
 			return
 		}
 	}
