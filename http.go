@@ -318,15 +318,58 @@ func (srv *HTTPServer) Engine() *loong.Engine {
 	return srv.engine
 }
 
-func (srv *HTTPServer) AddFastHandler(name string, handler FastHandlerFunc) {
-	srv.fastRoutes[name] = handler
-}
-
-func (srv *HTTPServer) FastRoute(stripPrefix bool, name string, handler http.Handler) {
+func (srv *HTTPServer) IsExists(name string) bool {
 	name = strings.TrimSuffix(name, "/")
 	name = strings.TrimPrefix(name, "/")
 	if strings.ContainsRune(name, '/') {
 		panic(errors.New("'" + name + "' is invalid fast urlpath, it must not contains '/'"))
+	}
+	_, exists := srv.fastRoutes[name];
+	return exists
+}
+
+func (srv *HTTPServer) AddFastHandler(name string, handler FastHandlerFunc) {
+	srv.setFastHandler(name, true, handler)
+}
+func (srv *HTTPServer) UpdateFastHandler(name string, handler FastHandlerFunc) {
+	srv.setFastHandler(name, false, handler)
+}
+
+func (srv *HTTPServer) setFastHandler(name string, checkExists bool, handler FastHandlerFunc) {
+	name = strings.TrimSuffix(name, "/")
+	name = strings.TrimPrefix(name, "/")
+	if strings.ContainsRune(name, '/') {
+		panic(errors.New("'" + name + "' is invalid fast urlpath, it must not contains '/'"))
+	}
+
+	if checkExists {
+		if _, exists := srv.fastRoutes[name]; exists {
+			panic(errors.New("'" + name + "' is already exists"))
+		}
+	}
+
+	srv.fastRoutes[name] = handler
+}
+
+func (srv *HTTPServer) UpdateFastRoute(stripPrefix bool, name string, handler http.Handler) {
+	srv.setFastRoute(stripPrefix, name, false, handler)
+}
+
+func (srv *HTTPServer) FastRoute(stripPrefix bool, name string, handler http.Handler) {
+	srv.setFastRoute(stripPrefix, name, true, handler)
+}
+
+func (srv *HTTPServer) setFastRoute(stripPrefix bool, name string, checkExists bool, handler http.Handler) {
+	name = strings.TrimSuffix(name, "/")
+	name = strings.TrimPrefix(name, "/")
+	if strings.ContainsRune(name, '/') {
+		panic(errors.New("'" + name + "' is invalid fast urlpath, it must not contains '/'"))
+	}
+
+	if checkExists {
+		if _, exists := srv.fastRoutes[name];exists {
+			panic(errors.New("'" + name + "' is already exists"))
+		}
 	}
 
 	if stripPrefix {
