@@ -43,6 +43,7 @@ const (
 	CfgUserCasServer            = "users.cas.server"
 	CfgUserCasRoles             = "users.cas.roles"
 	CfgUserCasFieldPrefix       = "users.cas.fields."
+	CfgSysDisableUsers          = "users.disabled_list"
 
 	CfgUserLoginURL               = "users.login_url"
 	CfgUserRedirectMode           = "users.redirect_mode"

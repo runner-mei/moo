@@ -11,6 +11,9 @@ func newHTTPError(code int, msg string) error {
 }
 
 var (
+	// ErrUserDisabled 用户被禁用
+	ErrUserDisabled = newHTTPError(http.StatusUnauthorized, "user name is disabled")
+
 	// ErrUsernameEmpty 用户名为空
 	ErrUsernameEmpty = newHTTPError(http.StatusUnauthorized, "user name is empty")
 

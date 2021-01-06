@@ -104,7 +104,9 @@ func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseW
 	}
 	message := gettext.Gettext("用户名或密码不正确!")
 
-	if err == services.ErrCaptchaKey || rawerr == services.ErrCaptchaKey {
+	if err == services.ErrUserDisabled || rawerr == services.ErrUserDisabled {
+		message = gettext.Gettext("用户被禁用")
+	} else if err == services.ErrCaptchaKey || rawerr == services.ErrCaptchaKey {
 		message = gettext.Gettext("请输入验证码")
 	} else if err == services.ErrCaptchaMissing || rawerr == services.ErrCaptchaMissing {
 		message = gettext.Gettext("验证码错误")

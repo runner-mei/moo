@@ -46,8 +46,8 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 					}
 					return err
 				}
-				existfilenames = append(existfilenames, filename)
 			}
+			existfilenames = append(existfilenames, filename)
 
 			for k, v := range props {
 				allProps[k] = v

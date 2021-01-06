@@ -14,6 +14,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/runner-mei/errors"
+	"github.com/runner-mei/goutils/split"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
@@ -590,6 +591,11 @@ func NewLoginManager(env *moo.Environment, cfg *Config, userManager UserManager,
 	}
 	if len(authOpts) > 0 {
 		opts = append(opts, authOpts...)
+	}
+
+	usernames := split.Split(env.Config.StringWithDefault(api.CfgSysDisableUsers, ""), ",", true, true)
+	if len(usernames) > 0 {
+		opts = append(opts, services.DisableUsers(usernames))
 	}
 	if !env.Config.BoolWithDefault(api.CfgUserCaptchaDisabled, false) {
 		opts = append(opts, services.CaptchaCheck(nil, counter))
