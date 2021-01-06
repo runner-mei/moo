@@ -144,7 +144,7 @@ func (user *User) Validate(validation *validation.Validation) bool {
 }
 
 func (user *User) IsDisabled() bool {
-	return user.Disabled // || user.Type == ItsmReporter
+	return user.Disabled && user.Name != api.UserAdmin // || user.Type == ItsmReporter
 }
 
 func (user *User) IsBuiltin() bool {
