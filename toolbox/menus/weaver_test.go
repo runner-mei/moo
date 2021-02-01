@@ -123,7 +123,12 @@ var tests = []struct {
 		layout: NewSimple(
 			logtest.New(),
 			Copy(menuTestLayout),
-			func(Menu) bool {
+			func(menu Menu) bool {
+				if menu.UID == "7" ||
+					menu.UID == "8_2" ||
+					menu.UID == "9_1" {
+					return false
+				}
 				return true
 			}),
 		steps: test2,
