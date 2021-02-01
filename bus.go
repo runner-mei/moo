@@ -8,6 +8,10 @@ import (
 	"sync/atomic"
 )
 
+type EventEmitter interface {
+	On(ctx context.Context, cb func(ctx context.Context, topicName string, value interface{})) error
+}
+
 // BusHandler is a receiver for event reference with the given regex pattern
 type BusHandler struct {
 	Handle  func(ctx context.Context, topicName string, value interface{}) // handler func to process events

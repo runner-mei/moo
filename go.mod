@@ -15,6 +15,7 @@ require (
 	github.com/getsentry/raven-go v0.2.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/google/go-cmp v0.4.0
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1 // indirect
 	github.com/jaypipes/ghw v0.5.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
@@ -33,7 +34,7 @@ require (
 	github.com/runner-mei/GoBatis v1.1.13
 	github.com/runner-mei/errors v0.0.0-20201207000105-8ab5f961a154
 	github.com/runner-mei/goutils v0.0.0-20201216023253-40daa8196774
-	github.com/runner-mei/log v1.0.3
+	github.com/runner-mei/log v1.0.5
 	github.com/runner-mei/loong v1.1.5
 	github.com/runner-mei/resty v0.0.0-20201027090334-0e59ca0b4638
 	github.com/runner-mei/validation v0.0.0-20200908120153-bc4aa6175f56
