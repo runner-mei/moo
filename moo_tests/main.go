@@ -235,3 +235,24 @@ func NewTestApp(t testing.TB) *TestApp {
 		},
 	}
 }
+
+func NewEnvironment(t testing.TB, args *moo.Arguments) *moo.Environment{
+	if args == nil {
+		args = &moo.Arguments{
+			CommandArgs: []string{
+				"moo.runMode=dev",
+				"users.version=2",
+				api.CfgOperationLoggerVersion + "=2",
+				"users.redirect_mode=code",
+			},
+		}
+	}
+
+	app, err := moo.NewApp(args)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+		return nil
+	}
+	return app.Environment
+}

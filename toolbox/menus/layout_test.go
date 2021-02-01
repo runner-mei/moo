@@ -1,7 +1,6 @@
 package menus
 
 import (
-	"cn/com/hengwei/pkg/goutils/toolbox"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -9,7 +8,7 @@ import (
 )
 
 var (
-	menuTestLayout = []toolbox.Menu{
+	menuTestLayout = []Menu{
 		{
 			UID: "1",
 			URL: "#",
@@ -21,7 +20,7 @@ var (
 		{
 			UID: "3",
 			URL: "#",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID: "3_1",
 					URL: "#",
@@ -40,7 +39,7 @@ var (
 		{
 			UID:   "5",
 			Title: "m5",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID: "5_1",
 				},
@@ -49,7 +48,7 @@ var (
 		{
 			UID:   "6",
 			Title: "m6",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID: "6_2",
 				},
@@ -62,7 +61,7 @@ var (
 		{ // 用户在创建时 子节点 被过滤
 			UID:   "8",
 			Title: "m8",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID: "8_2",
 				},
@@ -74,7 +73,7 @@ var (
 		},
 	}
 
-	menuTestResults = []toolbox.Menu{
+	menuTestResults = []Menu{
 		{
 			UID:   "1",
 			Title: "m1",
@@ -89,7 +88,7 @@ var (
 			UID:   "3",
 			Title: "m3",
 			URL:   "#",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "3_1",
 					Title: "m3_1",
@@ -101,7 +100,7 @@ var (
 			UID:   "4",
 			Title: "m4",
 			URL:   "#",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "4_1",
 					Title: "m4_1",
@@ -127,7 +126,7 @@ var (
 		{
 			UID:   "5",
 			Title: "m5",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "5_1",
 					Title: "m5_1",
@@ -138,7 +137,7 @@ var (
 		{
 			UID:   "6",
 			Title: "m6",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "6_2",
 					Title: "m6_2",
@@ -155,12 +154,12 @@ var (
 			UID:      "8",
 			Title:    "m8",
 			URL:      "/m8",
-			Children: []toolbox.Menu{},
+			Children: []Menu{},
 		},
 		{
 			UID:   "9",
 			Title: "m9",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "9_2",
 					Title: "m9_2",
@@ -170,7 +169,7 @@ var (
 		},
 	}
 
-	testapp1 = []toolbox.Menu{
+	testapp1 = []Menu{
 		{
 			UID:   "1",
 			Title: "m1",
@@ -180,7 +179,7 @@ var (
 			UID:   "3",
 			Title: "m3",
 			URL:   "#",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "3_1",
 					Title: "m3_1",
@@ -189,7 +188,7 @@ var (
 			},
 		},
 	}
-	testapp2 = []toolbox.Menu{
+	testapp2 = []Menu{
 		{
 			UID:   "2",
 			Title: "m2",
@@ -199,7 +198,7 @@ var (
 			UID:   "4",
 			Title: "m4",
 			URL:   "#",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "4_1",
 					Title: "m4_1",
@@ -218,7 +217,7 @@ var (
 			},
 		},
 	}
-	testapp3 = []toolbox.Menu{
+	testapp3 = []Menu{
 		{
 			UID:   "5_1",
 			Title: "m5_1",
@@ -227,7 +226,7 @@ var (
 		{
 			UID:   "6",
 			Title: "m6",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "6_1",
 					Title: "m6_1",
@@ -242,7 +241,7 @@ var (
 		},
 	}
 
-	testapp4 = []toolbox.Menu{
+	testapp4 = []Menu{
 		{
 			UID:   "7",
 			Title: "m7",
@@ -261,7 +260,7 @@ var (
 		{
 			UID:   "9",
 			Title: "m9",
-			Children: []toolbox.Menu{
+			Children: []Menu{
 				{
 					UID:   "9_1",
 					Title: "m9_1",
@@ -280,8 +279,8 @@ var (
 func TestLayoutSimple(t *testing.T) {
 	layout := NewSimple(
 		logtest.NewLogger(t),
-		toolbox.CopyMenuArray(menuTestLayout),
-		func(menu toolbox.Menu) bool {
+		Copy(menuTestLayout),
+		func(menu Menu) bool {
 			if menu.UID == "7" ||
 				menu.UID == "8_2" ||
 				menu.UID == "9_1" {
@@ -290,12 +289,12 @@ func TestLayoutSimple(t *testing.T) {
 			return true
 		})
 
-	app1 := toolbox.CopyMenuArray(testapp1)
-	app2 := toolbox.CopyMenuArray(testapp2)
-	app3 := toolbox.CopyMenuArray(testapp3)
-	app4 := toolbox.CopyMenuArray(testapp4)
+	app1 := Copy(testapp1)
+	app2 := Copy(testapp2)
+	app3 := Copy(testapp3)
+	app4 := Copy(testapp4)
 
-	apps := map[string][]toolbox.Menu{
+	apps := map[string][]Menu{
 		"app1": app1,
 		"app2": app2,
 		"app3": app3,
@@ -308,14 +307,14 @@ func TestLayoutSimple(t *testing.T) {
 		return
 	}
 
-	if !toolbox.IsSameMenuArray(results, menuTestResults) {
+	if !IsSameMenuArray(results, menuTestResults) {
 		msg := cmp.Diff(menuTestResults, results)
 		t.Error(msg)
 	}
 	t.Log("修改 m4 下的子菜单，确保它不会影响生成后的结果")
 	app2[1].Children[1].URL = "/test"
 
-	if !toolbox.IsSameMenuArray(results, menuTestResults) {
+	if !IsSameMenuArray(results, menuTestResults) {
 		msg := cmp.Diff(menuTestResults, results)
 		t.Error(msg)
 
