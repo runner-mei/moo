@@ -1,6 +1,8 @@
 package menus
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/runner-mei/log"
@@ -16,6 +18,10 @@ func NewSimple(logger log.Logger, layout []Menu,
 	layout = FilterBy(layout, true, func(menu *Menu) bool {
 		return filter(*menu)
 	})
+
+	bs, _ := json.MarshalIndent(layout, "", "  ")
+	fmt.Println(string(bs))
+
 	return &simpleLayout{
 		logger: logger,
 		layout: layout,

@@ -49,7 +49,7 @@ var (
 			UID:   "6",
 			Title: "m6",
 			Children: []Menu{
-				{
+				{ //测试子节点的排序，
 					UID: "6_2",
 				},
 			},

@@ -1,6 +1,7 @@
 package menus
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -12,6 +13,13 @@ import (
 
 func TestMenuSimple(t *testing.T) {
 	env := moo_tests.NewEnvironment(t, nil)
+
+	filename := env.Fs.FromTMP("app_menus.json")
+	if e := os.Remove(filename); e != nil && !os.IsNotExist(e) {
+		t.Error(e)
+		return
+	}
+
 	sendEvent := func(descr string) {}
 
 	for tidx, test := range tests {
@@ -50,8 +58,11 @@ func TestMenuSimple(t *testing.T) {
 					msg := cmp.Diff(step.results(), results)
 					t.Error(msg)
 
-					// bs, _ := json.MarshalIndent(weaver.Stats(), "", "  ")
-					// t.Log(string(bs))
+					bs, _ := json.MarshalIndent(results, "", "  ")
+					t.Log(string(bs))
+
+					bs, _ = json.MarshalIndent(step.results(), "", "  ")
+					t.Log(string(bs))
 				}
 			})
 		}
@@ -77,6 +88,10 @@ var test2 = []testStep{
 			*list[0] = testapp1[0]
 			list = searchMenuListInTree(results, "3", nil)
 			*list[0] = testapp1[1]
+
+			results = RemoveMenuInTree(results, "7")
+			results = RemoveMenuInTree(results, "8_2")
+			results = RemoveMenuInTree(results, "9_1")
 			return results
 		},
 	},
@@ -100,6 +115,10 @@ var test2 = []testStep{
 			for _, to := range list {
 				*to = testapp2[1].Children[0]
 			}
+
+			results = RemoveMenuInTree(results, "7")
+			results = RemoveMenuInTree(results, "8_2")
+			results = RemoveMenuInTree(results, "9_1")
 			return results
 		},
 	},
@@ -107,6 +126,42 @@ var test2 = []testStep{
 		name:  "app3",
 		app:   "app3",
 		value: testapp3,
+		results: func() []Menu {
+			results := Copy(menuTestLayout)
+			list := searchMenuListInTree(results, "1", nil)
+			*list[0] = testapp1[0]
+			list = searchMenuListInTree(results, "3", nil)
+			*list[0] = testapp1[1]
+
+			list = searchMenuListInTree(results, "2", nil)
+			*list[0] = testapp2[0]
+			list = searchMenuListInTree(results, "4", nil)
+			*list[0] = testapp2[1]
+
+			list = searchMenuListInTree(results, "4_1", nil)
+			for _, to := range list {
+				*to = testapp2[1].Children[0]
+			}
+
+			list = searchMenuListInTree(results, "5_1", nil)
+			*list[0] = testapp3[0]
+			list = searchMenuListInTree(results, "6", nil)
+			*list[0] = testapp3[1]
+			list[0].Children = make([]Menu, len(testapp3[1].Children))
+			list[0].Children[0] = testapp3[1].Children[1]
+			list[0].Children[1] = testapp3[1].Children[0]
+
+			results = RemoveMenuInTree(results, "7")
+			results = RemoveMenuInTree(results, "8_2")
+			results = RemoveMenuInTree(results, "9_1")
+
+			return results
+		},
+	},
+	{
+		name:  "app4",
+		app:   "app4",
+		value: testapp4,
 		results: func() []Menu {
 			return Copy(menuTestResults)
 		},
