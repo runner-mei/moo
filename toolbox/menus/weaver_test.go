@@ -1,7 +1,6 @@
 package menus
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
 
@@ -58,11 +57,11 @@ func TestMenuSimple(t *testing.T) {
 					msg := cmp.Diff(step.results(), results)
 					t.Error(msg)
 
-					bs, _ := json.MarshalIndent(results, "", "  ")
-					t.Log(string(bs))
+					// bs, _ := json.MarshalIndent(results, "", "  ")
+					// t.Log(string(bs))
 
-					bs, _ = json.MarshalIndent(step.results(), "", "  ")
-					t.Log(string(bs))
+					// bs, _ = json.MarshalIndent(step.results(), "", "  ")
+					// t.Log(string(bs))
 				}
 			})
 		}
