@@ -35,7 +35,7 @@ type ConvertFunc func(context.Context, map[string][]Menu) []Menu
 // appName = env.GetServiceConfig(appID)
 
 // Connect 连接到 weaver 服务
-func Connect(logger log.Logger, env *moo.Environment, prx *resty.Proxy, appName, mode, urlPath string, cb Callback, convert ConvertFunc) Client {
+func Connect(logger log.Logger, env *moo.Environment, prx *resty.Proxy, appName, mode, urlPath string, evtEmitter moo.EventEmitter, cb Callback, convert ConvertFunc) Client {
 	switch mode {
 	case "apart":
 		apart := &apartClient{
@@ -49,7 +49,9 @@ func Connect(logger log.Logger, env *moo.Environment, prx *resty.Proxy, appName,
 			c:         make(chan struct{}),
 		}
 		go apart.run()
-		// go apart.runSub()
+		if evtEmitter != nil {
+			go apart.RunSub(evtEmitter)
+		}
 		return apart
 	default:
 		return &standaloneClient{env: env, readLocal: cb}
@@ -139,9 +141,9 @@ func (srv *apartClient) Read(ctx context.Context) ([]Menu, error) {
 func (srv *apartClient) read(ctx context.Context) (map[string][]Menu, error) {
 	var value map[string][]Menu
 	req := srv.prx.New(srv.urlPath)
-	if srv.appName != "" {
-		req = req.SetParam("app", srv.appName)
-	}
+	// if srv.appName != "" {
+	// 	req = req.SetParam("app", srv.appName)
+	// }
 	err := req.
 		Result(&value).
 		GET(ctx)
