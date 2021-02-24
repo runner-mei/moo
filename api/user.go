@@ -104,9 +104,10 @@ const (
 	CfgSamplingNatsQueueGroup = "nats.sampling.queue_group"
 	CfgSamplingNatsSubThreads = "nats.sampling.sub_threads"
 
-	CfgSystemMenuVersion    = "system.menu.version"
-	CfgSystemMenuAllAppName = "system.menu.all_app_name"
-	CfgSystemMenuProducts   = "system.menu.products"
+	CfgSystemMenuVersion          = "system.menu.version"
+	CfgSystemMenuAllAppName       = "system.menu.all_app_name"
+	CfgSystemMenuProducts         = "system.menu.products"
+	CfgSystemMenuRewriteAppCookie = "system.menu.rewrite_app_cookie"
 
 	CookieAppName = "MOO_APP_NAME"
 )
