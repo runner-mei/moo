@@ -188,7 +188,10 @@ func (srv *apartClient) RunSub(listener moo.EventEmitter) {
 	errCount := 0
 	for atomic.LoadInt32(&srv.closed) == 0 {
 		c, cancel := context.WithCancel(context.Background())
-		srv.cw.Set(syncx.ToCloser(cancel))
+		srv.cw.Set(syncx.ToCloser(syncx.CloseFunc(func() error {
+			cancel()
+			return nil
+		})))
 
 		err := listener.On(c, func(ctx context.Context, _ string, _ interface{}) {
 			value, err := srv.read(ctx)
