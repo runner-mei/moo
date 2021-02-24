@@ -20,7 +20,7 @@ import (
 type requestAppNameKey struct{}
 
 func (*requestAppNameKey) String() string {
-	return "web_ext_request"
+	return "moo_request_app_name"
 }
 
 var ctxrequestAppNameKey = &requestAppNameKey{}
