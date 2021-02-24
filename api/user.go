@@ -107,6 +107,8 @@ const (
 	CfgSystemMenuVersion    = "system.menu.version"
 	CfgSystemMenuAllAppName = "system.menu.all_app_name"
 	CfgSystemMenuProducts   = "system.menu.products"
+
+	CookieAppName = "MOO_APP_NAME"
 )
 
 // 常用的错误
