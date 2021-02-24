@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/runner-mei/log"
@@ -176,6 +177,23 @@ func (weaver *menuWeaver) GenerateAll() (map[string][]Menu, error) {
 		menuList, err := cfg.Generate(weaver.byApplications)
 		if err != nil {
 			weaver.Logger.Error("generate", log.String("layout", key), log.Error(err))
+			return nil, err
+		}
+
+		err = ForEach(menuList, func(menu *Menu) error {
+			if strings.Contains(menu.URL, "app") {
+				return nil
+			}
+
+			if strings.Contains(menu.URL, "?") {
+				menu.URL = menu.URL + "&app=" + key
+			} else {
+				menu.URL = menu.URL + "?app=" + key
+			}
+			return nil
+		})
+		if err != nil {
+			weaver.Logger.Error("generate after", log.String("layout", key), log.Error(err))
 			return nil, err
 		}
 		weaver.menuListByLayout[key] = menuList

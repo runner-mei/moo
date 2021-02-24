@@ -141,9 +141,6 @@ func (srv *apartClient) Read(ctx context.Context) ([]Menu, error) {
 func (srv *apartClient) read(ctx context.Context) (map[string][]Menu, error) {
 	var value map[string][]Menu
 	req := srv.prx.New(srv.urlPath)
-	// if srv.appName != "" {
-	// 	req = req.SetParam("app", srv.appName)
-	// }
 	err := req.
 		Result(&value).
 		GET(ctx)
@@ -186,52 +183,6 @@ func (srv *apartClient) Flush() error {
 	}
 	return nil
 }
-
-// func (srv *apartClient) runSub() {
-// 	errCount := 0
-// 	hubURL := srv.wsrv.URLFor(srv.env.DaemonUrlPath, "/mq/")
-// 	builder := hub.Connect(hubURL)
-
-// 	for atomic.LoadInt32(&srv.closed) == 0 {
-// 		topic, err := builder.SubscribeTopic(srv.queueName)
-// 		if err != nil {
-// 			errCount++
-// 			if errCount%50 < 3 {
-// 				srv.logger.Error("subscribe fail", log.Error(err))
-// 			}
-
-// 			select {
-// 			case v, ok := <-srv.c:
-// 				if ok {
-// 					srv.c <- v
-// 				}
-// 			case <-time.After(1 * time.Second):
-// 			}
-// 			continue
-// 		}
-// 		srv.cw.Set(topic)
-
-// 		errCount = 0
-// 		err = topic.Run(func(sub *hub.Subscription, msg hub.Message) {
-// 			value, err := srv.read(context.Background())
-// 			srv.save(value, err)
-// 		})
-// 		if err != nil {
-// 			srv.logger.Error("subscribe fail", log.Error(err))
-// 		}
-// 		srv.cw.Set(nil)
-
-// 		func() {
-// 			defer recover()
-
-// 			select {
-// 			case srv.c <- struct{}{}:
-// 			default:
-// 				srv.logger.Error("failed to send flush event")
-// 			}
-// 		}()
-// 	}
-// }
 
 func (srv *apartClient) RunSub(listener moo.EventEmitter) {
 	errCount := 0

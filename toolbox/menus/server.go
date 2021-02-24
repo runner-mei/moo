@@ -125,7 +125,7 @@ func (srv *Server) read(w http.ResponseWriter, r *http.Request) {
 			srv.logger.Error("stats fail", log.String("app", app), log.Error(err))
 			http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		}
-	case "", "all":
+	case "all":
 		results, err := srv.weaver.GenerateAll()
 		if err != nil {
 			srv.logger.Error("query all fail", log.String("app", app), log.Error(err))
@@ -144,6 +144,10 @@ func (srv *Server) read(w http.ResponseWriter, r *http.Request) {
 			srv.logger.Info("query all is ok", log.String("app", app))
 		}
 	default:
+		if app == "" {
+			app = "default"
+		}
+
 		results, err := srv.weaver.Generate(app)
 		if err != nil {
 			srv.logger.Error("stats fail", log.String("app", app), log.Error(err))
