@@ -17,6 +17,30 @@ import (
 	"github.com/runner-mei/resty"
 )
 
+type requestAppNameKey struct{}
+
+func (*requestAppNameKey) String() string {
+	return "web_ext_request"
+}
+
+var ctxrequestAppNameKey = &requestAppNameKey{}
+
+func ContextWithAppName(ctx context.Context, appName string) context.Context {
+	return context.WithValue(ctx, ctxrequestAppNameKey, &appName)
+}
+
+func AppNameWithContext(ctx context.Context) *string {
+	o := ctx.Value(ctxrequestAppNameKey)
+	if o == nil {
+		return nil
+	}
+	r, ok := o.(*string)
+	if !ok {
+		return nil
+	}
+	return r
+}
+
 // Client 菜单服务
 type Client interface {
 	io.Closer
