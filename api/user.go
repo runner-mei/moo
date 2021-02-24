@@ -104,7 +104,9 @@ const (
 	CfgSamplingNatsQueueGroup = "nats.sampling.queue_group"
 	CfgSamplingNatsSubThreads = "nats.sampling.sub_threads"
 
-	CfgSystemMenuVersion = "sys.menu.version"
+	CfgSystemMenuVersion    = "system.menu.version"
+	CfgSystemMenuAllAppName = "system.menu.all_app_name"
+	CfgSystemMenuProducts   = "system.menu.products"
 )
 
 // 常用的错误
