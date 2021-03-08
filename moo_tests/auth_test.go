@@ -118,9 +118,8 @@ func (a *loginServer) assertResult(t *testing.T, url string, responseText string
 		return
 	}
 
-	responseText = responseText + "|-|" + username
 	if !strings.Contains(resposeAll, responseText) {
-		t.Error("excepted is", responseText)
+		t.Error("excepted is", responseText+"|-|"+username)
 		t.Error("actual   is", resposeAll)
 	}
 }

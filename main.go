@@ -30,8 +30,9 @@ type Arguments struct {
 	Customs     []string
 	CommandArgs []string
 
-	PreRun  func(*Environment) error
-	Options []Option
+	PreInit  func(*Environment) error
+	PostInit func(*Environment) error
+	Options  []Option
 }
 
 type Option = fx.Option
@@ -180,8 +181,8 @@ func NewApp(args *Arguments) (*App, error) {
 
 	env := NewEnvironment(namespace, config, fs, logger)
 
-	if args.PreRun != nil {
-		err := args.PreRun(env)
+	if args.PreInit != nil {
+		err := args.PreInit(env)
 		if err != nil {
 			return nil, err
 		}
@@ -210,6 +211,14 @@ func NewApp(args *Arguments) (*App, error) {
 	for _, cb := range initFuncs {
 		opts = append(opts, cb(env))
 	}
+
+	if args.PostInit != nil {
+		err := args.PostInit(env)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	app.App = fx.New(opts...)
 	return app, nil
 }
