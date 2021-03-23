@@ -524,6 +524,9 @@ type UserQueryer interface {
 	// @record_type UserAndRole
 	GetUserAndRoleList(ctx context.Context) (func(*UserAndRole) (bool, error), io.Closer)
 
+	// @record_type User
+	GetUsernamesByUserIDs(ctx context.Context, idList []int64) (map[int64]string, error)
+
 	// @default SELECT id, name FROM <tablename type="User" as="users" /> <where>
 	//  <if test="!isJobPostion.Valid">
 	//       <if test="groupID.Valid">EXISTS(SELECT * FROM <tablename type="UserAndUsergroup" as="u2g" /> WHERE u2g.user_id = users.id AND u2g.group_id = #{groupID})</if>

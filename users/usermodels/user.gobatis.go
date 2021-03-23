@@ -912,6 +912,11 @@ func init() {
 				ctx.Statements["UserQueryer.GetUserAndRoleList"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetUsernamesByUserIDs
+			if _, exists := ctx.Statements["UserQueryer.GetUsernamesByUserIDs"]; !exists {
+				return errors.New("sql 'UserQueryer.GetUsernamesByUserIDs' error : statement not found - Generate SQL fail: sql is undefined")
+			}
+		}
 		{ //// UserQueryer.GetUsernames
 			if _, exists := ctx.Statements["UserQueryer.GetUsernames"]; !exists {
 				var sb strings.Builder
@@ -1377,6 +1382,23 @@ func (impl *UserQueryerImpl) GetUserAndRoleList(ctx context.Context) (func(*User
 		}
 		return true, results.Scan(value)
 	}, results
+}
+
+func (impl *UserQueryerImpl) GetUsernamesByUserIDs(ctx context.Context, idList []int64) (map[int64]string, error) {
+	var instances = map[int64]string{}
+
+	results := impl.session.Select(ctx, "UserQueryer.GetUsernamesByUserIDs",
+		[]string{
+			"idList",
+		},
+		[]interface{}{
+			idList,
+		})
+	err := results.ScanBasicMap(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
 }
 
 func (impl *UserQueryerImpl) GetUsernames(ctx context.Context, groupID sql.NullInt64, roleID sql.NullInt64, isJobPostion sql.NullBool) (map[int64]string, error) {
