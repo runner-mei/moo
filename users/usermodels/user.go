@@ -524,7 +524,8 @@ type UserQueryer interface {
 	// @record_type UserAndRole
 	GetUserAndRoleList(ctx context.Context) (func(*UserAndRole) (bool, error), io.Closer)
 
-	// @record_type User
+	// @default SELECT id, name FROM <tablename type="User" />
+	//       <foreach collection="idList" separator="," open="WHERE id in (" close=")">#{item}</foreach>
 	GetUsernamesByUserIDs(ctx context.Context, idList []int64) (map[int64]string, error)
 
 	// @default SELECT id, name FROM <tablename type="User" as="users" /> <where>

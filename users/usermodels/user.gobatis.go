@@ -914,7 +914,24 @@ func init() {
 		}
 		{ //// UserQueryer.GetUsernamesByUserIDs
 			if _, exists := ctx.Statements["UserQueryer.GetUsernamesByUserIDs"]; !exists {
-				return errors.New("sql 'UserQueryer.GetUsernamesByUserIDs' error : statement not found - Generate SQL fail: sql is undefined")
+				var sb strings.Builder
+				sb.WriteString("SELECT id, name FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("\r\n       <foreach collection=\"idList\" separator=\",\" open=\"WHERE id in (\" close=\")\">#{item}</foreach>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetUsernamesByUserIDs",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetUsernamesByUserIDs"] = stmt
 			}
 		}
 		{ //// UserQueryer.GetUsernames
