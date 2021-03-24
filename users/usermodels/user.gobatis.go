@@ -934,6 +934,28 @@ func init() {
 				ctx.Statements["UserQueryer.GetUsernamesByUserIDs"] = stmt
 			}
 		}
+		{ //// UserQueryer.GetNicknamesByUserIDs
+			if _, exists := ctx.Statements["UserQueryer.GetNicknamesByUserIDs"]; !exists {
+				var sb strings.Builder
+				sb.WriteString("SELECT id, nickname FROM ")
+				if tablename, err := gobatis.ReadTableName(ctx.Mapper, reflect.TypeOf(&User{})); err != nil {
+					return err
+				} else {
+					sb.WriteString(tablename)
+				}
+				sb.WriteString("\r\n       <foreach collection=\"idList\" separator=\",\" open=\"WHERE id in (\" close=\")\">#{item}</foreach>")
+				sqlStr := sb.String()
+
+				stmt, err := gobatis.NewMapppedStatement(ctx, "UserQueryer.GetNicknamesByUserIDs",
+					gobatis.StatementTypeSelect,
+					gobatis.ResultStruct,
+					sqlStr)
+				if err != nil {
+					return err
+				}
+				ctx.Statements["UserQueryer.GetNicknamesByUserIDs"] = stmt
+			}
+		}
 		{ //// UserQueryer.GetUsernames
 			if _, exists := ctx.Statements["UserQueryer.GetUsernames"]; !exists {
 				var sb strings.Builder
@@ -1405,6 +1427,23 @@ func (impl *UserQueryerImpl) GetUsernamesByUserIDs(ctx context.Context, idList [
 	var instances = map[int64]string{}
 
 	results := impl.session.Select(ctx, "UserQueryer.GetUsernamesByUserIDs",
+		[]string{
+			"idList",
+		},
+		[]interface{}{
+			idList,
+		})
+	err := results.ScanBasicMap(&instances)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}
+
+func (impl *UserQueryerImpl) GetNicknamesByUserIDs(ctx context.Context, idList []int64) (map[int64]string, error) {
+	var instances = map[int64]string{}
+
+	results := impl.session.Select(ctx, "UserQueryer.GetNicknamesByUserIDs",
 		[]string{
 			"idList",
 		},
