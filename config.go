@@ -23,28 +23,34 @@ func ReadConfigs(fs FileSystem, prefix string, args *Arguments, params map[strin
 	read := func(isCustom bool, files []string) error {
 		for i := range files {
 			var filename = files[i]
-			props, err := cfg.ReadProperties(filename)
-			if err != nil {
-				if !os.IsNotExist(err) {
-					return err
-				}
-				if fs == nil && filepath.IsAbs(filename) {
+
+			var props map[string]string
+			var err error
+			if filepath.IsAbs(filename) {
+
+				props, err = cfg.ReadProperties(filename)
+				if err != nil {
+					if !os.IsNotExist(err) {
+						return err
+					}
+
+					nonexistfilenames = append(nonexistfilenames, filename)
 					continue
 				}
 
+			} else {
 				if isCustom {
 					filename = fs.FromDataConfig(filename)
 				} else {
 					filename = fs.FromConfig(filename)
 				}
-
 				props, err = cfg.ReadProperties(filename)
 				if err != nil {
-					if os.IsNotExist(err) {
-						nonexistfilenames = append(nonexistfilenames, filename)
-						continue
+					if !os.IsNotExist(err) {
+						return err
 					}
-					return err
+					nonexistfilenames = append(nonexistfilenames, filename)
+					continue
 				}
 			}
 			existfilenames = append(existfilenames, filename)
