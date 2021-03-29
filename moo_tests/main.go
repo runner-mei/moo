@@ -170,6 +170,7 @@ func (a *TestApp) Start(t testing.TB) {
 		return
 	}
 	a.Env = a.App.Environment
+	a.Env.RunMode = moo.TestRunMode
 
 	for _, closer := range a.closers {
 		a.App.OnClosing(closer)

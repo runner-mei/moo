@@ -9,6 +9,9 @@ import (
 	"github.com/runner-mei/log"
 )
 
+const DevRunMode = "dev"
+const TestRunMode = "test"
+
 type Environment struct {
 	Logger               log.Logger
 	HeaderTitleText      string
@@ -20,6 +23,7 @@ type Environment struct {
 	Name      string
 	Config    *cfg.Config
 	Fs        FileSystem
+	RunMode      string
 
 	DaemonUrlPath string
 }
