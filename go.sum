@@ -256,6 +256,8 @@ github.com/runner-mei/GoBatis v1.1.12 h1:NQpx85pkVAs/iXK3eqkAVxf29cu73T49e0QoBMo
 github.com/runner-mei/GoBatis v1.1.12/go.mod h1:V6YE0l+mPOWsGjbV/fqfK3RkX+3UbzWRwIQ2MRMzEKQ=
 github.com/runner-mei/GoBatis v1.1.13 h1:rzVikiYKnYWBKpbjnUZ/pPCQJaXiQ3RAXBo4vgd0bWQ=
 github.com/runner-mei/GoBatis v1.1.13/go.mod h1:tw88IPrMLLrmgd8aXrxf3OddiJ8DpGDLcdS3UDeJc6Q=
+github.com/runner-mei/GoBatis v1.1.15 h1:MydXffMhAFDTFBm6O3BQXEWXj0H8bY4g0D13feBatPM=
+github.com/runner-mei/GoBatis v1.1.15/go.mod h1:tw88IPrMLLrmgd8aXrxf3OddiJ8DpGDLcdS3UDeJc6Q=
 github.com/runner-mei/check v0.0.0-20200624083308-d6cac10bd55d/go.mod h1:JotwTLciDKnIWZNoCXF94vqfLQaLDHOE1L5a9LZzhbc=
 github.com/runner-mei/check v0.0.0-20200902111954-a7ff09abcbc9/go.mod h1:JotwTLciDKnIWZNoCXF94vqfLQaLDHOE1L5a9LZzhbc=
 github.com/runner-mei/errors v0.0.0-20191030090348-38af1672ff66 h1:RdPUaLzJE68Q0S1Sx1X87XajtK4ZPzTb9w6WOdEDYUw=
@@ -330,6 +332,8 @@ github.com/runner-mei/loong v1.0.8 h1:5wXUK9D+ZiQ8+zbtGCWKA8osNrSvDHn8KQwDY2O6Bd
 github.com/runner-mei/loong v1.0.8/go.mod h1:nuZTSkb2Y/BC8xsGVDIo0G+fQQFune/J+LBK9WlY2Sk=
 github.com/runner-mei/loong v1.1.5 h1:mvQc13s/BkBJtNqJGhvAorUZJQIm+GlwK5/aZ5U0/wM=
 github.com/runner-mei/loong v1.1.5/go.mod h1:nuZTSkb2Y/BC8xsGVDIo0G+fQQFune/J+LBK9WlY2Sk=
+github.com/runner-mei/loong v1.1.6 h1:KLwVgUtgOXAPUDXxbYd9ebwnTJ8DnglgqvZsanoOj8s=
+github.com/runner-mei/loong v1.1.6/go.mod h1:nuZTSkb2Y/BC8xsGVDIo0G+fQQFune/J+LBK9WlY2Sk=
 github.com/runner-mei/resty v0.0.0-20191102140647-fa73802f0b7f/go.mod h1:EtdW2DD7fG5IeQrnBo+iOqvcjQ04Su1Wq4Zrj9KAQ/c=
 github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6 h1:O5CpvXXSZnQzSE4HzPdu1zr0MdCI0UXaA6435RKqhcQ=
 github.com/runner-mei/resty v0.0.0-20200609052003-2d07f2c034d6/go.mod h1:EtdW2DD7fG5IeQrnBo+iOqvcjQ04Su1Wq4Zrj9KAQ/c=

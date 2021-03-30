@@ -35,7 +35,7 @@ require (
 	github.com/runner-mei/errors v0.0.0-20201207000105-8ab5f961a154
 	github.com/runner-mei/goutils v0.0.0-20210131034305-05dc6a928a3e
 	github.com/runner-mei/log v1.0.6
-	github.com/runner-mei/loong v1.1.5
+	github.com/runner-mei/loong v1.1.6
 	github.com/runner-mei/resty v0.0.0-20201027090334-0e59ca0b4638
 	github.com/runner-mei/validation v0.0.0-20200908120153-bc4aa6175f56
 	github.com/stretchr/testify v1.6.1
