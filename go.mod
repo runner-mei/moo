@@ -31,7 +31,7 @@ require (
 	github.com/revel/log15 v2.11.20+incompatible // indirect
 	github.com/revel/pathtree v0.0.0-20140121041023-41257a1839e9 // indirect
 	github.com/revel/revel v0.21.0
-	github.com/runner-mei/GoBatis v1.1.13
+	github.com/runner-mei/GoBatis v1.1.15
 	github.com/runner-mei/errors v0.0.0-20201207000105-8ab5f961a154
 	github.com/runner-mei/goutils v0.0.0-20210131034305-05dc6a928a3e
 	github.com/runner-mei/log v1.0.6
