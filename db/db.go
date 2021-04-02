@@ -256,15 +256,15 @@ func readDbConfig(prefix string, props *cfg.Config) DbConfig {
 		Password: props.StringWithDefault(prefix+"db.password", ""),
 	}
 
-	if props.StringWithDefault("moo.runMode", "") == "dev" {
+	if props.StringWithDefault(moo.NS + ".runMode", "") == "dev" {
 		// NOTE: 为测试增加的
 		switch prefix {
 		case "models.":
-			dbConfig.drvName = props.StringWithDefault("moo.test.models.db_drv", "")
-			dbConfig.connURL = props.StringWithDefault("moo.test.models.db_url", "")
+			dbConfig.drvName = props.StringWithDefault(moo.NS + ".test.models.db_drv", "")
+			dbConfig.connURL = props.StringWithDefault(moo.NS + ".test.models.db_url", "")
 		case "data.":
-			dbConfig.drvName = props.StringWithDefault("moo.test.data.db_drv", "")
-			dbConfig.connURL = props.StringWithDefault("moo.test.data.db_url", "")
+			dbConfig.drvName = props.StringWithDefault(moo.NS + ".test.data.db_drv", "")
+			dbConfig.connURL = props.StringWithDefault(moo.NS + ".test.data.db_url", "")
 		}
 	}
 	return dbConfig

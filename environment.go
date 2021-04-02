@@ -48,6 +48,7 @@ func NewEnvironment(namespace string, cfg *cfg.Config, fs FileSystem, logger log
 		Config:        cfg,
 		Fs:            fs,
 		DaemonUrlPath: cfg.StringWithDefault("daemon.urlpath", DefaultURLPath),
+		RunMode: cfg.StringWithDefault( NS + ".runMode", ""),
 	}
 	if !strings.HasPrefix(env.DaemonUrlPath, "/") {
 		env.DaemonUrlPath = "/" + env.DaemonUrlPath

@@ -228,7 +228,7 @@ func NewTestApp(t testing.TB) *TestApp {
 		// HttpOK: make(chan error, 3),
 		Args: moo.Arguments{
 			CommandArgs: []string{
-				"moo.runMode=dev",
+				moo.NS + ".runMode=" + moo.TestRunMode,
 				"users.version=2",
 				api.CfgOperationLoggerVersion + "=2",
 				"users.redirect_mode=code",
@@ -241,7 +241,7 @@ func NewEnvironment(t testing.TB, args *moo.Arguments) *moo.Environment{
 	if args == nil {
 		args = &moo.Arguments{
 			CommandArgs: []string{
-				"moo.runMode=dev",
+				moo.NS + ".runMode=" + moo.TestRunMode,
 				"users.version=2",
 				api.CfgOperationLoggerVersion + "=2",
 				"users.redirect_mode=code",
