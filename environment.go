@@ -9,6 +9,7 @@ import (
 	"github.com/runner-mei/log"
 )
 
+const CfgRunMode = "runMode"
 const DevRunMode = "dev"
 const TestRunMode = "test"
 
@@ -23,7 +24,7 @@ type Environment struct {
 	Name      string
 	Config    *cfg.Config
 	Fs        FileSystem
-	RunMode      string
+	RunMode   string
 
 	DaemonUrlPath string
 }
@@ -48,7 +49,7 @@ func NewEnvironment(namespace string, cfg *cfg.Config, fs FileSystem, logger log
 		Config:        cfg,
 		Fs:            fs,
 		DaemonUrlPath: cfg.StringWithDefault("daemon.urlpath", DefaultURLPath),
-		RunMode: cfg.StringWithDefault( NS + ".runMode", ""),
+		RunMode:       cfg.StringWithDefault(namespace+"."+CfgRunMode, ""),
 	}
 	if !strings.HasPrefix(env.DaemonUrlPath, "/") {
 		env.DaemonUrlPath = "/" + env.DaemonUrlPath
