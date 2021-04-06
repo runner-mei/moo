@@ -167,7 +167,7 @@ func NewFileSystem(namespace string, params map[string]string) (FileSystem, erro
 			logDir:     "/var/log/" + namespace,
 			dataDir:    "/var/lib/" + namespace,
 			confDir:    "/etc/" + namespace,
-			tmpDir:     "/tmp/" + namespace,
+			tmpDir:     filepath.Join(os.TempDir(), namespace),
 			runDir:     "/var/run/" + namespace,
 		}
 	}
