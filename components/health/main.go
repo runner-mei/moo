@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"os"
+	"strconv"
 	"sync/atomic"
 	"net/http"
 	"time"
@@ -301,9 +303,10 @@ func Register(publisher pubsub.Publisher, appid, title string) error {
 	return publisher.Publish(keepliveTopic, message)
 }
 
-func Active(publisher pubsub.Publisher, appid, title string) error {
+func Active(publisher pubsub.Publisher, appid, sessionID,title string) error {
 	message := pubsub.NewMessage(appid, &api.SysKeepaliveEvent{
 		App:    appid,
+		SessionID: sessionID,
 		Title:  title,
 		Action: api.SysKeepaliveEventActive,
 	})
@@ -314,6 +317,8 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 	if interval == 0 {
 		interval = 2 * time.Minute
 	}
+
+	sessionID := "pid:"+strconv.FormatInt(int64(os.Getpid()), 10)
 
 	publisher, err := pubsub.NewHTTPPublisher(pubsubURL, logger)
 	if err != nil {
@@ -330,7 +335,7 @@ func StartActive(ctx context.Context, logger log.Logger, pubsubURL, appid, title
 	activeTimeout = func() {
 		defer time.AfterFunc(interval, activeTimeout)
 
-		err := Active(publisher, appid, title)
+		err := Active(publisher, appid, sessionID, title)
 		if err != nil {
 			logger.Error("active health fail", log.Error(err))
 			return
