@@ -19,6 +19,7 @@ const (
 type SysKeepaliveEvent struct {
 	ID     string `json:"id,omitempty"`
 	App    string `json:"app,omitempty"`
+	SessionID    string `json:"sessionID,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Action string `json:"action,omitempty"`
 }
