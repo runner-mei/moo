@@ -22,15 +22,15 @@ func init() {
 	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, hasher InUserPasswordHasher) *Users {
 			sessionRef := db.Factory.SessionReference()
-			if hasher.Hasher == nil {
-				hasher.Hasher = bcrypto.DefaultHasher
-			}
 			return NewUsers(env, sessionRef, hasher.Hasher)
 		})
 	})
 }
 
 func NewUsers(env *moo.Environment, sessionRef gobatis.SqlSession, hasher api.UserPasswordHasher) *Users {
+	if hasher == nil {
+		hasher = bcrypto.DefaultHasher
+	}
 	return &Users{
 		hasher: hasher,
 		// env:       env,
