@@ -213,9 +213,13 @@ func NewApp(args *Arguments) (*App, error) {
 	}
 
 	if args.PostInit != nil {
+		count := len(args.Options)
 		err := args.PostInit(env)
 		if err != nil {
 			return nil, err
+		}
+		if  len(args.Options) > count {
+			opts = append(opts, args.Options[count:]...)
 		}
 	}
 
