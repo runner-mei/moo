@@ -7,10 +7,10 @@ import (
 	gobatis "github.com/runner-mei/GoBatis"
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/util"
-	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo"
-	"github.com/runner-mei/moo/db"
+	"github.com/runner-mei/moo/api"
 	"github.com/runner-mei/moo/bcrypto"
+	"github.com/runner-mei/moo/db"
 )
 
 type InUserPasswordHasher struct {
@@ -18,6 +18,7 @@ type InUserPasswordHasher struct {
 
 	Hasher api.UserPasswordHasher `optional:"true"`
 }
+
 func init() {
 	moo.On(func(*moo.Environment) moo.Option {
 		return moo.Provide(func(env *moo.Environment, db db.InModelFactory, hasher InUserPasswordHasher) *Users {
@@ -269,4 +270,34 @@ func (c *Users) WriteProfile(ctx context.Context, userID int64, name, value stri
 
 func (c *Users) DeleteProfile(ctx context.Context, userID int64, name string) (int64, error) {
 	return c.UserDao.DeleteProfile(ctx, userID, name)
+}
+
+func ReadUserNames(ctx context.Context, ignoreError bool, users *Users, length int, get func(idx int) int64, set func(idx int, name string)) error {
+	cached := map[int64]string{}
+	for i := 0; i < length; i++ {
+		userid := get(i)
+		if userid > 0 {
+			continue
+		}
+
+		if username, ok := cached[userid]; ok {
+			set(i, username)
+			continue
+		}
+
+		u, err := users.GetUserByID(ctx, userid)
+		if err != nil {
+			if !ignoreError {
+				return err
+			}
+
+			cached[userid] = ""
+			continue
+		}
+
+		username := u.DisplayName(ctx)
+		set(i, username)
+		cached[userid] = username
+	}
+	return nil
 }
