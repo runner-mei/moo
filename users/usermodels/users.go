@@ -276,7 +276,7 @@ func ReadUserNames(ctx context.Context, ignoreError bool, users *Users, length i
 	cached := map[int64]string{}
 	for i := 0; i < length; i++ {
 		userid := get(i)
-		if userid > 0 {
+		if userid <= 0 {
 			continue
 		}
 
