@@ -24,7 +24,7 @@ type OperationQueryerClient struct {
 
 // Types: annotation is missing
 
-func (client OperationQueryerClient) Count(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, beginAt time.Time, endAt time.Time) (int64, error) {
+func (client OperationQueryerClient) Count(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, contentLike string, beginAt time.Time, endAt time.Time) (int64, error) {
 	var result int64
 
 	request := resty.NewRequest(client.Proxy, "/count")
@@ -37,7 +37,8 @@ func (client OperationQueryerClient) Count(ctx context.Context, useridList []int
 	for idx := range typeList {
 		request = request.AddParam("type_list", typeList[idx])
 	}
-	request = request.SetParam("begin_at", beginAt.Format(client.Proxy.TimeFormat)).
+	request = request.SetParam("content_like", contentLike).
+		SetParam("begin_at", beginAt.Format(client.Proxy.TimeFormat)).
 		SetParam("end_at", endAt.Format(client.Proxy.TimeFormat)).
 		Result(&result)
 
@@ -46,7 +47,7 @@ func (client OperationQueryerClient) Count(ctx context.Context, useridList []int
 	return result, err
 }
 
-func (client OperationQueryerClient) List(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, beginAt time.Time, endAt time.Time, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
+func (client OperationQueryerClient) List(ctx context.Context, useridList []int64, successful sql.NullBool, typeList []string, contentLike string, beginAt time.Time, endAt time.Time, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
 	var result []OperationLog
 
 	request := resty.NewRequest(client.Proxy, "/")
@@ -59,7 +60,8 @@ func (client OperationQueryerClient) List(ctx context.Context, useridList []int6
 	for idx := range typeList {
 		request = request.AddParam("type_list", typeList[idx])
 	}
-	request = request.SetParam("begin_at", beginAt.Format(client.Proxy.TimeFormat)).
+	request = request.SetParam("content_like", contentLike).
+		SetParam("begin_at", beginAt.Format(client.Proxy.TimeFormat)).
 		SetParam("end_at", endAt.Format(client.Proxy.TimeFormat)).
 		SetParam("offset", strconv.FormatInt(offset, 10)).
 		SetParam("limit", strconv.FormatInt(limit, 10)).

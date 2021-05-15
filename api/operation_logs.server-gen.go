@@ -32,9 +32,10 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 		var successful sql.NullBool
 		if s := ctx.QueryParam("successful"); s != "" {
 			successful.Valid = true
-			successful.Bool = toBool(s)
+			successful.Bool = ToBool(s)
 		}
 		var typeList = ctx.QueryParamArray("type_list")
+		var contentLike = ctx.QueryParam("content_like")
 		var beginAt time.Time
 		if s := ctx.QueryParam("begin_at"); s != "" {
 			beginAtValue, err := loong.ToDatetime(s)
@@ -52,7 +53,7 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 			endAt = endAtValue
 		}
 
-		result, err := svc.Count(ctx.StdContext, useridList, successful, typeList, beginAt, endAt)
+		result, err := svc.Count(ctx.StdContext, useridList, successful, typeList, contentLike, beginAt, endAt)
 		if err != nil {
 			return ctx.ReturnError(err)
 		}
@@ -70,9 +71,10 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 		var successful sql.NullBool
 		if s := ctx.QueryParam("successful"); s != "" {
 			successful.Valid = true
-			successful.Bool = toBool(s)
+			successful.Bool = ToBool(s)
 		}
 		var typeList = ctx.QueryParamArray("type_list")
+		var contentLike = ctx.QueryParam("content_like")
 		var beginAt time.Time
 		if s := ctx.QueryParam("begin_at"); s != "" {
 			beginAtValue, err := loong.ToDatetime(s)
@@ -107,7 +109,7 @@ func InitOperationQueryer(mux loong.Party, svc OperationQueryer) {
 		}
 		var sortBy = ctx.QueryParam("sort_by")
 
-		result, err := svc.List(ctx.StdContext, useridList, successful, typeList, beginAt, endAt, offset, limit, sortBy)
+		result, err := svc.List(ctx.StdContext, useridList, successful, typeList, contentLike, beginAt, endAt, offset, limit, sortBy)
 		if err != nil {
 			return ctx.ReturnError(err)
 		}

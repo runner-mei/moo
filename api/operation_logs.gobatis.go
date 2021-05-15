@@ -67,12 +67,14 @@ func init() {
 						"userids",
 						"successful",
 						"typeList",
+						"contentLike",
 						"createdAt",
 					},
 					[]reflect.Type{
 						reflect.TypeOf([]int64{}),
 						reflect.TypeOf(&sql.NullBool{}).Elem(),
 						reflect.TypeOf([]string{}),
+						reflect.TypeOf(new(string)).Elem(),
 						reflect.TypeOf(&TimeRange{}).Elem(),
 					},
 					[]gobatis.Filter{})
@@ -97,6 +99,7 @@ func init() {
 						"userids",
 						"successful",
 						"typeList",
+						"contentLike",
 						"createdAt",
 						"offset",
 						"limit",
@@ -106,6 +109,7 @@ func init() {
 						reflect.TypeOf([]int64{}),
 						reflect.TypeOf(&sql.NullBool{}).Elem(),
 						reflect.TypeOf([]string{}),
+						reflect.TypeOf(new(string)).Elem(),
 						reflect.TypeOf(&TimeRange{}).Elem(),
 						reflect.TypeOf(new(int64)).Elem(),
 						reflect.TypeOf(new(int64)).Elem(),
@@ -172,7 +176,7 @@ func (impl *OperationLogDaoImpl) DeleteBy(ctx context.Context, createdAt TimeRan
 	return err
 }
 
-func (impl *OperationLogDaoImpl) Count(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, createdAt TimeRange) (int64, error) {
+func (impl *OperationLogDaoImpl) Count(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, contentLike string, createdAt TimeRange) (int64, error) {
 	var instance int64
 	var nullable gobatis.Nullable
 	nullable.Value = &instance
@@ -182,12 +186,14 @@ func (impl *OperationLogDaoImpl) Count(ctx context.Context, userids []int64, suc
 			"userids",
 			"successful",
 			"typeList",
+			"contentLike",
 			"createdAt",
 		},
 		[]interface{}{
 			userids,
 			successful,
 			typeList,
+			contentLike,
 			createdAt,
 		}).Scan(&nullable)
 	if err != nil {
@@ -200,13 +206,14 @@ func (impl *OperationLogDaoImpl) Count(ctx context.Context, userids []int64, suc
 	return instance, nil
 }
 
-func (impl *OperationLogDaoImpl) List(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
+func (impl *OperationLogDaoImpl) List(ctx context.Context, userids []int64, successful sql.NullBool, typeList []string, contentLike string, createdAt TimeRange, offset int64, limit int64, sortBy string) ([]OperationLog, error) {
 	var instances []OperationLog
 	results := impl.session.Select(ctx, "OperationLogDao.List",
 		[]string{
 			"userids",
 			"successful",
 			"typeList",
+			"contentLike",
 			"createdAt",
 			"offset",
 			"limit",
@@ -216,6 +223,7 @@ func (impl *OperationLogDaoImpl) List(ctx context.Context, userids []int64, succ
 			userids,
 			successful,
 			typeList,
+			contentLike,
 			createdAt,
 			offset,
 			limit,
