@@ -108,6 +108,8 @@ const (
 	CfgSystemMenuAllAppName       = "system.menu.all_app_name"
 	CfgSystemMenuProducts         = "system.menu.products"
 	CfgSystemMenuRewriteAppCookie = "system.menu.rewrite_app_cookie"
+	CfgI18NLanguage = "i18n.language"
+	CfgI18NDomain = "i18n.domain"
 
 	CookieAppName = "MOO_APP_NAME"
 )
