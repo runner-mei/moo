@@ -9,6 +9,7 @@ import (
 
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/util"
+	"github.com/runner-mei/goutils/gettext"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/moo/users/welcome"
 )
@@ -112,6 +113,13 @@ func ReadFieldsFromDir(env *moo.Environment) ([]Fields, error) {
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Sequence < results[j].Sequence
 	})
+
+	for idx := range results {
+		results[idx].Title = gettext.Gettext(results[idx].Title)
+		for fidx := range results[idx].Fields {
+			results[idx].Fields[fidx].Name = gettext.Gettext(results[idx].Fields[fidx].Name)
+		}
+	}
 	return results, nil
 }
 
@@ -122,6 +130,10 @@ func ReadFieldsFromFile(env *moo.Environment, defaultFields []Field) ([]Field, e
 	err := util.FromHjsonFile(filename, &fields)
 	if err != nil {
 		if os.IsNotExist(err) {
+			for idx := range defaultFields {
+				defaultFields[idx].Name = gettext.Gettext(defaultFields[idx].Name)
+			}
+
 			return defaultFields, nil
 		}
 		return nil, errors.New("read '" + filename + "' fail: " + err.Error())
@@ -157,7 +169,10 @@ func ReadFieldsFromFile(env *moo.Environment, defaultFields []Field) ([]Field, e
 		} else {
 			results[foundIdx] = field
 		}
+	}
 
+	for idx := range results {
+		results[idx].Name = gettext.Gettext(results[idx].Name)
 	}
 	return results, nil
 }
