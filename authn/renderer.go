@@ -452,6 +452,9 @@ var funcs = template.FuncMap{
 		return template.JSStr(s)
 	},
 	"urljoin": urlutil.Join,
+	"gettext": func(ctx interface{}, txt string) string {
+		return gettext.Gettext(txt)
+	},
 }
 
 func (r *templates) loadTemplate(name string) (*template.Template, error) {

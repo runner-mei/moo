@@ -63,18 +63,18 @@
 						<div class="input">
 							<div class="name mb30">
 								<img src="{{urljoin .global.url_prefix .context_path}}/static/images/username.jpg" class="name-p" />
-								<input type="text" placeholder="请输入用户名" name="username" value="{{.username}}"/>
+								<input type="text" placeholder="{{gettext $ "请输入用户名"}}" name="username" value="{{.username}}"/>
 							</div>
 							<div class="name mb30">
 								<img src="{{urljoin .global.url_prefix .context_path}}/static/images/password.jpg" class="name-p" />
-								<input type="password" placeholder="请输入密码" name="password" />
+								<input type="password" placeholder="{{gettext $ "请输入密码"}}" name="password" />
 							</div>
 							{{- if .errorMessage}}
 	            <p class="tishi help text-danger">{{ .errorMessage }}</p>
 	            {{- end}}
               {{- if .showForce}}
 							<div class="mb30">
-                  <input type="checkbox" id="login.force" name="force" ><lable for="login.force" style="margin-left: 10px; color:whitesmoke">强制登录</lable>
+                  <input type="checkbox" id="login.force" name="force" ><lable for="login.force" style="margin-left: 10px; color:whitesmoke">{{gettext $ "强制登录"}}</lable>
               </div>
               {{- end}}
 
@@ -85,11 +85,11 @@
 								<img {{printf "src='%s'" .captcha_data | htmlattr}} class="name-p Verification_Code" />
 
 								<img src="{{urljoin .global.url_prefix .context_path}}/static/images/captcha.png" class="name-p" />
-								<input type="text" placeholder="请输入验证码" name="captcha_value" />
+								<input type="text" placeholder="{{gettext $ "请输入验证码"}}" name="captcha_value" />
 							</div>
 							{{- end}}
 
-							<div><button class="denglu button btn btn-secondary">登&nbsp;录</button></div>
+							<div><button class="denglu button btn btn-secondary">{{gettext $ "登 录"}}</button></div>
 						</div>
 
           </form>
