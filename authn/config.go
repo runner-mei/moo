@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mojocn/base64Captcha"
+	"github.com/runner-mei/goutils/split"
 	"github.com/runner-mei/goutils/urlutil"
 	"github.com/runner-mei/goutils/util"
 	"github.com/runner-mei/log"

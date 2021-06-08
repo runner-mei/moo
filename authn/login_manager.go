@@ -14,7 +14,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/runner-mei/errors"
-	"github.com/runner-mei/goutils/split"
 	"github.com/runner-mei/log"
 	"github.com/runner-mei/loong"
 	"github.com/runner-mei/moo"
