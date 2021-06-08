@@ -9,6 +9,7 @@ import (
 
 	"github.com/runner-mei/errors"
 	"github.com/runner-mei/goutils/urlutil"
+	"github.com/runner-mei/goutils/gettext"
 	"github.com/runner-mei/moo"
 	"github.com/runner-mei/resty"
 )
@@ -108,6 +109,19 @@ func ReadURLs(env *moo.Environment, rootURL string) ([]GroupedOption, error) {
 	return concatOptionSet(choices1, choices2), nil
 }
 
+func toI18n(allChoices []GroupedOption)[]GroupedOption {
+	for idx := range allChoices {
+		if allChoices[idx].Label != "" {
+			allChoices[idx].Label = gettext.Gettext(allChoices[idx].Label)
+		}
+
+		for childIdx := range allChoices[idx].Children {
+			allChoices[idx].Children[childIdx].Label = gettext.Gettext(allChoices[idx].Children[childIdx].Label)
+		}
+	}
+	return allChoices
+}
+
 func GetURLs(env *moo.Environment, rootURL string, apps []Config) ([]GroupedOption, error) {
 	var errList []error
 	var allChoices []GroupedOption
@@ -151,9 +165,9 @@ func GetURLs(env *moo.Environment, rootURL string, apps []Config) ([]GroupedOpti
 	}
 
 	if len(errList) > 0 {
-		return allChoices, errors.ErrArray(errList, "GetWelcomeURLs")
+		return toI18n(allChoices), errors.ErrArray(errList, "GetWelcomeURLs")
 	}
-	return allChoices, nil
+	return toI18n(allChoices), nil
 }
 
 func ReadWelcomeChoices(env *moo.Environment) ([]GroupedOption, error) {
@@ -187,5 +201,5 @@ func ReadWelcomeChoices(env *moo.Environment) ([]GroupedOption, error) {
 	if err != nil {
 		return nil, errors.New("read '" + filename + "' fail: " + err.Error() + "\r\n" + string(bs))
 	}
-	return config.Choices, nil
+	return toI18n(config.Choices), nil
 }

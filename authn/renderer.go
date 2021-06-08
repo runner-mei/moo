@@ -137,7 +137,7 @@ func (srv *Renderer) ReturnError(authCtx *services.AuthContext, w http.ResponseW
 		"context_path":     srv.readContextPath(r),
 	}
 
-	if authCtx.ErrorCount > 0 {
+	if authCtx.ErrorCount > 0 && !srv.config.DisableCaptcha {
 		captchaKey, captchaCode, err := services.GenerateCaptcha(srv.captchaStore, srv.config.Captcha)
 		if err != nil {
 			authCtx.Logger.Warn("登录失败", log.String("username", authCtx.Request.Username),

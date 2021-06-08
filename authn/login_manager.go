@@ -593,11 +593,10 @@ func NewLoginManager(env *moo.Environment, cfg *Config, userManager UserManager,
 		opts = append(opts, authOpts...)
 	}
 
-	usernames := split.Split(env.Config.StringWithDefault(api.CfgSysDisableUsers, ""), ",", true, true)
-	if len(usernames) > 0 {
-		opts = append(opts, services.DisableUsers(usernames))
+	if len(cfg.DisableUserList) > 0 {
+		opts = append(opts, services.DisableUsers(cfg.DisableUserList))
 	}
-	if !env.Config.BoolWithDefault(api.CfgUserCaptchaDisabled, false) {
+	if !cfg.DisableCaptcha {
 		opts = append(opts, services.CaptchaCheck(nil, counter))
 	}
 

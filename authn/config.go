@@ -34,7 +34,9 @@ type Config struct {
 	FooterTitleText string
 	LogoPath        string
 	TampletePaths   []string
+	DisableUserList []string
 	ShowForce       bool
+	DisableCaptcha  bool
 	AutoLoad        string
 
 	SessionKey       string
@@ -126,6 +128,8 @@ func ReadConfig(env *moo.Environment) *Config {
 
 		TampletePaths:    []string{env.Fs.FromLib("web/sso"), env.Fs.FromData("resources")},
 		RedirectMode:     env.Config.StringWithDefault(api.CfgUserRedirectMode, "html"),
+		DisableUserList:  split.Split(env.Config.StringWithDefault(api.CfgSysDisableUsers, ""), ",", true, true),
+		DisableCaptcha:   env.Config.BoolWithDefault(api.CfgUserCaptchaDisabled, false),
 		ShowForce:        strings.ToLower(strings.TrimSpace(env.Config.StringWithDefault(api.CfgUserLoginConflict, ""))) != "disableforce",
 		SessionKey:       authclient.DefaultSessionKey,
 		SessionPath:      readSessonPath(env),
