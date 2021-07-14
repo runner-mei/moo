@@ -289,12 +289,15 @@ func (svc *Service) loadUser(ctx *RequestContext, u *usermodels.User, opts *User
 	return u, nil
 }
 
-func (svc *Service) CreateUserWithRoleNames(ctx *RequestContext, user *usermodels.User, roles []string) (int64, error) {
+func (svc *Service) CreateUserWithRoleNames(ctx *RequestContext, user *usermodels.User, roles []string, skipIfRoleNotExists bool) (int64, error) {
 	var roleIDs []int64
 	for _, name := range roles {
 		role, err := svc.Users.GetRoleByName(ctx.Ctx, name)
 		if err != nil {
 			if err == sql.ErrNoRows {
+				if skipIfRoleNotExists {
+					continue
+				}
 				return 0, errors.New("角色 '"+ name +"' 不存在")
 			}
 			return 0, err

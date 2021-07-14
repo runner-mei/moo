@@ -159,12 +159,18 @@ func (c *Users) GetRoleByName(ctx context.Context, name string) (*Role, error) {
 	return &role, nil
 }
 
-func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles []string) (int64, error) {
+func (c *Users) CreateUserWithRoleNames(ctx context.Context, user *User, roles []string, skipIfRoleNotExists bool) (int64, error) {
 	var roleIDs []int64
 	for _, name := range roles {
 		var role Role
 		err := c.UserDao.GetRoleByName(ctx, name)(&role)
-		if err != nil {
+		if err != nil {			
+			if err == sql.ErrNoRows {
+				if skipIfRoleNotExists {
+					continue
+				}
+				return 0, errors.New("角色 '"+ name +"' 不存在")
+			}
 			return 0, err
 		}
 		roleIDs = append(roleIDs, role.ID)

@@ -21,7 +21,7 @@ type UserManager interface {
 	api.UserManager
 	services.UserManager
 
-	Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error)
+	Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string, skipIfRoleNotExists bool) (interface{}, error)
 }
 
 type tokenUser struct {

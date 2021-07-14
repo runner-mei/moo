@@ -300,7 +300,8 @@ func (mgr *LoginManager) LoginWith(ctx context.Context, w http.ResponseWriter, r
 				"ldap",
 				"",
 				map[string]interface{}{},
-				roles)
+				roles,
+				true)
 			if err != nil {
 				returnError(authCtx, w, r, &services.ErrExternalServer{
 					Msg: "内部错误",

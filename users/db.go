@@ -43,7 +43,7 @@ import (
 // 	return um, nil
 // }
 
-func (um *UserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
+func (um *UserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string, skipIfRoleNotExists bool) (interface{}, error) {
 	user := &usermodels.User{
 		Name:       name,
 		Nickname:   nickname,
@@ -61,7 +61,7 @@ func (um *UserManager) Create(ctx context.Context, name, nickname, source, passw
 	}
 
 	reqCtx := um.Service.NewContext(ctx, currentUser, "")
-	id, err := um.Service.CreateUserWithRoleNames(reqCtx, user, roles)
+	id, err := um.Service.CreateUserWithRoleNames(reqCtx, user, roles, skipIfRoleNotExists)
 	if err != nil {
 		return nil, err
 	}
