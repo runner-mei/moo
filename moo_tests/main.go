@@ -72,7 +72,7 @@ func (a *TestApp) CreateUser(t testing.TB, name, password string, attributes ...
 		params = attributes[0]
 	}
 	userid, err := a.UserManager.Create(ctx,
-		name, name, "", password, params, nil)
+		name, name, "", password, params, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
