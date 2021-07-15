@@ -60,10 +60,10 @@ func (h *FileUserManager) CreateByDict(ctx context.Context, fields map[string]in
 	if password == "" {
 		return nil, errors.New("password is missing")
 	}
-	return h.Create(ctx, username, nickname, "", password, fields, nil)
+	return h.Create(ctx, username, nickname, "", password, fields, nil, false)
 }
 
-func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string) (interface{}, error) {
+func (h *FileUserManager) Create(ctx context.Context, name, nickname, source, password string, fields map[string]interface{}, roles []string, skipIfRoleNotExists bool) (interface{}, error) {
 	var users, err = h.All()
 	if err != nil {
 		return nil, err
